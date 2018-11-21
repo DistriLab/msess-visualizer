@@ -1,0 +1,3 @@
+bibtex main
+pdflatex --synctex=1 main 
+#dvipdfm main.dvi

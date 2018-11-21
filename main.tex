@@ -1,0 +1,143 @@
+%% \documentclass[sigconf,review, anonymous]{acmart}
+% \documentclass[sigconf,review,preprint]{acmart}
+\documentclass[acmsmall,10pt,review,anonymous]{acmart}\settopmatter{printfolios=true}
+%\documentclass[sigconf]{acmart}
+% \documentclass[preprint]{llncs}
+
+\input{usages}
+% \input{mathbxpersonal}
+
+% \setcopyright{rightsretained}
+\setcopyright{none}
+\pagenumbering{arabic}
+% DOI
+\acmDOI{}
+
+% ISBN
+\acmISBN{}
+
+% Conference
+\acmConference[]{}{}{}
+\acmYear{}
+\copyrightyear{}
+
+\acmPrice{}
+
+%\settopmatter{printacmref=false} % Removes citation information below abstract
+\renewcommand\footnotetextcopyrightpermission[1]{} % removes footnote with conference information in first column
+%\pagestyle{plain} % removes running headers
+
+\begin{document}
+\captionsetup[figure]{labelfont=bf,textfont=normalfont,singlelinecheck=on}
+\setlist[itemize]{leftmargin=*}
+\setlist[enumerate]{leftmargin=*}
+% \special{papersize=8.5in,11in}
+% \setlength{\pdfpageheight}{\paperheight}
+% \setlength{\pdfpagewidth}{\paperwidth}
+
+
+%% \title{A Multi-Party Session Logic with Explicit Synchronization}
+%% \title{A Multi-Party Session Logic with 
+%% Race-Free \\ and Non-Deterministic Communications}
+%% \title{A Multi-Party Logic with 
+%% Race-Free and \\ Non-Deterministic Communications}
+%% \title{Automated Reasoning with 
+%% Race-Free and \\ Non-Deterministic Communications}
+%% \title{Automated Reasoning for
+%% Race-Free Channels  \\ with Explicit Synchronization}
+%% \title{Automated Reasoning for
+%% Race-Free Channels  with \\ Explicit Synchronization and Precise Disjunction}
+%% \title{Automated Verification for
+%% Race-Free Channels  with \\ Implicit and Explicit Synchronization}
+\title{Automated Modular Verification for
+Race-Free Channels  \\ with Implicit and Explicit Synchronization}
+
+
+\author{}
+\affiliation{}
+\input{notation.tex}
+
+\begin{abstract}
+  \input{abstract}
+\end{abstract}
+
+\maketitle
+
+
+\input{style}
+
+
+% {\bf Abstract}
+\newcounter{ExampleNo}
+\setcounter{ExampleNo}{0}
+\newcommand{\setExampleNo}[1]{\refstepcounter{ExampleNo}\arabic{ExampleNo}\label{#1}}
+
+
+\section{Introduction}
+\input{intro}
+
+\renewcommand\labelitemi{\tiny$\bullet$}
+\section{Overview}
+\label{sec.overview}
+\input{overview}
+
+\section{Global Protocols}
+\label{sec:global}
+\input{global}
+
+% \section{Modular Decomposition}
+
+\section{Local Projection} 
+\label{sec:projection}
+\input{projection}
+ 
+ \section{Verification of C-like Programs}
+\input{verification}
+ 
+\section{Explicit Synchronization}
+\input{explicit_synch}
+
+\section{Modular Protocols}
+\input{modularity}
+
+% \section{Recursion}
+% \input{recursion}
+
+\section{Related Work}
+\input{related}
+
+ %% \section{Conclusion and Future Work}
+\section{Discussions and Final Remarks}
+\input{conclusion}
+
+%% \appendix
+%% \section{Full Specification Language}
+%% \section{Full Programming Language}
+%
+%This is the text of the appendix, if you need one.
+%
+%\acks
+%
+%Acknowledgments, if needed.
+
+% We recommend abbrvnat bibliography style.
+
+
+
+% The bibliography should be embedded for final submission.
+
+%\begin{thebibliography}{}
+%\softraggedright
+%\end{thebibliography}
+
+%\begingroup
+%\softraggedright
+
+\bibliography{ref}
+\bibliographystyle{ACM-Reference-Format}
+\citestyle{acmauthoryear}
+
+%\bibliographystyle{plain}
+%\endgroup
+
+\end{document}

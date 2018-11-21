@@ -1,0 +1,1100 @@
+\definecolor{darkgreen}{HTML}{008000}
+
+\newcommand{\cb}{{\textit{communicates-before}}}
+\newcommand{\chan}{\mathcal{C}}
+\newcommand{\lchan}{\tilde{\mathcal{C}}}
+\newcommand\commonspec[1]{\code{Common(#1)}}
+\newcommand\partyspec[2]{\code{Party(#1,#2)}}
+\newcommand\changlob[2]{\overline{\chan}(#1,#2)}
+\newcommand\gloabspec[3]{\code{Glob(#1,#2,#3)}}
+% \newcommand\chanspec[3]{\code{Channel{\langle}#1,#2,#3{\rangle}}}
+%\newcommand{\perchanprj}[3]{\code{{#1}{\prj}{#2}{\langle}{#3}{\rangle}}}
+\newcommand{\perchanprj}[3]{\code{{#1}{\prj}{#2}{\prj}{#3}}}
+\newcommand{\perpartyprj}[2]{\code{{#1}{\prj}{#2}}}
+\newcommand{\All}{\code{All}}
+\newcommand{\codeS}[1]{\ensuremath{\it #1}}
+\newcommand{\prj}{\mytt{\#}}
+\newcommand{\chpred}[2]{{\cal C}(#1,#2)}
+%% \newcommand{\wnsay}[1]{{{\color{blue}({\bf WN:} \textit{#1})}}}
+\newcommand{\wnsay}[1]{}
+\newcommand{\wnnay}[1]{}
+%% \newcommand{\asay}[1]{{{\color{darkgreen}{\bf A:} \textit{#1}}}}
+\newcommand{\asay}[1]{}
+\newcommand{\anay}[1]{}
+%% \newcommand{\scsay}[1]{{{\color{cyan}({\bf SC:} \textit{#1})}}}
+\newcommand{\scsay}[1]{}
+\newcommand{\scnay}[1]{}
+\newcommand{\doubt}[1]{{\color{red}{#1}}}
+\newcommand{\betw}[1]{\ensuremath{{\cdots}#1{\cdots}}}
+\def\defeq{\ensuremath{\,\triangleq}}
+\def\cd{\,{\cdot}\,}
+\def\compl{{\sim}}
+\def\pst{\omega}
+\def\st{\ensuremath{\sigma}}
+\def\sta{\ensuremath{\sigma'}}
+\def\stap{\ensuremath{\sigma''}}
+\def\St{\ensuremath{\mathrm{\Delta}}}
+\def\Sta{\ensuremath{\mathrm{\Delta'}}}
+
+\def\mw{\ensuremath{-\hspace{-1ex}\circledast~}}
+
+\def\Q{\ensuremath{\code{Q}}}
+\def\P{\ensuremath{\code{P}}}
+\def\Pow{\ensuremath{\mathcal{P}}}
+\def\B{\ensuremath{\mathsf{B}}}
+\def\S{\ensuremath{\mathcal{S}}}
+\def\SH{\ensuremath{\mathsf{SH}}}
+\def\PSH{\ensuremath{\Pow_\SH}}
+
+%\newcommand{\rearr}[2]{\ensuremath{\mathsf{rearr}(#1)(#2)}}
+\newcommand{\filter}[2]{\ensuremath{\mathsf{filter}(#1)(#2)}}
+%\newcommand{\exec}[2]{\ensuremath{\mathsf{exec}(#1)(#2)}}
+%\newcommand{\abs}[1]{\ensuremath{\mathsf{abs}(#1)}}
+
+\def\AllSpec{\ensuremath{\mathsf{AllSpec}}}
+\def\T{\ensuremath{\mathcal{T}}}
+\def\Pt{\ensuremath{\mathcal{P}^\top}}
+
+\def\rearr{\ensuremath{\mathsf{unfold}}}
+\def\exec{\ensuremath{\mathsf{exec}}}
+\def\abs{\ensuremath{\mathsf{abs}}}
+\def\absa{\ensuremath{\mathsf{abs_a}}}
+
+\def\Rearr{\ensuremath{\mathsf{Unfold}}}
+\def\Exec{\ensuremath{\mathsf{Exec}}}
+\def\Abs{\ensuremath{\mathsf{Abs}}}
+
+\newcommand{\Pre}{\ensuremath{\mathsf{Pre}}}
+\newcommand{\Post}{\ensuremath{\mathsf{Post}}}
+\newcommand{\Curr}{\ensuremath{\mathsf{Curr}}}
+
+\def\svar{\ensuremath{\mathsf{svars}}}
+\def\rec{\ensuremath{\mathsf{rec}}}
+\def\Pairs{\ensuremath{\mathsf{Pairs}}}
+\def\Spec{\ensuremath{\mathsf{Spec}}}
+\def\mspec{\ensuremath{\myit{mspec}}}
+\newcommand{\fv}[1]{\ensuremath{\mathsf{fv}(#1)}}
+\newcommand{\lv}[1]{\ensuremath{\mathsf{lv}(#1)}}
+\def\Refine{\ensuremath{\mathsf{Refine}}}
+\def\ReachVar{\ensuremath{\mathsf{ReachVar}}}
+\def\b{\ensuremath{\mathsf{b}}}
+\newcommand{\old}[1]{\ensuremath{\mathsf{old}(#1)}}
+\newcommand{\ol}[1]{\ensuremath{#1^*}}
+\newcommand{\lift}[1]{\ensuremath{#1^\dag}}
+
+\newcommand{\mtt}[1]{\ensuremath{\mathtt{#1}}}
+\newcommand{\mbf}[1]{\ensuremath{\mathbf{#1}}}
+\newcommand{\msf}[1]{\ensuremath{\mathsf{#1}}}
+\newcommand{\sevent}[2]{\ensuremath{#1^{#2}_S}}
+\newcommand{\revent}[2]{\ensuremath{#1^{#2}_R}}
+\newcommand{\event}[2]{\ensuremath{#1^{(#2)}}}
+% \def\ev{\ensuremath{\varepsilon}}
+\def\ev{\ensuremath{E}}
+\newcommand{\eventf}[3]{\ensuremath{#1^{#2}{{\at}#3}}}
+\newcommand{\transf}[3]{\ensuremath{#1{{\at}#3}}}
+
+%\newcommand{\pre}[1]{\ensuremath{\mathsf{Pre}_\mtt{#1}}}
+%\newcommand{\post}[1]{\ensuremath{\mathsf{Post}_\mtt{#1}}}
+
+\def\Var{\ensuremath{\mathsf{Var}}}
+\def\LVar{\ensuremath{\mathsf{LVar}}}
+\def\SVar{\ensuremath{\mathsf{SVar}}}
+
+\def\nul{\texttt{null}}
+
+\newcommand{\denoleft}{\ensuremath{|\hspace{-.06cm}[}}
+\newcommand{\denoright}{\ensuremath{]\hspace{-.06cm}|}}
+\newcommand{\semantic}[3]{{\denoleft}#1{\denoright}_{#2}#3}
+\newcommand{\semantica}[3]{{\denoleft}#1{\denoright}_{#2}^\msf{A}#3}
+\newcommand{\semantici}[3]{{\denoleft}#1{\denoright}_{#2}#3}
+\newcommand{\triple}[3]{\{ #1 \}~ {\color{blue}{#2}} ~\{ #3 \}}
+
+\def\vl{\ensuremath{\mathsf{val}}}
+\def\rf{\ensuremath{\mathsf{ref}}}
+\def\dispose{\ensuremath{\mathsf{dispose}}}
+\def\new{\ensuremath{\mathsf{new}}}
+\def\cskip{\ensuremath{\mathsf{skip}}}
+\newcommand{\cif}[3]{\ensuremath{\mathsf{if}~#1~\mathsf{then}~#2~\mathsf{else}~#3~\mathsf{fi}}}
+\newcommand{\cwhile}[2]{\ensuremath{\mathsf{while}~#1~\mathsf{do}~#2~\mathsf{od}}}
+\def\known{\ensuremath{\mathsf{known}}}
+\def\unknown{\ensuremath{\myit{unk}}}
+\def\local{\ensuremath{\mathsf{local}}}
+\def\return{\ensuremath{\mathsf{return}}}
+
+\def\D{\Delta}
+\def\Pst{\Upsilon}
+\def\S{\mathsf{S}}
+\def\H{\mathsf{H}}
+\def\Re{\mathsf{R}}
+\def\subst{\rho}
+\newcommand{\hyphen}[0]{\ensuremath{\mbox{-}}}
+\newcommand{\pair}[2]{\ensuremath{(#1, #2)}}%{\ensuremath{\langle #1;~ #2 \rangle}}
+\newcommand{\unk}[2]{\ensuremath{\myit{unk}_{#1}{(#2)}}}
+
+\def\TODO{\textsf{TODO}~}
+
+%%%%%%
+
+\def\State{\ensuremath{\varsigma}}
+\def\mem{\code{heap}}
+\def\stk{\code{stk}}
+\def\so{\textit{sizeof}}
+\def\sso{\textit{ssizeof}}
+\newcommand{\hp}{\ensuremath{\mu}}
+\newcommand{\sk}{\ensuremath{\sigma}}
+\newcommand{\err}{\ensuremath{\myit{er}}}
+\newcommand{\errdead}{\ensuremath{\bot_{\it deadlock}}}
+\newcommand{\memerr}{\ensuremath{\myit{er}_1}}
+\newcommand{\othererr}{\ensuremath{\myit{er}_2}}
+%\newcommand{\incsk}[1]{\ensuremath{\stk{:=}\stk{+}\myit{sizeof}(#1)}}
+%\newcommand{\inchp}[1]{\ensuremath{\mem{:=}\mem{+}\myit{sizeof}(#1)}}
+\newcommand{\incsk}[1]{\ensuremath{\myit{inc\_stk}(#1)}}
+\newcommand{\inchp}[1]{\ensuremath{\myit{inc\_hp}(#1)}}
+\newcommand{\decsk}[1]{\ensuremath{\myit{dec\_stk}(#1)}}
+\newcommand{\dechp}[1]{\ensuremath{\myit{dec\_hp}(#1)}}
+\newcommand{\cimplies}{\approx\!\!>}
+%%%%%%%%%%%%%%%%
+%\newcommand{\report}[1]{ }
+%\newcommand{\paper}[1]{#1}
+\newcommand{\acm}[1]{}
+%%%%%%%%%%%%%%%%
+\newcommand{\hide}[1]{}
+\newcommand{\nil}{\btt{null}}
+\newcommand{\res}{\btt{res}}
+\newcommand{\ra}{\,\rightarrow\,}
+\newcommand{\emp}{\btt{emp}}
+\newcommand{\veq}{\ensuremath{\equiv}}
+\newcommand{\self}{\btt{root}}
+%\newcommand{\root}{\btt{root}}
+\newcommand{\wwith}{\btt{inv}}
+\newcommand{\equivimp}{\ensuremath{\Longleftrightarrow}}
+\newcommand{\revimp}{\ensuremath{\Longleftarrow}}
+\newcommand{\ndet}{\ensuremath{\wedge}}
+\newcommand{\puret}{\ensuremath{\pi}}
+%\newcommand{\simp}{\ensuremath{\textrm{--}\!\btt{*}}}
+\newcommand{\simp}{{\bf ;}}
+\newcommand{\minv}{\ensuremath{\iota}}
+\newcommand{\ptr}{\ensuremath{\gamma}}
+\newcommand{\nm}{\ensuremath{\phi}}
+\newcommand{\heap}{\ensuremath{\kappa}}
+\newcommand{\constr}{\ensuremath{\mathrm{\Phi}}}
+\newcommand{\pconstr}{\ensuremath{\phi}}
+\newcommand{\sat}[1]{\myit{SAT}(#1)}
+\newcommand{\hmodels}[2]{\ensuremath{#1\,{\models}\,#2}}
+\newcommand{\abduct}[2]{\ensuremath{#1 \rhd #2}}
+\newcommand{\nabduct}[2]{\ensuremath{#1 \ntriangleright #2}}
+\newcommand{\entail}[2]{\ensuremath{#1 \vdash #2}}
+\newcommand{\entailA}[2]{\ensuremath{#1 \triangleright #2}}
+\newcommand{\nentail}[2]{\ensuremath{#1 \nvdash #2}}
+\newcommand{\entailD}[3]{\ensuremath{#1{\vdash}#2\,{\sep}\,#3}}
+\newcommand{\entailH}[3]{\ensuremath{#1{\vdash}#2\,{\sep}\,#3}}
+%\newcommand{\entailE}[4]{\ensuremath{#2{\vdash}#3\,{\sep}\,#4}}
+\newcommand{\entailE}[4]{\ensuremath{#2{\vdash}_{#1}#3\,{\sep}\,#4}}
+\newcommand{\entailV}[3]{\entailE{V}{#1}{#2}{#3}}
+\newcommand{\entailK}[5]{\ensuremath{#3{\vdash}^{#1}_{#2}#4\,{\sep}\,#5}}
+\newcommand{\entailVV}[3]{\entailK{\heap}{V}{#1}{#2}{#3}}
+\newcommand{\entailI}[3]{\ensuremath{#2 \vdash_{#1} #3}}
+\newcommand{\myit}[1]{\textit{#1}}
+\newcommand{\mytt}[1]{\texttt{#1}}
+% \newcommand{\U}{\ensuremath{{\btt{U}}}}
+\newcommand{\R}{\ensuremath{{\btt{R}}}}
+\newcommand{\Le}{\ensuremath{{\btt{L}}}}
+\newcommand{\Sh}{\ensuremath{{\btt{S}}}}
+\newcommand{\A}{{\myit{A}}}
+\newcommand{\at}{\mytt{@}}
+\newcommand{\isview}{\myit{IsView}}
+\newcommand{\isdata}{\myit{IsData}}
+\newcommand{\hc}[2]{\ensuremath{{#1}{::}#2}}
+\newcommand{\hx}[1]{\hc{\code{x}}{#1}}
+\newcommand{\mtype}[2]{\ensuremath{{#1}{ \ :}#2}}
+\def\primeV{\myit{prime}}
+\def\entword{ENT}
+\newcommand{\rulen}[1]{\ensuremath{{\bf \scriptstyle #1}}}
+\newcommand{\entrule}[1]{\ensuremath{\scriptstyle \entword-#1}}
+\newcommand{\entrulen}[1]{[\underline{{\bf \scriptstyle \entword-}\rulen{#1}}]}
+\newcommand{\oprulen}[1]{[\underline{{\bf \scriptstyle \opword-}\rulen{#1}}]}
+\def\opword{OP}
+\newcommand{\lemrulen}[1]{[{{\bf \scriptstyle LEM-}\rulen{#1}}]}
+\newcommand{\lemnormrulen}[1]{\lemrulen{NORM-#1}}
+\newcommand{\ebpentail}[2]{
+	\begin{prooftree}
+		\Hypo{\entrulen{#1}}
+		\Infer[no rule]1{{\begin{prooftree}[rule style=simple] #2 \end{prooftree}}}
+	\end{prooftree}
+}
+\newcommand{\ebpsem}[2]{
+	\begin{prooftree}
+		\Hypo{\oprulen{#1}}
+		\Infer[no rule]1{{\begin{prooftree}[rule style=simple] #2 \end{prooftree}}}
+	\end{prooftree}
+}
+\newcommand{\entwlbl}[2]{{\begin{array}{c} { \entrulen{#1} } \\ {#2} \end{array} }}
+%\newcommand{\entwlbl}[2]{{ { \entrulen{#1} } \\ {#2} }}
+\newcommand{\verirulen}[1]{[\underline{{\bf \scriptstyle FV-}\rulen{#1}}]}
+\newcommand{\reasonrulen}[1]{[\underline{{\bf \scriptstyle FR-}\rulen{#1}}]}
+\newcommand{\markred}[1]{{{\color{red}#1}}}
+\newcommand{\markblue}[1]{{{\color{blue}#1}}}
+% \newcommand{\ebpverif}[2]{
+% 	\begin{prooftree}
+% 		%\Hypo{\verirulen{#1}}
+% 		\Hypo{[\underline{{\bf \scriptstyle }\rulen{#1}}]}
+% 		\Infer[no rule]1{{\begin{prooftree}[rule style=simple] #2 \end{prooftree}}}
+% 	\end{prooftree}
+%       }
+\newcommand{\ebpverif}[2]{
+  \ifthenelse{\equal{#1}{} }{
+    \begin{prooftree}[rule style=simple] #2 \end{prooftree}
+  }{  
+    \begin{prooftree}
+      % \Hypo{\verirulen{#1}}
+      \Hypo{[\underline{{\bf \scriptstyle }\rulen{#1}}]}
+      \Infer[no rule]1{{\begin{prooftree}[rule style=simple] #2 \end{prooftree}}}
+    \end{prooftree}
+  }}
+
+%
+%\newcommand{\entail}[2]{\ensuremath{#1 \vdash #2}}
+%\newcommand{\ebpverif}[2]{
+	%\begin{prooftree}
+		%\Hypo{\verirulen{#1}}
+		%\Infer[no rule]1{ #2 }
+	%\end{prooftree}
+%}
+%\newcommand{\hform}[3]{\ensuremath{{#1}{::}{#2}{\langle}{#3}{\rangle}}}
+\newcommand{\hformn}[3]{\ensuremath{{\btt{#1}}{\mapsto}{\btt{#2}}{\langle}{\btt{#3}}{\rangle}}}
+%\newcommand{\view}[2]{\ensuremath{#1{\langle}{#2}{\rangle}}}
+%\newcommand{\hform}[3]{\ensuremath{{#2}{\langle}{#1,#3}{\rangle}}}
+%\newcommand{\mapview}[3]{\ensuremath{{#1}{\mapsto}{#2}{\langle}{#3}{\rangle}}}
+\newcommand{\view}[2]{\ensuremath{#1{(}{#2}{)}}}
+\newcommand{\pview}[2]{\ensuremath{\overline{#1}{(}{#2}{)}}}
+\newcommand{\sspec}[3]{\ensuremath{\view{\mathcal{#1}}{#2,#3}}}
+\newcommand{\hform}[3]{\ensuremath{{#2}({#1,#3})}}
+\newcommand{\uhform}[3]{\ensuremath{\code{H}({#2})({#1,#3})}}
+\newcommand{\mapview}[3]{\ensuremath{{#1}{\mapsto}{#2}{(}{#3}{)}}}
+\newcommand{\transit}{\rightarrow}
+\newcommand{\arrimp}{\ensremath{\,\btt{*}\!\!\!\rightarrow}\,}
+% \newcommand{\state}[1]{\ensuremath{{\langle}#1{\rangle}}}
+% \newcommand{\drule}[2]{\ensuremath{\frac{#1}{#2}}}
+% \newcommand{\drulea}[2]{\ensuremath{\begin{array}{c}{#1}\\\hline{#2}\end{array}}}
+% \newcommand{\dyn}[2]{\ensuremath{\state{#1}{\hookrightarrow}\state{#2}}}
+% \newcommand{\dyns}[2]{\ensuremath{\state{#1}{\hookrightarrow^*}\state{#2}}}
+% \newcommand{\dynf}[1]{\ensuremath{\state{#1}{\not\hookrightarrow^*}}}
+% \newcommand{\dynerr}[1]{\ensuremath{\state{#1}{\hookrightarrow}{\err}}}
+% \newcommand{\dynmemerr}[1]{\ensuremath{\state{#1}{\hookrightarrow}{\memerr}}}
+% \newcommand{\dynothererr}[1]{\ensuremath{\state{#1}{\hookrightarrow}{\othererr}}}
+\def\postst{\myit{Post}}
+
+
+%used in heap constraint solving
+\def\rewrite{\leadsto}
+%\def\map{\myit{map}}
+\def\map{\myit{X{\!}Pure}}
+\def\mappair{\myit{X{\!}Pure}_P}
+%\def\mapview{\ensuremath{\myit{X{\!}Pure}_V}}
+\def\mapself{\myit{mapself}}
+\def\mapi{\myit{mapI}}
+%\def\mapviewi{\myit{mapvI}}
+\def\mapselfi{\myit{mapsI}}
+\def\findu{\myit{find}}
+\def\fold{\myit{fold}_V}
+\def\foldN{\myit{fold}}
+\def\foldK{\myit{fold}^{\heap}}
+\newcommand{\foldKI}[1]{\myit{fold}^{#1}}
+\def\unfold{\myit{unfold}}
+\def\alias{\myit{alias}}
+\def\merge{\myit{merge}}
+\def\overlap{\myit{overlap}}
+\def\ex{{\bf ex}}
+
+%def\M{\myit{M}}
+%def\C{\myit{C}}
+%def\I{\myit{I}}
+%def\E{\myit{E}}
+%def\A{\myit{A}}
+%def\B{{\myit{B}}}
+\def\D{\Delta}
+%def\S{{\cal S}}
+%def\H{{\cal H}}
+%def\W{{\cal M}}
+%\def\loop{\ensuremath{\alpha}}
+\def\myloop{\ensuremath{\alpha}}
+\def\arity{\myit{arity}}
+\def\max{\myit{max}}
+\def\fresh{\myit{fresh}}
+\def\where{\btt{where}}
+\def\bag{\ensuremath{\code{B}}}
+\def\bagunion{\sqcup}
+\def\bagintersect{\sqcap}
+\def\bagsubsume {\sqsubset}
+\def\bagsubtract{-}
+\def\zerobag{\{{\bf 0}\}}
+\def\zerobslash{\emp}
+\newcommand{\load}[1]{\mytt{load}{\langle}#1{\rangle}}
+\newcommand{\store}[1]{\mytt{store}{\langle}#1{\rangle}}
+%\def\store{\mytt{store}}
+\newcommand{\const}[1]{\mytt{const}{\langle}#1{\rangle}}
+%\def\iconst{\mytt{iconst}}
+\def\invoke{\mytt{invoke}}
+\def\invokeTail{\mytt{invoke}_{Tail}}
+\def\new{\mytt{new}}
+\def\dispose{\mytt{dispose}}
+\def\bool{\btt{bool}}
+\def\int{\btt{int}}
+\def\longint{\mytt{long}}
+\def\float{\mytt{float}}
+\def\double{\mytt{double}}
+\def\fixpt{\myit{fixpt}}
+\def\rec{\mytt{Rec}}
+\def\void{\btt{void}}
+\def\type{\myit{type}}
+\def\reference{\mytt{ref}}
+\def\object{\mytt{object}}
+\def\objectset{{\rm\bf ObjectType}}
+\def\mn{\myit{m}}
+\def\F{{\cal F}}%stack frame size
+\def\phiinv{\phi_{\myit{inv}}}
+\def\phirec{\phi_{\myit{rec}}}
+\def\pre{\constr_{\myit{pr}}}
+\def\post{\constr_{\myit{po}}}
+\def\T{\Gamma}%type for the stack frame
+\def\eqt{\myit{eq}_\tau}
+%\def\stk{\pi} %current stack frame
+\def\FS{\Pi}  %the stack of frames
+\def\true{\btt{true}}
+\def\false{\btt{false}}
+%\def\a{\alpha}
+\def\a{s}
+\def\restrict{\myit{enrich}}%context enhance
+\newcommand{\parg}[1]{\ensuremath{{\langle}#1{\rangle}}}
+%% \newcommand{\hash}{\ensuremath{{\scriptstyle \#}}}
+\newcommand{\num}[1]{|#1|}
+\newcommand{\ifEq}[2]{\mytt{if}~#1~#2}
+\newcommand{\whileEq}[1]{\mytt{while}~#1}
+\newcommand{\myif}[3]{\btt{if}~(#1)~#2~\btt{else}~#3}
+\newcommand{\mywhile}[3]{\btt{while}~#1~\btt{where}~#3~\btt{do}~#2}
+\newcommand{\mybind}[3]{\mytt{bind}~#1~\mytt{to}~#2~\mytt{in}~#3}
+\def\skipcmd{\mytt{nop}}
+\newcommand{\defs}{\ensuremath{=_{df}}}
+\newcommand{\snd}[1]{\myit{snd}(#1)}
+\newcommand{\guarding}{{\ensuremath{\rightarrow}}}
+\newcommand{\nonneg}[1]{\myit{notneg}(#1)}
+\newcommand{\code}[1]{{\ensuremath{\tt #1}}}
+\newcommand{\sm}[1]{\mbox{$#1$}}
+\newcommand{\btt}[1]{{\tt #1}}
+\newcommand{\todo}[1]{{\bf(* #1 *)}}
+\newcommand{\passref}{\btt{ref}}
+\newcommand{\ensures}{\btt{ensures}}
+\newcommand{\requires}{\btt{requires}}
+
+\newcommand{\llin}[1]{\texttt{#1}}
+
+%%below renamed for llncs format
+\newtheorem{thm}{Theorem}
+%\newtheorem{lemma}{Lemma}
+\newtheorem{pty}{Property}
+%\newtheorem{cor}[thm]{Corollary}
+\newtheorem{defn}{Definition}
+\newtheorem{idfn}{Informal Definition}
+\def\proof{\vspace{-0.2cm}\noindent{\bf Proof}\hspace*{0.5cm}}
+%\newcommand{\tverb}[1]{\mbox{\verb|#1|}}
+
+%\newcommand{\tcv}[2]{#1\,\vdash\,#2}
+\newcommand{\tcv}[3]{#1\,\vdash\,#2,\,#3}
+\newcommand{\tcvT}[2]{\tcv{}{#1}{#2}}
+
+
+%frame bound inference
+\newcommand{\fsr}[5]{#1 \vdash_{\small\myit{F}} #2 \rightsquigarrow #3, #4, #5}
+\newcommand{\fsinf}[3]{\ensuremath{\frac{\begin{array}{c}[\underline{\rulen{FS-#1}}]\\[0.5ex]
+#2\end{array}}{#3}}}
+%\newcommand{\rulen}[1]{\ensuremath{{\bf \scriptstyle #1}}}
+
+%abstract state inference
+\newcommand{\asr}[4]{#1 \vdash_{\small\myit{A}} #2 \rightsquigarrow #3, #4}
+\newcommand{\asinf}[3]{\ensuremath{\frac{\begin{array}{c}[\underline{\rulen{AS-#1}}]\\[0.5ex]
+#2\end{array}}{#3}}}
+
+%stack space inference
+\newcommand{\ssrA}[2]{\ssr{\myit{a}}{#1}{#2}}
+\newcommand{\ssr}[3]{#1 \vdash_{\small\myit{S}} #2 \rightsquigarrow #3}
+\newcommand{\ssinf}[3]{\ensuremath{\frac{\begin{array}{c}[\underline{\rulen{SS-#1}}]\\[0.5ex]
+#2\end{array}}{#3}}}
+
+%heap space inference
+\newcommand{\hsrX}[5]{#5,#1 \vdash_{\myit{H}} #2 \rightsquigarrow #3,#4}
+\newcommand{\hsr}[4]{\hsrX{#1}{#2}{#3}{#4}{\myit{a}}}
+%\newcommand{\hsr}[4]{\myit{a},#1 \vdash_{\myit{H}} #2 \rightsquigarrow #3,#4}
+\newcommand{\hsinf}[3]{\ensuremath{\frac{\begin{array}{c}[\underline{\rulen{HS-#1}}]\\[0.5ex]
+#2\end{array}}{#3}}}
+
+%op semantics
+\newcommand{\oprerr}[5]{\ensuremath{\config{#1}{#2}{#3}{#4}\hookrightarrow #5}}
+%\newcommand{\config}[4]{\ensuremath{{\langle}{#1},{#2},{#3},{#4}{\rangle}}}
+%\newcommand{\opr}[8]{\ensuremath{\config{#1}{#2}{#3}{#4} \hookrightarrow \config{#5}{#6}{#7}{#8}}}
+%\newcommand{\oprd}[4]{\opr{\FS}{#1}{\O}{#2}{\FS}{#3}{\O}{#4}}
+\newcommand{\config}[4]{\ensuremath{{\langle}{#1},{#2},{#3},{#4}{\rangle}}}
+\newcommand{\opr}[8]{\ensuremath{\config{#1}{#2}{#3}{#4} \hookrightarrow \config{#5}{#6}{#7}{#8}}}
+\newcommand{\oprd}[4]{\opr{#1:\FS}{\O}{#2}{\ss,\mem}{#3:\FS}{\O}{#4}{\ss,\mem}}
+\newcommand{\oprds}[6]{\opr{#1:\FS}{\O}{#2}{\ss,\mem}{#3:\FS}{#4}{#6}{\ss,#5}}
+\newcommand{\oprc}[5]{\config{#1}{#2}{#3}{#4}\hookrightarrow^* {#5}}
+\newcommand{\oprule}[3]{\ensuremath{\frac{\begin{array}{c}[\underline{\rulen{OP-#1}}]\\[0.5ex]
+#2\end{array}}{#3}}}
+
+\def\EI{\epsilon}
+\def\Y{\Upsilon}
+\def\L{\Lambda}
+\def\O{\omega}
+\def\i{\iota}
+%\def\mem{\mytt{h}}%available heap space
+%\def\ss{\mytt{s}}%available stack space
+\def\MemErr{\mytt{MemInadequate}}
+\def\OF{\mytt{FrameErr}}
+\def\cf{\myit{f}}
+\def\ret{\mytt{ret}}
+\def\size{\myit{size}}
+\def\cxt{\mytt{cxt}}
+\newcommand\reqs[4]{\ensuremath{#1 \vdash #2 \rightsquigarrow #3,#4 }}
+
+\def\G{\Gamma}
+%\def\res{\myit{res}}
+%\def\nochange{\myit{no}\!{\cal X}}
+\def\nochange{\myit{nochange}}
+\def\FSV{\myit{V}}
+\newcommand{\sep}{\ensuremath{*}}
+\newcommand{\sepc}{\ensuremath{*}}
+\newcommand{\rview}[2]{\code{\ensuremath{#1{(}{\self,#2}{)}}}}
+\newcommand{\sepimpl}{\ensuremath{\code{-\!\!\!\!-\!\!\!*}}}
+\newcommand\eq[3]{\ensuremath{\myit{eq}_{#1}(#2,#3)}}
+\newcommand{\tj}[5]{#1,#2\,{\vdash}\,#3~{::}~#4, #5}
+%\newcommand{\tr}[3]{\ensuremath{\frac{\begin{array}{c}[\underline{\rulen{S-#1}}]\\[0.5ex]
+%#2\end{array}}{#3}}}
+\newcommand{\tr}[3]{\ensuremath{\frac{\begin{array}{c}[\underline{\rulen{#1}}]\\[0.5ex]
+#2\end{array}}{#3}}}
+\newcommand{\hlr}[3]{\ensuremath{\frac{\begin{array}{c}\reasonrulen{#1}\\[0.5ex]%[\underline{\rulen{#1}}]\\[0.5ex]
+#2\end{array}}{#3}}}
+\newcommand{\hlrs}[3]{\ensuremath{\frac{\begin{array}{c}%\verirulen{#1}\\[0.5ex]%[\underline{\rulen{#1}}]\\[0.5ex]
+#2\end{array}}{#3}}}
+\newcommand{\htriple}[3]{\ensuremath{\vdash \{#1\}\,#2\,\{#3\}}}
+%\newcommand{\rulen}[1]{\ensuremath{{\bf \scriptstyle #1}}}
+\newcommand{\iview}[2]{\ensuremath{#1{\langle}#2{\rangle}}} %use it rather than tt
+\newcommand{\ihc}[2]{\ensuremath{#1{::}#2}}                 %use it rather than tt
+\newcommand{\subtr}[3]{\entailH{#1}{#2}{#3}}
+%\newcommand{\subtr}[3]{\ensuremath{#1\,{\vdash}\,#2,#3}}
+\newcommand{\reasonrulenm}[1]{[\underline{{\bf \scriptstyle }\rulen{#1}}]}
+\newcommand{\hlrm}[3]{\ensuremath{\frac{\begin{array}{c}\reasonrulenm{#1}\\[0.5ex]%[\underline{\rulen{#1}}]\\[0.5ex]
+#2\end{array}}{#3}}}
+
+%static semantics
+\newcommand{\raws}[9]{{#1} ; {#2} ; {#3} ;{#4} \vdash {#5} :: {#6} , {#7},{#8} ,{#9}}
+\newcommand{\rawss}[5]{\T ; \D; \L; \Y  \vdash {#1} :: {#2} , {#3}, {#4}, {#5}}
+
+%from sound-cav.tex
+\newcommand{\mymodel}{\models}
+\def\Flds{\myit{Fields}}
+\def\Store{\myit{Heaps}}
+\def\Stack{\myit{Stacks}}
+\def\Locations{\myit{Loc}}
+\def\Val{\myit{Val}}
+\def\Var{\myit{Var}}
+\newcommand{\mo}[3]{#1,#2 \mymodel #3}
+\newcommand{\notmo}[3]{#1,#2 \not\mymodel #3}
+\newcommand{\mos}[1]{\ensuremath{\mo{s}{h}{#1}}}
+\newcommand{\mosp}[1]{\ensuremath{{s}\mymodel{#1}}}
+\def\iffs{\mbox{\tt iff~}}
+\def\dom{\myit{dom}}
+\def\loc{\iota}
+\newcommand{\s}[1]{[\![#1]\!]s}
+\def\inv{\myit{inv}}
+\def\getP{\myit{getProperty}}
+\newcommand{\menv}[2]{\frac{\begin{array}{c}#1\end{array}}{#2}}
+\def\fresh{\myit{fresh}}
+\def\length{\myit{length}}
+
+\newcommand{\mysf}[1]{\textsf{\bf\small #1}}
+% \newcommand{\Top}{\mbox{$\top$}}
+\newcommand{\presize}{\phi_{\myit{pr}}}
+\newcommand{\postsize}{\phi_{\myit{po}}}
+\newcommand{\sizev}{{\cal V}}
+\newcommand{\pure}{\ensuremath{\pi}}
+\newcommand{\sarg}[1]{{\la}#1{\ra}}
+\def\la{\langle}
+\def\ra{\rangle}
+%\def\bag{B}
+\def\bagconstr{\varphi}
+
+\newcommand{\pnt}[2]{\ensuremath{#1 {\mapsto} #2}}
+\newcommand{\lseg}[2]{\ensuremath{\mathsf{ls}(#1, #2)}}
+\newcommand{\lsegs}[3]{\ensuremath{\mathsf{ls}(#1, #2, #3)}}
+
+
+\newcommand{\hipsleek}{\textsc{Hip/Sleek}~}
+\newcommand{\hip}{\textsc{Hip}~}
+\newcommand{\sleek}{\textsc{Sleek}~}
+\newcommand{\M}{\mathsf{M}}
+
+\newcommand{\absr}[3]{\ensuremath{\frac{\displaystyle{#1}}
+    {\displaystyle{#2}}{\textsc{#3}}}}
+
+\newcommand{\join}[2]{\ensuremath{\msf{join}(#1,#2)}}
+\newcommand{\pjoin}[2]{\ensuremath{\msf{join_\pure}(#1,#2)}}
+\newcommand{\ljoin}[2]{\ensuremath{\lift{\msf{join}}(#1,#2)}}
+\newcommand{\widen}[2]{\ensuremath{\msf{widen}(#1,#2)}}
+\newcommand{\pwiden}[2]{\ensuremath{\msf{widen_\pure}(#1,#2)}}
+\newcommand{\lwiden}[2]{\ensuremath{\lift{\msf{widen}}(#1,#2)}}
+\newcommand{\joining}{\ensuremath{\msf{join}}}
+\newcommand{\widening}{\ensuremath{\msf{widen}}}
+%\newcommand{\abs}{\leadsto}
+\newcommand{\cfm}{\Lambda}
+\newcommand{\junk}{\textit{junk}}
+
+%%%%%%
+
+\def\hip{\textsc{Hip}~}
+\def\sleek{\textsc{Sleek}~}
+\def\Prog{\ensuremath{\mathcal{P}}}
+\def\shps{\ensuremath{\mathcal{S}}}
+\def\fail{\textsf{fail}}
+\def\FAIL{\textsf{FAIL}}
+\def\entfailed{\myit{entfail}}
+\newcommand{\numerical}[1]{\ensuremath{\mathsf{pureV}(#1)}}
+\newcommand{\abstraction}[1]{\ensuremath{\mathsf{gen\_abs}(#1)}}
+\newcommand{\postprime}[1]{\ensuremath{\mathsf{prime}(#1)}}
+\newcommand{\Reach}[2]{\ensuremath{\mathsf{Reach}(#1, \{#2\})}}
+\newcommand{\Local}[2]{\ensuremath{\mathsf{Local}(#1, \{#2\})}}
+\newcommand{\Frame}[2]{\ensuremath{\mathsf{Frame}(#1, \{#2\})}}
+\newcommand{\pr}[1]{\ensuremath{\mathsf{ex\_quan}(#1)}}
+\newcommand{\pureres}[1]{\code{#1}}
+\def\Sp{\Prog}
+\newcommand{\lbl}[1]{\ensuremath{\myit{lbl}(#1)}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\lstset{ language=[ANSI]C,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{black}\ttfamily,
+  % keywordstyle=\color{blue},
+  % numbers=left,
+  % numberstyle=\scriptsize,
+  % stepnumber=1,
+  % numbersep=5pt,
+  commentstyle=\small\color{red},
+  % backgroundcolor=\color[rgb]{0.9,1.0,1.0},
+  % frame=single,
+  framexleftmargin=0mm,
+  xleftmargin=0mm,
+  xrightmargin=0mm,
+  % resetmargins=true,
+  % rulesepcolor=\color{red!20!green!20!blue!20!},
+  captionpos=b, 
+  showspaces=false,
+  showstringspaces=false,   
+  showtabs=false, 
+  tabsize=4,
+  breaklines=true,
+  % lineskip=0pt;
+  extendedchars=false,
+  % morekeywords={self,requires,ensures,data},
+  escapeinside= {(*@} {@*)}
+}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%space def
+
+\newcommand{\dist}{0em}
+\newcommand{\distv}{0em}
+\newcommand{\disth}{0em}
+\newcommand{\distt}{0em}
+
+\newcommand{\distf}{-1.6ex}
+
+
+%prop definition
+%\theoremstyle{definition} 
+%\newtheorem{law}{Law}
+%\theoremstyle{plain} 
+%\newtheorem{prop}[law]{Property}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "main"
+%%% End:
+
+
+\newcommand{\sstate}[1]{\textcolor{MidnightBlue}{\code{#1}}}
+\newcommand{\obar}[1]{\code{\bar{#1}}}
+
+\newcommand{\viewbody}{\L}
+% \newcommand{\prot}{\myit{G}}
+\newcommand{\prot}{{G}}
+\newcommand{\cproj}{{Z}}
+\newcommand{\cprojtail}{{Z^t}}
+\newcommand{\cprojres}{{Z^\prime}}
+\newcommand{\gp}{H}
+\newcommand{\prott}{\ensuremath{\prot^\mathcal{T}}}
+\newcommand{\proj}{{L}}
+% \newcommand{\projp}{\proj^p}
+\newcommand{\projp}{\Upupsilon}
+\newcommand{\projc}{\proj}
+\newcommand{\unkbox}{\square}
+\newcommand{\sessend}{end}
+
+\newcommand{\send}[2]{
+  \ifthenelse{\equal{#1}{} }{
+     !{#2}
+   }{  !{#1}{\cd}{#2}}
+ }
+\newcommand{\recv}[2]{
+   \ifthenelse{\equal{#1}{} }{
+     ?{#2}
+   }{  ?{#1}{\cd}{#2}}
+ }
+\newcommand{\sendc}[3]{
+  \ifthenelse{\equal{#2}{} }{
+     #1!{#3}
+  }{ #1!{#2}{\cd}{#3} }
+}
+\newcommand{\recvc}[3]{
+  \ifthenelse{\equal{#2}{} }{
+     #1?{#3}
+  }{ #1?{#2}{\cd}{#3} }
+}
+  
+\newcommand{\trans}[2]{\unkbox {#1}{\cd}{#2}}
+
+\newcommand{\seq}{;} %sequence
+%\newcommand{\useq}{*} %order insensitive conj
+% \newcommand{\useq}{\circledast}
+\newcommand{\useq}{*}
+\newcommand{\disj}{\vee}
+\newcommand{\chani}[3]{\ensuremath{\view{\chan}{#1,#2,#3}}}
+\newcommand{\lchani}[3]{\ensuremath{\view{\lchan}{#1,#2,#3}}}
+%second order variable
+%second order variable for heap formula
+%second order variable for session
+\newcommand{\hov}{V}
+\newcommand{\hovars}{\hov}
+\newcommand{\hovarh}{\hov}
+\newcommand{\hosets}{\mathcal{I}}
+\newcommand{\hoseth}{\mathcal{I}}
+\newcommand{\vdashs}{\vdash_{s}}
+\newcommand{\vdashe}{\vdash_{e}}
+\newcommand{\entailS}[3]{\ensuremath{#1 \vdash #2 ~\leadsto ~#3}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% SYNC related stuff (fence,cdl, etc)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\def\gfencelit{f}
+\def\genfencelit{F}
+\def\pfencelit{{f}}
+\def\sync{\ensuremath{\zeta}}
+\def\await{await}
+\def\down{down}
+\def\cons{}
+\def\acc{+}
+
+%\newcommand{\fence}[3]{
+%\ifthenelse{\equal{#1}{-} }{
+  %{#3}^\bullet({#2})
+%}{
+  %\ifthenelse{\equal{#1}{+} }{
+		%{#3}^\circ({#2})
+%}{
+		%{#3}^\circ({#2},#1)
+%}}}
+\newcommand{\fence}[4]{
+\ifthenelse{\equal{#1}{-} }{
+  {#4}^\text{\cons}({#2},#3)
+}{\ifthenelse{\equal{#1}{+} }{
+{#4}^\text{\acc}({#2},#3)
+}{\ifthenelse{\equal{#1}{D} }{
+{\down}^\text{\acc}({#2},#3)
+}{\ifthenelse{\equal{#1}{A} }{
+{\await}^\text{\cons}({#2},#3)
+}{{\sync}^\text{}({#2})} } 
+}}}
+
+%\newcommand{\gensync}[1]{}
+
+%%%%% global fence
+\def\gfenceboth{\rightleftharpoons}
+\def\gfencesend{\leftharpoonup}
+\def\gfencereceive{\rightharpoondown}
+\newcommand{\ggfence}[3]{\fence{#1}{#2}{#3}{\gfencelit}}
+\newcommand{\gstub}[3]{\fence{#1}{#2}{#3}{\gfencelit}}
+\newcommand{\gfence}[4]{
+\ifthenelse{\equal{1}{#3} }{
+#1{\gfencereceive}#2:#4 % fencing on the receiver
+}{
+\ifthenelse{\equal{2}{#3} }{
+#1{\gfencesend}#2:#4   % fencing on the sender
+}{
+#1{\gfenceboth}#2:#4   % unknown source for fencing
+}}}
+\newcommand{\pfence}[3]{\fence{#1}{#2}{#3}{\pfencelit}}
+\newcommand{\fences}{\mathcal{F}}
+\newcommand{\stripfence}[1]{\ensuremath{#1\%\sync}}
+\newcommand{\opt}[1]{[#1]}
+
+\newcommand{\upeergfence}[2]{\ensuremath{\gfence{\unkbox}{\unkbox}{#1}{#2}}}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% PROJECTION related stuff 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand{\projectsymbol}{\downharpoonright}
+\newcommand{\project}[2]{(#2){\projectsymbol}_{#1}}
+
+\newcommand{\bind}[2]{#1~$\leftarrow$~#2}
+\newcommand{\mapschan}[2]{\ensuremath{#1\vDash#2}}
+
+\def\pequiv{\dashv\vdash}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% MISC 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\def\wrt{w.r.t.~}
+\definecolor{projcolor}{RGB}{0, 176, 80} %green
+\definecolor{protcolor}{RGB}{222, 71, 142} %pink
+\definecolor{fencecolor}{RGB}{0, 176, 240} %blue
+
+\newcommand{\setfont}[2]{{\fontfamily{#1}\selectfont #2}}
+
+\newcommand{\savespace}{\vspace{-2mm}}
+\def\dual{\ensuremath{\sim}}
+\def\resid{S}
+\def\chanvar{c}
+\def\lchanvar{c}
+\def\echanvar{\tilde{c}}
+\def\rolevar{P}
+\def\msgvar{\myit{m}}
+\def\employ{\in}
+\def\notemploy{\notin}
+\def\eqdef{\mathrel{\stackrel{\makebox[0pt]{\mbox{\normalfont\tiny
+          def}}}{=}}}
+
+\def\pstate{PS}
+\def\cstate{CS}
+\def\tstate{TS}
+\def\tconf{TC}
+\def\sstore{SS}
+\def\css{CSS}
+\newcommand{\wait}[2]{\code{join~{#1}~{#2}}}
+\def\SAFE{\btt{SAFE}}
+\def\HOLE{\btt{HOLE}}
+\def\ANS{\btt{ANS}}
+\def\BLOCK{\btt{BLOCK}}
+\def\YES{\btt{YES}}
+\def\NO{\btt{NO}}
+\def\safesend{\btt{S_{safe}}}
+\def\saferecv{\btt{R_{safe}}}
+\def\fid{\btt{FID}}
+
+\def\idt{idt}
+\def\idp{idp}
+\def\idc{idc}
+
+\newcommand\figref[1]{Fig. \ref{#1}}
+\newcommand\secref[1]{Sec. \ref{#1}}
+\newcommand\defref[1]{Def.\ref{#1}}
+
+% roman god of communication 
+\def\sessionlogic{Mercurius}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% global protocol related stuff
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand{\explicitseq}[1]{
+  \ifthenelse{\equal{RR}{#1} }{
+    {\downdownharpoons} %% \downdownarrows
+  }{
+    \ifthenelse{\equal{SS}{#1} }{
+      \upupharpoons %% \upuparrows
+    }{
+      \ifthenelse{\equal{RS}{#1} }{
+        \downupharpoons %% \downuparrows
+      }{
+        \ifthenelse{\equal{SR}{#1} }{
+          \updownharpoons%% \updownarrows
+        }{
+
+        }         
+      }   
+    }
+  }
+}
+
+\newcommand{\gseq}[1]{\ensuremath{\seq^{\explicitseq{#1}}}}
+\newcommand{\gseqA}[1]{\ensuremath{\seq}}
+\newcommand{\guard}[1]{\ensuremath{{\ominus}(#1)}}
+\newcommand{\assume}[1]{\ensuremath{{\oplus}(#1)}}
+%% \newcommand{\assumeL}[2]{\ensuremath{\oplus(#1)_{#2}}}
+\newcommand{\assumeL}[2]{\ensuremath{\oplus(#1)}}
+
+%% A->B : k <\delta>  where
+%% #1 --> A
+%% #2 --> B
+%% #3 --> \delta
+%% #4 --> k
+%% #5 --> transmit ->, labelled or not
+\newcommand{\transmitbase}[5]{
+  \ifthenelse{\equal{#3}{} \AND \equal{#4}{}}{
+    #1{#5}#2
+  }{
+    \ifthenelse{\NOT \equal{#3}{} \AND \equal{#4}{}}{
+      #1{#5}#2:#3
+    }{
+      \ifthenelse{\NOT \equal{#4}{} \AND \equal{#3}{}}{
+        #1{#5}#2:#4
+      }{
+        #1{#5}#2:#4{\langle}#3{\rangle}
+      }
+    }
+  }
+}
+
+\newcommand{\transmit}[4]{\transmitbase{#1}{#2}{#3}{#4}{\rightarrow} }
+\newcommand{\bringson}[2]{{#1}{\rightharpoonup}{#2} }
+\newcommand{\delegate}[3]{\transmitbase{#1}{#2}{#3}{}{\xrightarrow{d}}}
+\newcommand{\atransmit}[5]{\transmitbase{#1}{#2}{#3}{#4}{\xrightarrow{#5}}}
+\newcommand{\msg}[2]{#1\,{\cdot}\,#2}
+\newcommand{\omsg}[2]{#2}
+
+%% delegation
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% CDL related stuff
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% global CDL
+\newcommand{\gdown}[3]{#1:#2 {\langle} DOWN(#3) {\rangle}}
+\newcommand{\gawait}[3]{#1:#2 {\langle} AWAIT(#3) {\rangle}}
+% local CDL
+\newcommand{\pdown}[1]{down(#1)}
+\newcommand{\pawait}[1]{await(#1)}
+
+% \newcommand{\gprot}[4]{
+%   \ifthenelse{\equal{#4}{}}{
+%     #1(#2)@I(#3) } {
+%     #1(#2)@I(#3) \leadsto @O(#4)}
+% }
+
+\newcommand{\gprot}[4]{
+  \ifthenelse{\equal{#4}{}}{
+    #1(#2,#3) } {
+    #1(#2,#3) \leadsto @O(#4)}
+}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% causality related stuff
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\def\atid{\textit i}
+\def\atloc{\textit l}
+\def\atzero{\bot}
+
+\def\implies{\Rightarrow}
+
+\newcommand{\addL}[1]{\ensuremath{(#1,0)}}
+\newcommand{\addR}[1]{\ensuremath{(0,#1)}}
+\newcommand{\addFull}[0]{\ensuremath{1}}
+\newcommand{\addAt}[1]{\ensuremath{{\at}#1}}
+\def\atFull{\addAt{\addFull}}
+\def\atL{\addAt{\addL{\addFull}}}
+\def\atR{\addAt{\addR{\addFull}}}
+\def\atLno{\addL{\addFull}}
+\def\atRno{\addR{\addFull}}
+\def\atLL{\addAt{\addL{\atLno}}}
+\def\atLR{\addAt{\addL{\atRno}}}
+\def\atRL{\addAt{\addR{\atLno}}}
+\def\atRR{\addAt{\addR{\atRno}}}
+
+\newcommand{\CB}{CB}
+\newcommand{\HB}{HB}
+\newcommand{\SEQ}{SEQ}
+\newcommand{\precx}[1]{\ensuremath{\prec_{#1}}}
+\newcommand{\lt}[2]{#1\,{\prec}\,#2}
+% \newcommand{\ltset}[2]{#1\,{\prec^*}\,#2}
+\newcommand{\ltset}[2]{merge(#1,\,#2)}
+\newcommand{\ltcb}[2]{#1\!{\prec_{\CB}}#2}
+\newcommand{\lthb}[2]{#1\!{\prec_{\HB}}#2}
+\newcommand{\seqhb}[2]{#1\!{\prec_{\SEQ}}#2}
+\newcommand{\lthbw}[2]{#1{\preceq_{\HB}}\,#2}
+\newcommand{\lthbmay}[2]{#1{\prec^{maybe}_{HB}}\,#2}
+% \newcommand{\rl}[2]{#1^{(#2)}}
+% same as event
+\newcommand{\rl}[2]{\event{#1}{#2}}
+% \newcommand{\rrl}[3]{(#1,#2)^{(#3)}}
+\newcommand{\rrl}[3]{\atransmit{#1}{#2}{}{}{#3}}
+\newcommand{\rk}[3]{\rl{#1}{#3}{:}{#2}}
+\def\roles{\mathcal{R}}
+\newcommand{\graph}[1]{
+  \ifthenelse{\equal{#1}{}}{\mathcal{G}}{\mathcal{G}(#1)}}
+
+
+\def\oplusseq{\otimes}
+\def\oplusstar{\circledast}
+\def\opluschoice{\oplus}
+
+\def\roletyp{\mathcal{R}{{ole}}}
+\def\eventtyp{\mathcal{E}{{vents}}}
+\def\labeltyp{{{Nat}}}
+\def\idtyp{nat}
+\def\lchantyp{\mathcal{C}{{han}}}
+\def\chantyp{\mathcal{{L}}{{chan}}}
+\def\echantyp{\mathcal{{E}}{{ndpt}}}
+%% \def\chantyp{\Var}
+\def\operationtyp{\mathcal{O}}
+
+\def\ordering{\pure}
+\newcommand{\chanmap}{\ensuremath{\mathrm{\Gamma}}}
+\def\rolemap{K}
+\def\locof{\mathcal{L}}
+\def\loccompstar{\useq}
+\def\loccompseq{\seq}
+\def\loccompvee{\vee}
+% \def\loccompstar{\bowtie}
+% \def\loccompseq{\ltimes}
+% \def\loccompvee{\vee}
+
+\def\composeseqop{h_1}
+\def\composestarop{h_2}
+\def\composeveeop{h_3}
+\newcommand{\composeseq}[2]{{\composeseqop}(#1,#2)}
+\newcommand{\composestar}[2]{{\composestarop}(#1,#2)}
+\newcommand{\composevee}[2]{{\composeveeop}(#1,#2)}
+
+\def\bordermergebase{\sqcup}
+% \newcommand{\bordermerge}[1]{\bordermergebase^{#1}}
+\newcommand{\bordermerge}[1]{\lfloor{#1}\rfloor}
+\newcommand{\mergeseq}{\bordermerge{\loccompseq}}
+\newcommand{\mergestar}{\bordermerge{\loccompstar}}
+\newcommand{\mergevee}{\bordermerge{\loccompvee}}
+
+\def\mergeset{merge\_adjacent}
+\newcommand{\mergeseqtier}[2]{\mergeset(#1,#2)}
+\newcommand{\mergestartier}[2]{merge\_star(#1,#2)}
+
+% frontier
+\def\mfront{F}
+% backtier
+\def\mback{B}
+% constraints
+\newcommand{\morders}{\ensuremath{\mathrm{\Pi}}}
+% obligations
+\def\mguards{A^{\ominus}}
+\def\massum{A^{\oplus}}
+\def\terminal{T}
+% \def\operation{\varepsilon}
+\newcommand{\notop}[1]{\neg(#1)}
+\def\orderas{\vartheta}
+\def\racefreeas{\ensuremath{\mathrm{\Psi}}}
+\def\os{\mathcal{S}}
+\newcommand{\osbck}[1]{{#1}^{bt}}
+\newcommand{\osfrt}[1]{{#1}^{ft}}
+\newcommand{\osasm}[1]{{#1}^{\oplus}}
+\newcommand{\osgrd}[1]{{#1}^{\ominus}}
+
+\newcommand{\bordrmap}[1]{{#1}.\rolemap}
+\newcommand{\bordcmap}[1]{{#1}.\chanmap}
+
+\newcommand{\racefree}[2]{\ensuremath{#1 \,{\vDash_{RF}}\,  #2}}
+\newcommand{\racefreerel}[2]{{\ifthenelse{\equal{#2}{}}{RF(#1)}{RF(#1,#2)}}}
+% constraint base formula
+\def\cbformula{BForm}
+% constraint formula
+\def\cformula{EForm}
+\def\eborder{\beta}
+\def\tborder{\eborder^T}
+\def\oborder{\eborder^E}
+
+
+\definecolor{navyblue}{HTML}{336699}
+\definecolor{denimblue}{HTML}{151B8D}
+\newcommand\blueord[1]{\textcolor{denimblue}{#1}}
+\newcommand\grayord[1]{\textcolor{gray}{#1}}
+
+\def\fmsg{\St}
+\newcommand\chanspec[3]{\chani{#1}{#2}{#3}}
+
+
+\lstdefinestyle{informal}{
+  belowcaptionskip=1\baselineskip,
+  breaklines=true,
+  % frame=L,
+  % xleftmargin=\parindent,
+  showstringspaces=false,
+  basicstyle=\footnotesize\ttfamily\color{blue},
+  keywordstyle=\bfseries\color{blue},
+  commentstyle=\itshape\color{blue},
+  identifierstyle=\color{blue},
+  stringstyle=\color{blue},
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% verification related stuff
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand{\openall}[3]{openall(#1,#2,#3)}
+\newcommand{\opened}[3]{opened(#1,#2,#3)}
+\newcommand{\closed}[1]{closed(#1)}
+\newcommand{\emptyc}[2]{empty(#1,#2)}
+\def\simpag{\textbackslash{\sep}}
+\def\init{init}
+\def\initall{initall}
+
+\newcommand{\peer}[1]{Peer(#1)}
+\newcommand{\bindv}[2]{bind(#1,#2)}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% auxiliary functions and notations
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newcommand{\EV}[1]{EV(#1)}
+\newcommand{\TR}[1]{TR(#1)}
+\newcommand{\first}[1]{TR^{fst}(#1)}
+\newcommand{\sub}[1]{sub(#1)}
+
+\newcommand{\safesnd}[4]{\safesend(#2, #4, #3, #1)}
+\newcommand{\safercv}[2]{\saferecv(#2, #1)}
+\newcommand{\safefid}[3]{\fid(#1, #2, #3)}
+
+\def\sendfunction{send}
+\def\recvfunction{recv}
+\def\notifyAllfunction{notifyAll}
+\def\waitfunction{wait}
+\newcommand{\tsend}[1]{\sendfunction(#1)}
+\newcommand{\notifyAll}[1]{\notifyAllfunction(#1)}
+\newcommand{\mwait}[1]{\waitfunction(#1)}
+\newcommand{\msend}[2]{\sendfunction(#1, #2)}
+\newcommand{\trecv}[1]{\recvfunction(#1)}
+\newcommand{\esend}[1]{{\sendfunction_e}(#1)}
+\newcommand{\erecv}[1]{{\recvfunction_e}(#1)}
+\newcommand{\tlbl}[1]{lbl(#1)}
+\newcommand{\tchan}[1]{chan(#1)}
+\newcommand{\tmsg}[1]{msg(#1)}
+\newcommand{\mdisj}[2]{#1 \# #2}
+\newcommand{\evpeer}[1]{#1.peer}
+\newcommand{\evlbl}[1]{#1.id}
+\newcommand{\cnil}{\btt{NULL}}
+\newcommand{\cpar}{\|} %parallel composition
+
+\newcommand{\RF}{RF~}
+\newcommand{\SO}{SO}
+\newcommand{\ltseq}[2]{#1\!{\prec}#2}
+\newcommand{\ord}[1]{{\ifthenelse{\equal{#1}{}}{seq}{seq(#1)}}}
+\newcommand{\adj}[2]{Adj(#1,#2)}
+\newcommand{\link}[2]{Adj^+(#1,#2)}
+\def\proof{\vspace{-0.2cm}\noindent{\it Proof}\hspace*{0.5cm}}
+\renewenvironment{proof}{\noindent{\it Proof:}}{\qedsymbol}
+\newcommand{\satisf}[3]{\ensuremath{(#1,#2) \vDash #3}}
+\def\smstack{\myit{s}}
+\def\smheap{\myit{h}}
+\newcommand{\node}[3]{\hformn{#1}{#2}{#3}}
+\def\disjoint{\perp}
+\def\mord{\myit{o}}
+\newcommand{\eeval}[1]{[[#1]]}
+\newcommand{\beval}[1]{[[#1]]}

@@ -1,0 +1,23 @@
+\lstdefinestyle{MCStyle}{
+  language=[LaTeX]Tex,
+  keywordstyle=\bfseries\color[rgb]{0,0,0},
+  texcsstyle=*\color{black}
+  captionpos=b,
+  numbers=left,
+  basicstyle=\scriptsize\normalfont,
+  stepnumber=1,
+  numbersep=10pt,
+  tabsize=2,
+  showspaces=false,
+  showstringspaces=false,
+  numbersep=0pt,
+}
+
+\lstdefinelanguage{MC}
+{
+	morekeywords={data,int},
+	sensitive=false,
+	morecomment=[l]{@},
+	morecomment=[s]{/*}{*/},
+	morestring=[b]"
+}

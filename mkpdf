@@ -1,3 +1,7 @@
-bibtex main
-pdflatex --synctex=1 main 
+if [[ $1 == clean ]]; then
+  rm *.aux *.log *.bbl *.blg *.out *.pdf *.syn*.*gz
+else
+  bibtex main
+  pdflatex --synctex=1 main
 #dvipdfm main.dvi
+fi

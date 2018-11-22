@@ -15,11 +15,11 @@
 \newcommand{\codeS}[1]{\ensuremath{\it #1}}
 \newcommand{\prj}{\mytt{\#}}
 \newcommand{\chpred}[2]{{\cal C}(#1,#2)}
-%% \newcommand{\wnsay}[1]{{{\color{blue}({\bf WN:} \textit{#1})}}}
-\newcommand{\wnsay}[1]{}
+\newcommand{\wnsay}[1]{{{\color{blue}({\bf WN:} \textit{#1})}}}
+% \newcommand{\wnsay}[1]{}
 \newcommand{\wnnay}[1]{}
-%% \newcommand{\asay}[1]{{{\color{darkgreen}{\bf A:} \textit{#1}}}}
-\newcommand{\asay}[1]{}
+\newcommand{\asay}[1]{{{\color{darkgreen}{\bf A:} \textit{#1}}}}
+% \newcommand{\asay}[1]{}
 \newcommand{\anay}[1]{}
 %% \newcommand{\scsay}[1]{{{\color{cyan}({\bf SC:} \textit{#1})}}}
 \newcommand{\scsay}[1]{}
@@ -244,7 +244,7 @@
 \newcommand{\ebpverif}[2]{
   \ifthenelse{\equal{#1}{} }{
     \begin{prooftree}[rule style=simple] #2 \end{prooftree}
-  }{  
+  }{
     \begin{prooftree}
       % \Hypo{\verirulen{#1}}
       \Hypo{[\underline{{\bf \scriptstyle }\rulen{#1}}]}
@@ -585,10 +585,10 @@
   xrightmargin=0mm,
   % resetmargins=true,
   % rulesepcolor=\color{red!20!green!20!blue!20!},
-  captionpos=b, 
+  captionpos=b,
   showspaces=false,
-  showstringspaces=false,   
-  showtabs=false, 
+  showstringspaces=false,
+  showtabs=false,
   tabsize=4,
   breaklines=true,
   % lineskip=0pt;
@@ -601,7 +601,7 @@
 
 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
@@ -616,9 +616,9 @@
 
 
 %prop definition
-%\theoremstyle{definition} 
+%\theoremstyle{definition}
 %\newtheorem{law}{Law}
-%\theoremstyle{plain} 
+%\theoremstyle{plain}
 %\newtheorem{prop}[law]{Property}
 
 %%% Local Variables:
@@ -665,7 +665,7 @@
      #1?{#3}
   }{ #1?{#2}{\cd}{#3} }
 }
-  
+
 \newcommand{\trans}[2]{\unkbox {#1}{\cd}{#2}}
 
 \newcommand{\seq}{;} %sequence
@@ -717,7 +717,7 @@
 {\down}^\text{\acc}({#2},#3)
 }{\ifthenelse{\equal{#1}{A} }{
 {\await}^\text{\cons}({#2},#3)
-}{{\sync}^\text{}({#2})} } 
+}{{\sync}^\text{}({#2})} }
 }}}
 
 %\newcommand{\gensync}[1]{}
@@ -746,7 +746,7 @@
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% PROJECTION related stuff 
+% PROJECTION related stuff
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \newcommand{\projectsymbol}{\downharpoonright}
 \newcommand{\project}[2]{(#2){\projectsymbol}_{#1}}
@@ -756,7 +756,7 @@
 
 \def\pequiv{\dashv\vdash}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% MISC 
+% MISC
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \def\wrt{w.r.t.~}
 \definecolor{projcolor}{RGB}{0, 176, 80} %green
@@ -803,7 +803,7 @@
 \newcommand\secref[1]{Sec. \ref{#1}}
 \newcommand\defref[1]{Def.\ref{#1}}
 
-% roman god of communication 
+% roman god of communication
 \def\sessionlogic{Mercurius}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -823,8 +823,8 @@
           \updownharpoons%% \updownarrows
         }{
 
-        }         
-      }   
+        }
+      }
     }
   }
 }

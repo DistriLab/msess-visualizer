@@ -21,15 +21,19 @@ import Text.Parsec
  - SECTION USER INTERFACE
  -}
 main = do
-  inputLines <- interpreter
-  let s = intercalate "\n" $ map (show . extractParse parseExpr) inputLines
-   in putStrLn s
+  welcome
+  interpreter
 
-interpreter :: IO [String]
-interpreter = do
+welcome :: IO ()
+welcome = do
   mapM_ putStrLn $
-    "Either:" :
-    "1) Type out expression" : "2) Load file (load <file>)" : "" : []
+    "Welcome!" :
+    "Type at the prompt. Either:" :
+    "1) Type out expression, or" : "2) Load file (load <file>)" : "" : []
+
+interpreter :: IO ()
+interpreter = do
+  putStr "msess> "
   inputLine <- getLine
   inputLines <-
     if take loadStringLength inputLine == loadString
@@ -39,7 +43,9 @@ interpreter = do
         seq (hClose handle) (return $ lines contents)
       else do
         return [inputLine]
-  return inputLines
+  let s = intercalate "\n" $ map (show . extractParse parseExpr) inputLines
+   in putStrLn s
+  interpreter
   where
     loadString = "load "
     loadStringLength = length loadString

@@ -49,13 +49,68 @@ interpreter = do
  -}
 type SParsec = Parsec String ()
 
-data Expr a where
-  EBool :: Bool -> Expr Bool
+type VarFirst = Int
+
+type VarSecond = String
+
+type Role = Int
+
+type Chan = Int
+
+type Label = Int
+
+data Heap
+  = Emp
+  | Map VarFirst
+        VarFirst
+  | Separate Heap
+             Heap
+  | VarFirst
+  | VarSecond
+  deriving (Show)
+
+data Prot
+  = ProtTrans
+  | ProtGuard Prot
+              Prot
+  | ProtAssume Prot
+               Prot
+  | ProtEmp Prot
+            Prot
+  deriving (Show)
+
+data Expr a
+  {- pred ::= p(root,v*) = Φ inv π -}
+  {- Φ ::= VΔ -}
+  {- Δ ::= ∃v*.k^π | Δ*Δ -}
+  {- κ ::= emp | v↦d<v*> | p(v*) | κ*κ | V -}
+  {- π ::= v:t | b|a | π^π | πvπ | ~π | ∃v.π | ∀v.π | γ -}
+      where
   ENot :: Expr Bool -> Expr Bool
   EAnd :: Expr Bool -> Expr Bool -> Expr Bool
   EOr :: Expr Bool -> Expr Bool -> Expr Bool
+  {- γ ::= v=v | v=null | v/=v | v/=null -}
+  EPointerEq :: Expr VarFirst -> Expr VarFirst -> Expr Bool
+  EPointerNull :: Expr VarFirst -> Expr Bool
+  EPointerDiseq :: Expr VarFirst -> Expr VarFirst -> Expr Bool
+  EPointerNotNull :: Expr VarFirst -> Expr Bool
+  {- b ::= true | false | b=b -}
+  EBool :: Bool -> Expr Bool
+  EBoolEq :: Expr Bool -> Expr Bool -> Expr Bool
+  {- a ::= s=s | s<=s | TODO maybe V=Δ -}
+  EIntEq :: Expr Int -> Expr Int -> Expr Bool
+  EIntLeq :: Expr Int -> Expr Int -> Expr Bool
+  {- s ::= k | v | k x s | s + s | -s -}
   EInt :: Int -> Expr Int
+  EVarFirstInt :: Expr VarFirst -> Expr Int
+  EMul :: Expr Int -> Expr Int -> Expr Int
   EAdd :: Expr Int -> Expr Int -> Expr Int
+  ENeg :: Expr Int -> Expr Int
+  {- G ::= G*G | GVG | G;G -}
+  EProt :: Prot -> Expr Prot
+  EConcurrency :: Expr Prot -> Expr Prot -> Expr Prot
+  EChoice :: Expr Prot -> Expr Prot -> Expr Prot
+  ESequencing :: Expr Prot -> Expr Prot -> Expr Prot
 
 -- Existentially quantify Expr
 -- Contains a well-formed Expr, but precise type of Expr is secret
@@ -80,17 +135,20 @@ extractParse p s =
     Right x -> x
 
 {-
- - SUBSECTION BOOL
+ - SUBSECTION pred
  -}
-parseBool :: SParsec (Expr Bool)
-parseBool = do
-  b <-
-    (do string "True"
-        return $ EBool True) <|>
-    (do string "False"
-        return $ EBool False)
-  return b
-
+{-
+ - SUBSECTION Φ
+ -}
+{-
+ - SUBSECTION Δ
+ -}
+{-
+ - SUBSECTION κ
+ -}
+{-
+ - SUBSECTION π
+ -}
 parseNot :: SParsec (Expr Bool)
 parseNot = do
   char '~'
@@ -112,12 +170,49 @@ parseOr = do
   return $ EOr b1 b2
 
 {-
- - SUBSECTION INT
+ - SUBSECTION γ
+ -}
+{-
+ - SUBSECTION b
+ -}
+parseBool :: SParsec (Expr Bool)
+parseBool = do
+  b <-
+    (do string "True"
+        return $ EBool True) <|>
+    (do string "False"
+        return $ EBool False)
+  return b
+
+parseBoolEq :: SParsec (Expr Bool)
+parseBoolEq = do
+  b1 <- parseBool
+  char '='
+  b2 <- parseBool
+  return $ EBoolEq b1 b2
+
+{-
+ - SUBSECTION a
+ -}
+{-
+ - SUBSECTION s
  -}
 parseInt :: SParsec (Expr Int)
 parseInt = do
   i <- many digit
   return $ EInt $ read i
+
+parseVarFirstInt :: SParsec (Expr Int)
+parseVarFirstInt = do
+  i <- parseInt
+  return $ EVarFirstInt i
+
+parseMul :: SParsec (Expr Int)
+parseMul = do
+  i1 <- parseInt
+  char 'x'
+  i2 <- parseInt
+  return $ EMul i1 i2
 
 parseAdd :: SParsec (Expr Int)
 parseAdd = do
@@ -126,6 +221,15 @@ parseAdd = do
   i2 <- parseInt
   return $ EAdd i1 i2
 
+parseNeg :: SParsec (Expr Int)
+parseNeg = do
+  char '-'
+  i <- parseInt
+  return $ ENeg i
+
+{-
+ - SUBSECTION PROTOCOL
+ -}
 {-
  - SUBSECTION EXPR
  -}

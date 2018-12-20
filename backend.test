@@ -11,3 +11,5 @@ False&True
 True&False
 True&True
 if False&True then ~True else False|True
+0
+1+1

@@ -1,8 +1,13 @@
 {- SECTION PRAGMAS -}
-{-# LANGUAGE StandaloneDeriving #-}
 -- Allows putting `deriving` on a standalone line, needed for GADTs to derive 
 -- (Show)
-{-# LANGUAGE GADTs #-} -- Allows type equalities (a ~ Bool)
+{-# LANGUAGE StandaloneDeriving #-}
+-- Allows constrained ASTs
+{-# LANGUAGE GADTs #-}
+-- Allows more than one StandaloneDeriving
+{-# LANGUAGE UndecidableInstances #-}
+-- Allows ambiguity check in instance declarations, to use sites
+{-# LANGUAGE AllowAmbiguousTypes #-}
 
 import Data.List (intercalate)
 import System.IO (IOMode(ReadMode), hClose, hGetContents, openFile)
@@ -19,7 +24,7 @@ main = do
   inputLines <- interpreter
   let s =
         intercalate "\n" $
-        map ((\e -> show (evalExpr e, e)) . extractParse parseExpr) inputLines
+        map ((\e -> show (e, e)) . extractParse parseExpr) inputLines
    in putStrLn s
 
 interpreter :: IO [String]
@@ -28,10 +33,15 @@ interpreter = do
     "Either:" :
     "1) Type out expression" : "2) Load file (load <file>)" : "" : []
   inputLine <- getLine
-  handle <- openFile (drop loadStringLength inputLine) ReadMode
-  contents <- hGetContents handle
-  let inputLines = lines contents
-   in seq (hClose handle) (return inputLines)
+  inputLines <-
+    if take loadStringLength inputLine == loadString
+      then do
+        handle <- openFile (drop loadStringLength inputLine) ReadMode
+        contents <- hGetContents handle
+        seq (hClose handle) (return $ lines contents)
+      else do
+        return [inputLine]
+  return inputLines
   where
     loadString = "load "
     loadStringLength = length loadString
@@ -46,9 +56,21 @@ data Expr a where
   ENot :: Expr Bool -> Expr Bool
   EAnd :: Expr Bool -> Expr Bool -> Expr Bool
   EOr :: Expr Bool -> Expr Bool -> Expr Bool
-  EIf :: Expr Bool -> Expr a -> Expr a -> Expr a
+  EInt :: Int -> Expr Int
+  EAdd :: Expr Int -> Expr Int -> Expr Int
 
-deriving instance Show a => Show (Expr a)
+-- Existentially quantify Expr
+-- Contains a well-formed Expr, but precise type of Expr is secret
+data AnyExpr where
+  AnyExpr :: Expr a -> AnyExpr
+
+deriving instance Show (Expr a)
+
+instance Show (AnyExpr) where
+  show (AnyExpr a) = show a
+
+anyExpr :: SParsec (Expr a) -> SParsec AnyExpr
+anyExpr e = fmap AnyExpr e
 
 {-
  - SECTION PARSERS
@@ -59,6 +81,9 @@ extractParse p s =
     Left x -> error $ show x
     Right x -> x
 
+{-
+ - SUBSECTION BOOL
+ -}
 parseBool :: SParsec (Expr Bool)
 parseBool = do
   b <-
@@ -88,33 +113,33 @@ parseOr = do
   b2 <- parseBool
   return $ EOr b1 b2
 
-parseIf :: SParsec (Expr Bool)
-parseIf = do
-  string "if "
-  b <- parseExpr
-  string " then "
-  e1 <- parseExpr
-  string " else "
-  e2 <- parseExpr
-  return $ EIf b e1 e2
+{-
+ - SUBSECTION INT
+ -}
+parseInt :: SParsec (Expr Int)
+parseInt = do
+  i <- many digit
+  return $ EInt $ read i
 
--- TODO too many `try`s
-parseExpr :: SParsec (Expr Bool)
-parseExpr = do
-  e <-
-    (try parseIf <|> try parseNot <|> try parseAnd <|> try parseOr <|>
-     try parseBool)
-  return e
+parseAdd :: SParsec (Expr Int)
+parseAdd = do
+  i1 <- parseInt
+  char '+'
+  i2 <- parseInt
+  return $ EAdd i1 i2
 
 {-
- - SECTION EVALUATORS
+ - SUBSECTION EXPR
  -}
-evalExpr :: Expr a -> a
-evalExpr (EBool b) = b
-evalExpr (ENot b) = not $ evalExpr b
-evalExpr (EAnd b1 b2) = (evalExpr b1) && (evalExpr b2)
-evalExpr (EOr b1 b2) = (evalExpr b1) || (evalExpr b2)
-evalExpr (EIf b e1 e2) =
-  if (evalExpr b)
-    then (evalExpr e1)
-    else (evalExpr e2)
+parseExpr :: SParsec AnyExpr
+parseExpr = do
+  e <-
+    choice $
+    [ anyExpr parseNot
+    , anyExpr parseAnd
+    , anyExpr parseOr
+    , anyExpr parseBool
+    , anyExpr parseAdd
+    , anyExpr parseInt
+    ]
+  return e

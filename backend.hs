@@ -17,7 +17,9 @@ import Text.Parsec
  -}
 main = do
   inputLines <- interpreter
-  let s = intercalate "\n" $ map (show . extractParse parseExpr) inputLines
+  let s =
+        intercalate "\n" $
+        map ((\e -> show (evalExpr e, e)) . extractParse parseExpr) inputLines
    in putStrLn s
 
 interpreter :: IO [String]

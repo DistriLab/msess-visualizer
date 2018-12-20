@@ -22,9 +22,7 @@ import Text.Parsec
  -}
 main = do
   inputLines <- interpreter
-  let s =
-        intercalate "\n" $
-        map ((\e -> show (e, e)) . extractParse parseExpr) inputLines
+  let s = intercalate "\n" $ map (show . extractParse parseExpr) inputLines
    in putStrLn s
 
 interpreter :: IO [String]
@@ -134,12 +132,8 @@ parseAdd = do
 parseExpr :: SParsec AnyExpr
 parseExpr = do
   e <-
-    choice $
-    [ anyExpr parseNot
-    , anyExpr parseAnd
-    , anyExpr parseOr
-    , anyExpr parseBool
-    , anyExpr parseAdd
-    , anyExpr parseInt
-    ]
+    try (anyExpr parseNot) <|> try (anyExpr parseAnd) <|> try (anyExpr parseOr) <|>
+    try (anyExpr parseBool) <|>
+    try (anyExpr parseAdd) <|>
+    try (anyExpr parseInt)
   return e

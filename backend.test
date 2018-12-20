@@ -1,0 +1,13 @@
+False
+True
+~False
+~True
+False|False
+False|True
+True|False
+True|True
+False&False
+False&True
+True&False
+True&True
+if False&True then ~True else False|True

@@ -55,6 +55,7 @@ data Expr a where
   EAnd :: Expr Bool -> Expr Bool -> Expr Bool
   EOr :: Expr Bool -> Expr Bool -> Expr Bool
   EInt :: Int -> Expr Int
+  EMul :: Expr Int -> Expr Int -> Expr Int
   EAdd :: Expr Int -> Expr Int -> Expr Int
 
 -- Existentially quantify Expr
@@ -116,12 +117,18 @@ parseOr = do
  - SUBSECTION INT
  -}
 parseInt :: SParsec (Expr Int)
-parseInt = parseAdd
+parseInt = parseMul
 
 parseIntLit :: SParsec (Expr Int)
-parseIntLit = do
-  i <- many digit
-  return $ EInt $ read i
+parseIntLit =
+  between (char '(') (char ')') parseMul <|>
+  parsecMap (EInt . read) (many digit)
+
+parseMul :: SParsec (Expr Int)
+parseMul =
+  parseAdd `chainl1`
+  (do char 'x'
+      return EMul)
 
 parseAdd :: SParsec (Expr Int)
 parseAdd =

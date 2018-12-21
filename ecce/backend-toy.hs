@@ -111,7 +111,7 @@ parseOr :: SParsec (Expr Bool)
 parseOr = do
   (parseNot <|> parseBoolLit) `chainl1`
     (do char '|'
-        return EAnd)
+        return EOr)
 
 {-
  - SUBSECTION INT

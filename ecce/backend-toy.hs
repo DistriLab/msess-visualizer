@@ -83,7 +83,10 @@ extractParse p s =
  - SUBSECTION BOOL
  -}
 parseBool :: SParsec (Expr Bool)
-parseBool = do
+parseBool = parseAnd
+
+parseBoolLit :: SParsec (Expr Bool)
+parseBoolLit = do
   b <-
     (do string "True"
         return $ EBool True) <|>
@@ -94,46 +97,42 @@ parseBool = do
 parseNot :: SParsec (Expr Bool)
 parseNot = do
   char '~'
-  b <- parseBool
+  b <- parseBoolLit
   return $ ENot b
 
 parseAnd :: SParsec (Expr Bool)
 parseAnd = do
-  b1 <- parseBool
-  char '&'
-  b2 <- parseBool
-  return $ EAnd b1 b2
+  parseOr `chainl1`
+    (do char '&'
+        return EAnd)
 
 parseOr :: SParsec (Expr Bool)
 parseOr = do
-  b1 <- parseBool
-  char '|'
-  b2 <- parseBool
-  return $ EOr b1 b2
+  (parseNot <|> parseBoolLit) `chainl1`
+    (do char '|'
+        return EAnd)
 
 {-
  - SUBSECTION INT
  -}
 parseInt :: SParsec (Expr Int)
-parseInt = do
+parseInt = choice [parseAdd, parseIntLit]
+
+parseIntLit :: SParsec (Expr Int)
+parseIntLit = do
   i <- many digit
   return $ EInt $ read i
 
 parseAdd :: SParsec (Expr Int)
-parseAdd = do
-  i1 <- parseInt
-  char '+'
-  i2 <- parseInt
-  return $ EAdd i1 i2
+parseAdd =
+  parseIntLit `chainl1`
+  (do char '+'
+      return EAdd)
 
 {-
  - SUBSECTION EXPR
  -}
 parseExpr :: SParsec AnyExpr
 parseExpr = do
-  e <-
-    try (anyExpr parseNot) <|> try (anyExpr parseAnd) <|> try (anyExpr parseOr) <|>
-    try (anyExpr parseBool) <|>
-    try (anyExpr parseAdd) <|>
-    try (anyExpr parseInt)
+  e <- try (anyExpr parseBool) <|> try (anyExpr parseInt)
   return e

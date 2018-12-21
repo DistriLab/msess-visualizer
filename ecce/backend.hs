@@ -8,6 +8,8 @@
 {-# LANGUAGE UndecidableInstances #-}
 -- Allows ambiguity check in instance declarations, to use sites
 {-# LANGUAGE AllowAmbiguousTypes #-}
+-- Allows deriving for empty data types
+{-# LANGUAGE EmptyDataDeriving #-}
 
 import Data.List (intercalate)
 import System.IO (IOMode(ReadMode), hClose, hGetContents, openFile)
@@ -55,39 +57,27 @@ interpreter = do
  -}
 type SParsec = Parsec String ()
 
-type VarFirst = Int
+type Heap = String
+
+type Pure = String
+
+type Pointer = String
+
+type BoolInt = Int
 
 type VarType = String
 
+type VarFirst = Int
+
 type VarSecond = String
+
+type Prot = String
 
 type Role = Int
 
 type Chan = Int
 
 type Label = Int
-
-data Heap
-  deriving (Show)
-
-data Pure
-  deriving (Show)
-
-data Pointer
-  deriving (Show)
-
-data BoolInt
-  deriving (Show)
-
-data Prot
-  = ProtTrans
-  | ProtGuard Prot
-              Prot
-  | ProtAssume Prot
-               Prot
-  | ProtEmp Prot
-            Prot
-  deriving (Show)
 
 data Expr a
   {- pred ::= p(root,v*) = Φ inv π -}
@@ -96,18 +86,23 @@ data Expr a
   {- κ ::= emp | v↦d<v*> | p(v*) | κ*κ | V -}
       where
   EHeap :: Heap -> Expr Heap
-  EHeapEmp :: Expr Heap -> Expr Heap
-  EHeapMap :: Expr Pointer -> Expr Pointer -> Expr Heap
-  EHeapPointer :: Expr Pointer -> Expr Heap
+  EHeapEmp :: Expr Heap
+  EHeapMap :: Expr VarFirst -> Expr VarFirst -> Expr Heap
+  EHeapPointer :: Expr VarFirst -> Expr Heap
   EHeapSeparate :: Expr Heap -> Expr Heap -> Expr Heap
-  {- π ::= v:t | b|a | π^π | πvπ | ~π | ∃v.π | ∀v.π | γ -}
+  {- π ::= v:t | b | a | π^π | πvπ | ~π | ∃v.π | ∀v.π | γ -}
   EPure :: Pure -> Expr Pure
+  EVarType :: VarType -> Expr VarType
   EPureType :: Expr VarFirst -> Expr VarType -> Expr Pure
-  EPureNot :: Expr Pure -> Expr Pure
+  EPureBool :: Expr Bool -> Expr Pure
+  EPureBoolInt :: Expr BoolInt -> Expr Pure
   EPureAnd :: Expr Pure -> Expr Pure -> Expr Pure
   EPureOr :: Expr Pure -> Expr Pure -> Expr Pure
+  EPureNot :: Expr Pure -> Expr Pure
+  EPureExists :: Expr VarFirst -> Expr Pure -> Expr Pure
+  EPureForall :: Expr VarFirst -> Expr Pure -> Expr Pure
+  EPurePointer :: Expr Pointer -> Expr Pure
   {- γ ::= v=v | v=null | v/=v | v/=null -}
-  EPointer :: Pointer -> Expr Pointer
   EPointerEq :: Expr VarFirst -> Expr VarFirst -> Expr Pointer
   EPointerNull :: Expr VarFirst -> Expr Pointer
   EPointerDiseq :: Expr VarFirst -> Expr VarFirst -> Expr Pointer
@@ -116,17 +111,16 @@ data Expr a
   EBool :: Bool -> Expr Bool
   EBoolEq :: Expr Bool -> Expr Bool -> Expr Bool
   {- a ::= s=s | s<=s | TODO maybe V=Δ -}
-  EBoolInt :: Bool -> Expr BoolInt
+  EBoolInt :: BoolInt -> Expr BoolInt
   EBoolIntEq :: Expr Int -> Expr Int -> Expr BoolInt
   EBoolIntLeq :: Expr Int -> Expr Int -> Expr BoolInt
   {- s ::= k | v | k x s | s + s | -s -}
   EInt :: Int -> Expr Int
-  EIntVarFirst :: Expr VarFirst -> Expr Int
+  EVarFirst :: Expr VarFirst -> Expr Int
   EIntMul :: Expr Int -> Expr Int -> Expr Int
   EIntAdd :: Expr Int -> Expr Int -> Expr Int
   EIntNeg :: Expr Int -> Expr Int
   {- G ::= G*G | GVG | G;G -}
-  EProt :: Prot -> Expr Prot
   EConcurrency :: Expr Prot -> Expr Prot -> Expr Prot
   EChoice :: Expr Prot -> Expr Prot -> Expr Prot
   ESequencing :: Expr Prot -> Expr Prot -> Expr Prot
@@ -167,27 +161,28 @@ extractParse p s =
  -}
 parseHeap :: SParsec (Expr Heap)
 parseHeap = do
-  p <- many alphaNum
-  return $ EHeap p
+  h <- many alphaNum
+  return $ EHeap h
 
 parseHeapEmp :: SParsec (Expr Heap)
 parseHeapEmp = do
-  p <- parseHeap
-  return $ EHeapEmp p
+  string "emp"
+  return $ EHeapEmp
 
+-- TODO define user-defined data type d
 parseHeapMap :: SParsec (Expr Heap)
 parseHeapMap = do
-  p1 <- parseHeap
-  char '&'
-  p2 <- parseHeap
-  return $ EHeapMap p1 p2
+  v1 <- parseVarFirst
+  string "->"
+  v2 <- parseVarFirst
+  return $ EHeapMap v1 v2
 
 parseHeapPointer :: SParsec (Expr Heap)
 parseHeapPointer = do
-  p <- parsePointer
-  char '~'
-  p <- parseHeap
-  return $ EHeapPointer p
+  string "p("
+  v <- parseVarFirst
+  string "*)"
+  return $ EHeapPointer v
 
 parseHeapSeparate :: SParsec (Expr Heap)
 parseHeapSeparate = do
@@ -204,16 +199,27 @@ parsePure = do
   p <- many alphaNum
   return $ EPure p
 
+-- Lift VarType into Expr VarType
+parseVarType :: SParsec (Expr VarType)
+parseVarType = do
+  t <- many alphaNum
+  return $ EVarType t
+
 parsePureType :: SParsec (Expr Pure)
 parsePureType = do
-  p <- parsePure
-  return $ EPureNot p
+  v <- parseVarFirst
+  t <- parseVarType
+  return $ EPureType v t
 
-parsePureNot :: SParsec (Expr Pure)
-parsePureNot = do
-  char '~'
-  p <- parsePure
-  return $ EPureNot p
+parsePureBool :: SParsec (Expr Pure)
+parsePureBool = do
+  b <- parseBool
+  return $ EPureBool b
+
+parsePureBoolInt :: SParsec (Expr Pure)
+parsePureBoolInt = do
+  bi <- parseBoolInt
+  return $ EPureBoolInt bi
 
 parsePureAnd :: SParsec (Expr Pure)
 parsePureAnd = do
@@ -229,35 +235,62 @@ parsePureOr = do
   p2 <- parsePure
   return $ EPureOr p1 p2
 
+parsePureNot :: SParsec (Expr Pure)
+parsePureNot = do
+  char '~'
+  p <- parsePure
+  return $ EPureNot p
+
+parsePureExists :: SParsec (Expr Pure)
+parsePureExists = do
+  v <- parseVarFirst
+  p <- parsePure
+  return $ EPureExists v p
+
+parsePureForall :: SParsec (Expr Pure)
+parsePureForall = do
+  v <- parseVarFirst
+  p <- parsePure
+  return $ EPureForall v p
+
+parsePurePointer :: SParsec (Expr Pure)
+parsePurePointer = do
+  p <- parsePointer
+  return $ EPurePointer p
+
 {-
  - SUBSECTION γ
  -}
 parsePointer :: SParsec (Expr Pointer)
-parsePointer = do
-  v <- parseIntVarFirst
-  return $ EPointer v
+parsePointer =
+  choice
+    [parsePointerEq, parsePointerNull, parsePointerDiseq, parsePointerNotNull]
 
 parsePointerEq :: SParsec (Expr Pointer)
 parsePointerEq = do
-  p1 <- parseparsePointer
-  p2 <- parseparsePointer
-  return $ EPointerEq p1 p2
+  v1 <- parseVarFirst
+  char '='
+  v2 <- parseVarFirst
+  return $ EPointerEq v1 v2
 
 parsePointerNull :: SParsec (Expr Pointer)
 parsePointerNull = do
-  p <- parseparsePointer
-  return $ EPointerNull p
+  v <- parseVarFirst
+  string "=null"
+  return $ EPointerNull v
 
 parsePointerDiseq :: SParsec (Expr Pointer)
 parsePointerDiseq = do
-  p1 <- parseparsePointer
-  p2 <- parseparsePointer
-  return $ EPointerEq p1 p2
+  v1 <- parseVarFirst
+  string "/="
+  v2 <- parseVarFirst
+  return $ EPointerEq v1 v2
 
 parsePointerNotNull :: SParsec (Expr Pointer)
 parsePointerNotNull = do
-  p <- parseparsePointer
-  return $ EPointerNull p
+  v <- parseVarFirst
+  string "/=null"
+  return $ EPointerNull v
 
 {-
  - SUBSECTION b
@@ -283,26 +316,21 @@ parseBoolEq = do
  -}
 parseBoolInt :: SParsec (Expr BoolInt)
 parseBoolInt = do
-  b <-
-    (do string "True"
-        return $ EBoolInt True) <|>
-    (do string "False"
-        return $ EBoolInt False)
-  return b
+  choice [parseBoolIntEq, parseBoolIntLeq]
 
 parseBoolIntEq :: SParsec (Expr BoolInt)
 parseBoolIntEq = do
-  b1 <- parseBoolInt
+  i1 <- parseInt
   char '='
-  b2 <- parseBoolInt
-  return $ EBoolIntEq b1 b2
+  i2 <- parseInt
+  return $ EBoolIntEq i1 i2
 
 parseBoolIntLeq :: SParsec (Expr BoolInt)
 parseBoolIntLeq = do
-  b1 <- parseBoolInt
+  i1 <- parseInt
   string "<="
-  b2 <- parseBoolInt
-  return $ EBoolIntLeq b1 b2
+  i2 <- parseInt
+  return $ EBoolIntLeq i1 i2
 
 {-
  - SUBSECTION s
@@ -312,10 +340,10 @@ parseInt = do
   i <- many digit
   return $ EInt $ read i
 
-parseIntVarFirst :: SParsec (Expr Int)
-parseIntVarFirst = do
+parseVarFirst :: SParsec (Expr Int)
+parseVarFirst = do
   i <- parseInt
-  return $ EIntVarFirst i
+  return $ EVarFirst i
 
 parseIntMul :: SParsec (Expr Int)
 parseIntMul = do
@@ -345,9 +373,5 @@ parseIntNeg = do
  -}
 parseExpr :: SParsec AnyExpr
 parseExpr = do
-  e <-
-    try (anyExpr parseNot) <|> try (anyExpr parseAnd) <|> try (anyExpr parseOr) <|>
-    try (anyExpr parseBool) <|>
-    try (anyExpr parseAdd) <|>
-    try (anyExpr parseInt)
+  e <- try (anyExpr parseBool) <|> try (anyExpr parseInt)
   return e

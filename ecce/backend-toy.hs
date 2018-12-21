@@ -120,9 +120,7 @@ parseInt :: SParsec (Expr Int)
 parseInt = parseAdd
 
 parseIntLit :: SParsec (Expr Int)
-parseIntLit =
-  between (char '(') (char ')') parseAdd <|>
-  parsecMap (EInt . read) (many digit)
+parseIntLit = parsecMap (EInt . read) (many digit)
 
 parseMul :: SParsec (Expr Int)
 parseMul =
@@ -132,7 +130,7 @@ parseMul =
 
 parseAdd :: SParsec (Expr Int)
 parseAdd =
-  parseAdd `chainl1`
+  parseMul `chainl1`
   (do char '+'
       return EAdd)
 

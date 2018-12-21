@@ -192,8 +192,7 @@ parseHeapSeparate = do
 parsePure :: SParsec (Expr Pure)
 parsePure =
   choice
-    [ parseVarType
-    , parsePureVarType
+    [ parsePureVarType
     , parsePureBool
     , parsePureBoolInt
     , parsePureAnd
@@ -204,7 +203,7 @@ parsePure =
     , parsePurePointer
     ]
 
--- Lift VarType into Expr VarType
+-- Helper function, lift VarType into Expr VarType
 parseVarType :: SParsec (Expr VarType)
 parseVarType = do
   t <- many alphaNum
@@ -230,14 +229,14 @@ parsePureBoolInt = do
 parsePureAnd :: SParsec (Expr Pure)
 parsePureAnd = do
   p1 <- parsePure
-  char '&'
+  char '^'
   p2 <- parsePure
   return $ EPureAnd p1 p2
 
 parsePureOr :: SParsec (Expr Pure)
 parsePureOr = do
   p1 <- parsePure
-  char '|'
+  char 'v'
   p2 <- parsePure
   return $ EPureOr p1 p2
 
@@ -249,12 +248,14 @@ parsePureNot = do
 
 parsePureExists :: SParsec (Expr Pure)
 parsePureExists = do
+  char 'E'
   v <- parseVarFirst
   p <- parsePure
   return $ EPureExists v p
 
 parsePureForall :: SParsec (Expr Pure)
 parsePureForall = do
+  char 'A'
   v <- parseVarFirst
   p <- parsePure
   return $ EPureForall v p
@@ -303,6 +304,10 @@ parsePointerNotNull = do
  -}
 parseBool :: SParsec (Expr Bool)
 parseBool = do
+  choice [parseBoolLit, parseBoolEq]
+
+parseBoolLit :: SParsec (Expr Bool)
+parseBoolLit = do
   b <-
     (do string "True"
         return $ EBool True) <|>
@@ -342,7 +347,11 @@ parseBoolIntLeq = do
  - SUBSECTION s
  -}
 parseInt :: SParsec (Expr Int)
-parseInt = do
+parseInt =
+  choice [parseIntLit, parseVarFirst, parseIntMul, parseIntAdd, parseIntNeg]
+
+parseIntLit :: SParsec (Expr Int)
+parseIntLit = do
   i <- many digit
   return $ EInt $ read i
 
@@ -353,7 +362,7 @@ parseVarFirst = do
 
 parseIntMul :: SParsec (Expr Int)
 parseIntMul = do
-  i1 <- parseInt
+  i1 <- parseIntLit
   char 'x'
   i2 <- parseInt
   return $ EIntMul i1 i2
@@ -379,5 +388,5 @@ parseIntNeg = do
  -}
 parseExpr :: SParsec AnyExpr
 parseExpr = do
-  e <- try (anyExpr parseBool) <|> try (anyExpr parseInt)
+  e <- anyExpr parsePure
   return e

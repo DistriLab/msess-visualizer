@@ -299,8 +299,7 @@ parsePointerNotNull = do
  - SUBSECTION b
  -}
 parseBool :: SParsec (Expr Bool)
-parseBool = do
-  choice [parseBoolLit, parseBoolEq]
+parseBool = parseBoolEq
 
 parseBoolLit :: SParsec (Expr Bool)
 parseBoolLit = do
@@ -313,10 +312,9 @@ parseBoolLit = do
 
 parseBoolEq :: SParsec (Expr Bool)
 parseBoolEq = do
-  b1 <- parseBool
-  char '='
-  b2 <- parseBool
-  return $ EBoolEq b1 b2
+  parseBoolLit `chainl1`
+    (do char '='
+        return EBoolEq)
 
 {-
  - SUBSECTION a
@@ -327,48 +325,46 @@ parseBoolInt = do
 
 parseBoolIntEq :: SParsec (Expr BoolInt)
 parseBoolIntEq = do
-  i1 <- parseInt
+  s1 <- parseInt
   char '='
-  i2 <- parseInt
-  return $ EBoolIntEq i1 i2
+  s2 <- parseInt
+  return $ EBoolIntEq s1 s2
 
 parseBoolIntLeq :: SParsec (Expr BoolInt)
 parseBoolIntLeq = do
-  i1 <- parseInt
+  s1 <- parseInt
   string "<="
-  i2 <- parseInt
-  return $ EBoolIntLeq i1 i2
+  s2 <- parseInt
+  return $ EBoolIntLeq s1 s2
 
 {-
  - SUBSECTION s
  -}
 parseInt :: SParsec (Expr Int)
 parseInt =
-  choice [parseIntLit, parseVarFirst, parseIntMul, parseIntAdd, parseIntNeg]
+  choice [parseIntAdd, parseIntMul, parseIntNeg, parseIntLit, parseVarFirst]
 
 parseIntLit :: SParsec (Expr Int)
-parseIntLit = do
-  i <- many digit
-  return $ EInt $ read i
+parseIntLit = parsecMap (EInt . read) (many digit)
 
 parseVarFirst :: SParsec (Expr Int)
 parseVarFirst = do
-  i <- parseInt
-  return $ EVarFirst i
+  v <- parseInt
+  return $ EVarFirst v
 
 parseIntMul :: SParsec (Expr Int)
 parseIntMul = do
-  i1 <- parseIntLit
+  k <- parseIntLit
   char 'x'
-  i2 <- parseInt
-  return $ EIntMul i1 i2
+  s <- parseInt
+  return $ EIntMul k s
 
 parseIntAdd :: SParsec (Expr Int)
 parseIntAdd = do
-  i1 <- parseInt
+  s1 <- parseInt
   char '+'
-  i2 <- parseInt
-  return $ EIntAdd i1 i2
+  s2 <- parseInt
+  return $ EIntAdd s1 s2
 
 parseIntNeg :: SParsec (Expr Int)
 parseIntNeg = do
@@ -384,5 +380,5 @@ parseIntNeg = do
  -}
 parseExpr :: SParsec AnyExpr
 parseExpr = do
-  e <- anyExpr parsePure
+  e <- anyExpr parseInt
   return e

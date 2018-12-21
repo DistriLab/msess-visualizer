@@ -189,66 +189,20 @@ parseHeapSeparate = do
 {-
  - SUBSECTION π
  -}
-parseVarType :: SParsec (Expr VarType)
-parseVarType = do
-  t <- many alphaNum
-  return $ EVarType t
-
-i
-
-parsePureVarType :: SParsec (Expr Pure)
-parsePureVarType = do
-  v <- parseVarFirst
-  char ':'
-  t <- parseVarType
-  return $ EPureVarType v t
-
-parsePureBool :: SParsec (Expr Pure)
-parsePureBool = do
-  b <- parseBool
-  return $ EPureBool b
-
-parsePureBoolInt :: SParsec (Expr Pure)
-parsePureBoolInt = do
-  bi <- parseBoolInt
-  return $ EPureBoolInt bi
-
-parsePureAnd :: SParsec (Expr Pure)
-parsePureAnd = do
-  p1 <- parsePure
-  char '&'
-  p2 <- parsePure
-  return $ EPureAnd p1 p2
-
-parsePureOr :: SParsec (Expr Pure)
-parsePureOr = do
-  p1 <- parsePure
-  char '|'
-  p2 <- parsePure
-  return $ EPureOr p1 p2
-
-parsePureNot :: SParsec (Expr Pure)
-parsePureNot = do
-  char '~'
-  p <- parsePure
-  return $ EPureNot p
-
-parsePureExists :: SParsec (Expr Pure)
-parsePureExists = do
-  v <- parseVarFirst
-  p <- parsePure
-  return $ EPureExists v p
-
-parsePureForall :: SParsec (Expr Pure)
-parsePureForall = do
-  v <- parseVarFirst
-  p <- parsePure
-  return $ EPureForall v p
-
-parsePurePointer :: SParsec (Expr Pure)
-parsePurePointer = do
-  p <- parsePointer
-  return $ EPurePointer p
+parsePure :: SParsec (Expr Pure)
+parsePure =
+  choice
+    [ parseVarType
+    , parsePureVarType
+    , parsePureBool
+    , parsePureBoolInt
+    , parsePureAnd
+    , parsePureOr
+    , parsePureNot
+    , parsePureExists
+    , parsePureForall
+    , parsePurePointer
+    ]
 
 -- Lift VarType into Expr VarType
 parseVarType :: SParsec (Expr VarType)

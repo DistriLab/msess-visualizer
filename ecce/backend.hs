@@ -341,13 +341,12 @@ parseBoolIntLeq = do
  - SUBSECTION s
  -}
 parseInt :: SParsec (Expr Int)
-parseInt = parseIntAdd
+parseInt = between (char '(') (char ')') parseIntAdd <|> parseIntAdd
 
 parseIntLit :: SParsec (Expr Int)
-parseIntLit =
-  between (char '(') (char ')') parseIntAdd <|> do
-    s <- many digit
-    return $ EInt (read s)
+parseIntLit = do
+  s <- many digit
+  return $ EInt (read s)
 
 parseVarFirst :: SParsec (Expr Int)
 parseVarFirst = do
@@ -355,28 +354,22 @@ parseVarFirst = do
   return $ EVarFirst v
 
 parseIntMul :: SParsec (Expr Int)
-parseIntMul =
-  (parseIntNeg <|> parseIntLit) `chainl1`
-  (do char 'x'
-      return EIntMul)
-
-{-
-  do
-  k <- parseIntLit
+parseIntMul = do
+  k <- parseIntNeg <|> parseIntLit
   char 'x'
   s <- parseInt
   return $ EIntMul k s
--}
+
 parseIntAdd :: SParsec (Expr Int)
 parseIntAdd =
-  parseIntMul `chainl1`
+  (try parseIntMul <|> try parseIntNeg <|> try parseIntLit) `chainl1`
   (do char '+'
       return EIntAdd)
 
 parseIntNeg :: SParsec (Expr Int)
 parseIntNeg = do
   char '-'
-  i <- parseInt
+  i <- (between (char '(') (char ')') parseInt) <|> parseIntLit
   return $ EIntNeg i
 
 {-

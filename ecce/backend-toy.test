@@ -1,0 +1,14 @@
+False
+True
+~False
+~True
+False|False
+False|True
+True|False
+True|True
+False&False
+False&True
+True&False
+True&True
+0
+1+1

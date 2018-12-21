@@ -6,8 +6,6 @@
 {-# LANGUAGE GADTs #-}
 -- Allows more than one StandaloneDeriving
 {-# LANGUAGE UndecidableInstances #-}
--- Allows ambiguity check in instance declarations, to use sites
-{-# LANGUAGE AllowAmbiguousTypes #-}
 -- Allows deriving for empty data types
 {-# LANGUAGE EmptyDataDeriving #-}
 
@@ -85,15 +83,13 @@ data Expr a
   {- Δ ::= ∃v*.k^π | Δ*Δ -}
   {- κ ::= emp | v↦d<v*> | p(v*) | κ*κ | V -}
       where
-  EHeap :: Heap -> Expr Heap
   EHeapEmp :: Expr Heap
   EHeapMap :: Expr VarFirst -> Expr VarFirst -> Expr Heap
   EHeapPointer :: Expr VarFirst -> Expr Heap
   EHeapSeparate :: Expr Heap -> Expr Heap -> Expr Heap
   {- π ::= v:t | b | a | π^π | πvπ | ~π | ∃v.π | ∀v.π | γ -}
-  EPure :: Pure -> Expr Pure
   EVarType :: VarType -> Expr VarType
-  EPureType :: Expr VarFirst -> Expr VarType -> Expr Pure
+  EPureVarType :: Expr VarFirst -> Expr VarType -> Expr Pure
   EPureBool :: Expr Bool -> Expr Pure
   EPureBoolInt :: Expr BoolInt -> Expr Pure
   EPureAnd :: Expr Pure -> Expr Pure -> Expr Pure
@@ -160,9 +156,8 @@ extractParse p s =
  - SUBSECTION κ
  -}
 parseHeap :: SParsec (Expr Heap)
-parseHeap = do
-  h <- many alphaNum
-  return $ EHeap h
+parseHeap =
+  choice [parseHeapEmp, parseHeapMap, parseHeapPointer, parseHeapSeparate]
 
 parseHeapEmp :: SParsec (Expr Heap)
 parseHeapEmp = do
@@ -194,10 +189,64 @@ parseHeapSeparate = do
 {-
  - SUBSECTION π
  -}
-parsePure :: SParsec (Expr Pure)
-parsePure = do
-  p <- many alphaNum
-  return $ EPure p
+parseVarType :: SParsec (Expr VarType)
+parseVarType = do
+  t <- many alphaNum
+  return $ EVarType t
+
+parsePureVarType :: SParsec (Expr Pure)
+parsePureVarType = do
+  v <- parseVarFirst
+  char ':'
+  t <- parseVarType
+  return $ EPureVarType v t
+
+parsePureBool :: SParsec (Expr Pure)
+parsePureBool = do
+  b <- parseBool
+  return $ EPureBool b
+
+parsePureBoolInt :: SParsec (Expr Pure)
+parsePureBoolInt = do
+  bi <- parseBoolInt
+  return $ EPureBoolInt bi
+
+parsePureAnd :: SParsec (Expr Pure)
+parsePureAnd = do
+  p1 <- parsePure
+  char '&'
+  p2 <- parsePure
+  return $ EPureAnd p1 p2
+
+parsePureOr :: SParsec (Expr Pure)
+parsePureOr = do
+  p1 <- parsePure
+  char '|'
+  p2 <- parsePure
+  return $ EPureOr p1 p2
+
+parsePureNot :: SParsec (Expr Pure)
+parsePureNot = do
+  char '~'
+  p <- parsePure
+  return $ EPureNot p
+
+parsePureExists :: SParsec (Expr Pure)
+parsePureExists = do
+  v <- parseVarFirst
+  p <- parsePure
+  return $ EPureExists v p
+
+parsePureForall :: SParsec (Expr Pure)
+parsePureForall = do
+  v <- parseVarFirst
+  p <- parsePure
+  return $ EPureForall v p
+
+parsePurePointer :: SParsec (Expr Pure)
+parsePurePointer = do
+  p <- parsePointer
+  return $ EPurePointer p
 
 -- Lift VarType into Expr VarType
 parseVarType :: SParsec (Expr VarType)
@@ -205,11 +254,12 @@ parseVarType = do
   t <- many alphaNum
   return $ EVarType t
 
-parsePureType :: SParsec (Expr Pure)
-parsePureType = do
+parsePureVarType :: SParsec (Expr Pure)
+parsePureVarType = do
   v <- parseVarFirst
+  char ':'
   t <- parseVarType
-  return $ EPureType v t
+  return $ EPureVarType v t
 
 parsePureBool :: SParsec (Expr Pure)
 parsePureBool = do

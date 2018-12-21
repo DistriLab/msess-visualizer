@@ -191,17 +191,13 @@ parseHeapSeparate = do
  -}
 parsePure :: SParsec (Expr Pure)
 parsePure =
-  choice
-    [ parsePureVarType
-    , parsePureBool
-    , parsePureBoolInt
-    , parsePureAnd
-    , parsePureOr
-    , parsePureNot
-    , parsePureExists
-    , parsePureForall
-    , parsePurePointer
-    ]
+  try parsePureVarType <|> try parsePureAnd <|> try parsePureOr <|>
+  try parsePureBool <|>
+  try parsePureBoolInt <|>
+  try parsePureNot <|>
+  try parsePureExists <|>
+  try parsePureForall <|>
+  try parsePurePointer
 
 -- Helper function, lift VarType into Expr VarType
 parseVarType :: SParsec (Expr VarType)

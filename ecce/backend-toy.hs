@@ -117,11 +117,11 @@ parseOr = do
  - SUBSECTION INT
  -}
 parseInt :: SParsec (Expr Int)
-parseInt = parseMul
+parseInt = parseAdd
 
 parseIntLit :: SParsec (Expr Int)
 parseIntLit =
-  between (char '(') (char ')') parseMul <|>
+  between (char '(') (char ')') parseAdd <|>
   parsecMap (EInt . read) (many digit)
 
 parseMul :: SParsec (Expr Int)

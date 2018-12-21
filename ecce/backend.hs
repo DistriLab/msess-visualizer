@@ -194,6 +194,8 @@ parseVarType = do
   t <- many alphaNum
   return $ EVarType t
 
+i
+
 parsePureVarType :: SParsec (Expr Pure)
 parsePureVarType = do
   v <- parseVarFirst

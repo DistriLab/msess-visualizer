@@ -126,13 +126,13 @@ parseIntLit =
 
 parseMul :: SParsec (Expr Int)
 parseMul =
-  parseAdd `chainl1`
+  parseIntLit `chainl1`
   (do char 'x'
       return EMul)
 
 parseAdd :: SParsec (Expr Int)
 parseAdd =
-  parseIntLit `chainl1`
+  parseAdd `chainl1`
   (do char '+'
       return EAdd)
 

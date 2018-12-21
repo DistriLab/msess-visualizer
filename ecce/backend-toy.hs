@@ -116,7 +116,7 @@ parseOr = do
  - SUBSECTION INT
  -}
 parseInt :: SParsec (Expr Int)
-parseInt = choice [parseAdd, parseIntLit]
+parseInt = parseAdd
 
 parseIntLit :: SParsec (Expr Int)
 parseIntLit = do

@@ -135,6 +135,62 @@ anyExpr :: SParsec (Expr a) -> SParsec AnyExpr
 anyExpr e = fmap AnyExpr e
 
 {-
+ - SECTION LEXER
+ -}
+languageDef =
+  emptyDef
+    { Token.commentStart = "/*"
+    , Token.commentEnd = "*/"
+    , Token.commentLine = "//"
+    , Token.identStart = letter
+    , Token.identLetter = alphaNum
+    , Token.reservedNames =
+        [ "if"
+        , "then"
+        , "else"
+        , "while"
+        , "do"
+        , "skip"
+        , "true"
+        , "false"
+        , "not"
+        , "and"
+        , "or"
+        ]
+    , Token.reservedOpNames =
+        ["+", "-", "*", "/", ":=", "<", ">", "and", "or", "not"]
+    }
+
+lexer = Token.makeTokenParser languageDef
+
+identifier = Token.identifier lexer -- parses an identifier
+
+reserved = Token.reserved lexer -- parses a reserved name
+
+reservedOp = Token.reservedOp lexer -- parses an operator
+
+parens = Token.parens lexer -- parses surrounding parenthesis:
+                                    --   parens p
+                                    -- takes care of the parenthesis and
+                                    -- uses p to parse what's inside them
+
+integer = Token.integer lexer -- parses an integer
+
+semi = Token.semi lexer -- parses a semicolon
+
+whiteSpace = Token.whiteSpace lexer -- parses whitespace
+
+aOperators =
+  [ [Prefix (reservedOp "-" >> return (Neg))]
+  , [ Infix (reservedOp "*" >> return (ABinary Multiply)) AssocLeft
+    , Infix (reservedOp "/" >> return (ABinary Divide)) AssocLeft
+    ]
+  , [ Infix (reservedOp "+" >> return (ABinary Add)) AssocLeft
+    , Infix (reservedOp "-" >> return (ABinary Subtract)) AssocLeft
+    ]
+  ]
+
+{-
  - SECTION PARSERS
  -}
 extractParse :: SParsec a -> String -> a
@@ -142,6 +198,19 @@ extractParse p s =
   case parse p "" s of
     Left x -> error $ show x
     Right x -> x
+
+aTerm = parens aExpression <|> liftM Var identifier <|> liftM IntConst integer
+
+bTerm =
+  parens bExpression <|> (reserved "true" >> return (BoolConst True)) <|>
+  (reserved "false" >> return (BoolConst False)) <|>
+  rExpression
+
+aExpression :: Parser AExpr
+aExpression = buildExpressionParser aOperators aTerm
+
+bExpression :: Parser BExpr
+bExpression = buildExpressionParser bOperators bTerm
 
 {-
  - SUBSECTION pred
@@ -198,6 +267,13 @@ parsePure =
   try parsePureExists <|>
   try parsePureForall <|>
   try parsePurePointer
+
+pureOperators =
+  [ [Prefix (reservedOp "~" >> return (EPureNot))]
+  , [ Infix (reservedOp "^" >> return (EPureAnd)) AssocLeft
+    , Infix (reservedOp "v" >> return (EPureOr)) AssocLeft
+    ]
+  ]
 
 -- Helper function, lift VarType into Expr VarType
 parseVarType :: SParsec (Expr VarType)
@@ -316,6 +392,13 @@ parseBoolEq = do
     (do char '='
         return EBoolEq)
 
+bOperators =
+  [ [Prefix (reservedOp "not" >> return (Not))]
+  , [ Infix (reservedOp "and" >> return (BBinary And)) AssocLeft
+    , Infix (reservedOp "or" >> return (BBinary Or)) AssocLeft
+    ]
+  ]
+
 {-
  - SUBSECTION a
  -}
@@ -380,5 +463,5 @@ parseIntNeg = do
  -}
 parseExpr :: SParsec AnyExpr
 parseExpr = do
-  e <- anyExpr parseInt
+  e <- anyExpr parseBool
   return e

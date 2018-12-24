@@ -9,13 +9,17 @@
 -- Allows ambiguity check in instance declarations, to use sites
 {-# LANGUAGE AllowAmbiguousTypes #-}
 
+import Control.Monad
 import Data.List (intercalate)
 import System.IO (IOMode(ReadMode), hClose, hGetContents, openFile)
+import Text.ParserCombinators.Parsec.Expr
+import Text.ParserCombinators.Parsec.Language
 
 {-
  - SECTION IMPORTS
  -}
 import Text.Parsec
+import qualified Text.ParserCombinators.Parsec.Token as Token
 
 {-
  - SECTION USER INTERFACE
@@ -54,9 +58,10 @@ data Expr a where
   ENot :: Expr Bool -> Expr Bool
   EAnd :: Expr Bool -> Expr Bool -> Expr Bool
   EOr :: Expr Bool -> Expr Bool -> Expr Bool
-  EInt :: Int -> Expr Int
-  EMul :: Expr Int -> Expr Int -> Expr Int
-  EAdd :: Expr Int -> Expr Int -> Expr Int
+  EInteger :: Integer -> Expr Integer
+  ENeg :: Expr Integer -> Expr Integer
+  EMul :: Expr Integer -> Expr Integer -> Expr Integer
+  EAdd :: Expr Integer -> Expr Integer -> Expr Integer
 
 -- Existentially quantify Expr
 -- Contains a well-formed Expr, but precise type of Expr is secret
@@ -72,6 +77,39 @@ anyExpr :: SParsec (Expr a) -> SParsec AnyExpr
 anyExpr e = fmap AnyExpr e
 
 {-
+ - SECTION LEXER
+ -}
+languageDef =
+  emptyDef
+    { Token.commentStart = "/*"
+    , Token.commentEnd = "*/"
+    , Token.commentLine = "//"
+    , Token.identStart = letter
+    , Token.identLetter = alphaNum
+    , Token.reservedNames = ["true", "false", "~", "^", "v"]
+    , Token.reservedOpNames = ["+", "-", "x", "^", "v", "~"]
+    }
+
+lexer = Token.makeTokenParser languageDef
+
+identifier = Token.identifier lexer -- parses an identifier
+
+reserved = Token.reserved lexer -- parses a reserved name
+
+reservedOp = Token.reservedOp lexer -- parses an operator
+
+parens = Token.parens lexer -- parses surrounding parenthesis:
+                                    --   parens p
+                                    -- takes care of the parenthesis and
+                                    -- uses p to parse what's inside them
+
+integer = Token.integer lexer -- parses an integer
+
+semi = Token.semi lexer -- parses a semicolon
+
+whiteSpace = Token.whiteSpace lexer -- parses whitespace
+
+{-
  - SECTION PARSERS
  -}
 extractParse :: SParsec a -> String -> a
@@ -84,60 +122,37 @@ extractParse p s =
  - SUBSECTION BOOL
  -}
 parseBool :: SParsec (Expr Bool)
-parseBool = parseAnd
+parseBool = buildExpressionParser opBool termBool
 
-parseBoolLit :: SParsec (Expr Bool)
-parseBoolLit = do
-  b <-
-    (do string "True"
-        return $ EBool True) <|>
-    (do string "False"
-        return $ EBool False)
-  return b
+opBool =
+  [ [Prefix (reservedOp "~" >> return (ENot))]
+  , [ Infix (reservedOp "&" >> return (EAnd)) AssocLeft
+    , Infix (reservedOp "|" >> return (EOr)) AssocLeft
+    ]
+  ]
 
-parseNot :: SParsec (Expr Bool)
-parseNot = do
-  char '~'
-  b <- parseBoolLit
-  return $ ENot b
-
-parseAnd :: SParsec (Expr Bool)
-parseAnd = do
-  parseOr `chainl1`
-    (do char '&'
-        return EAnd)
-
-parseOr :: SParsec (Expr Bool)
-parseOr = do
-  (parseNot <|> parseBoolLit) `chainl1`
-    (do char '|'
-        return EOr)
+termBool =
+  parens parseBool <|> (reserved "true" >> return (EBool True)) <|>
+  (reserved "false" >> return (EBool False))
 
 {-
  - SUBSECTION INT
  -}
-parseInt :: SParsec (Expr Int)
-parseInt = parseAdd
+parseInteger :: SParsec (Expr Integer)
+parseInteger = buildExpressionParser opInteger termInteger
 
-parseIntLit :: SParsec (Expr Int)
-parseIntLit = parsecMap (EInt . read) (many digit)
+opInteger =
+  [ [Prefix (reservedOp "-" >> return (ENeg))]
+  , [Infix (reservedOp "x" >> return (EMul)) AssocLeft]
+  , [Infix (reservedOp "+" >> return (EAdd)) AssocLeft]
+  ]
 
-parseMul :: SParsec (Expr Int)
-parseMul =
-  parseIntLit `chainl1`
-  (do char 'x'
-      return EMul)
-
-parseAdd :: SParsec (Expr Int)
-parseAdd =
-  parseMul `chainl1`
-  (do char '+'
-      return EAdd)
+termInteger = parens parseInteger <|> liftM EInteger integer
 
 {-
  - SUBSECTION EXPR
  -}
 parseExpr :: SParsec AnyExpr
 parseExpr = do
-  e <- try (anyExpr parseBool) <|> try (anyExpr parseInt)
+  e <- try (anyExpr parseBool) <|> try (anyExpr parseInteger)
   return e

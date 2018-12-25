@@ -75,6 +75,8 @@ interpreter = do
  -}
 type SParsec = Parsec String ()
 
+type SymbolicPredicate = String
+
 type FormulaDisjunct = String
 
 type Formula = String
@@ -95,8 +97,14 @@ type BoolInteger = Integer
 
 data Expr a
   {- pred ::= p(root,v*) = Φ inv π -}
-  {- Φ ::= VΔ -}
       where
+  ESymbolicPredicate
+    :: Expr Pointer
+    -> [Expr VarFirst]
+    -> Expr FormulaDisjunct
+    -> Expr Pure
+    -> Expr SymbolicPredicate
+  {- Φ ::= VΔ -}
   EFormulaDisjunct :: [Expr Formula] -> Expr FormulaDisjunct
   {- Δ ::= ∃v*.κ^π | Δ*Δ -}
   EFormulaExists :: [Expr VarFirst] -> Expr Heap -> Expr Pure -> Expr Formula
@@ -215,6 +223,16 @@ extractParse p s =
 {-
  - SUBSECTION pred
  -}
+parseSymbolicPredicate :: SParsec (Expr SymbolicPredicate)
+parseSymbolicPredicate = do
+  po <- parsePointer
+  vs <- between (string "(root,") (char ')') (parseVarFirst `sepBy` (char ','))
+  string " = "
+  fd <- parseFormulaDisjunct
+  string "inv"
+  pu <- parsePure
+  return $ ESymbolicPredicate po vs fd pu
+
 {-
  - SUBSECTION Φ
  -}
@@ -433,7 +451,8 @@ parseVarFirst = liftM EVarFirst integer
 parseExpr :: SParsec AnyExpr
 parseExpr = do
   e <-
-    try (anyExpr parseFormula) <|> try (anyExpr parseFormulaDisjunct) <|>
+    try (anyExpr parseSymbolicPredicate) <|> try (anyExpr parseFormula) <|>
+    try (anyExpr parseFormulaDisjunct) <|>
     try (anyExpr parsePointer) <|>
     try (anyExpr parseHeap) <|>
     try (anyExpr parseBoolInteger) <|>

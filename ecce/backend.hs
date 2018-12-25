@@ -193,8 +193,10 @@ parseHeap = buildExpressionParser opHeap termHeap
 opHeap = [[Infix (reservedOp "*" >> return EHeapSeparate) AssocLeft]]
 
 termHeap =
-  parens parseHeap <|> (reserved "emp" >> return EHeapEmp) <|> parseHeapMap <|>
-  parseHeapPointer
+  parens parseHeap <|> parseHeapEmp <|> parseHeapMap <|> parseHeapPointer
+
+parseHeapEmp :: SParsec (Expr Heap)
+parseHeapEmp = reserved "emp" >> return EHeapEmp
 
 parseHeapMap :: SParsec (Expr Heap)
 parseHeapMap = do

@@ -83,14 +83,13 @@ data Expr a
   {- Φ ::= VΔ -}
   {- Δ ::= ∃v*.k^π | Δ*Δ -}
   {- κ ::= emp | v↦d<v*> | p(v*) | κ*κ | V -}
-  {- π ::= v:t | b | a | π^π | πvπ | ~π | ∃v.π | ∀v.π | γ -}
-  {- γ ::= v=v | v=null | v/=v | v/=null -}
       where
-  EHeap :: Heap -> Expr Heap
   EHeapEmp :: Expr Heap
   EHeapMap :: Expr VarFirst -> Expr VarFirst -> Expr Heap
   EHeapPointer :: Expr VarFirst -> Expr Heap
   EHeapSeparate :: Expr Heap -> Expr Heap -> Expr Heap
+  {- π ::= v:t | b | a | π^π | πvπ | ~π | ∃v.π | ∀v.π | γ -}
+  {- γ ::= v=v | v=null | v/=v | v/=null -}
   {- b ::= true | false | b=b -}
   EBool :: Bool -> Expr Bool
   EBoolEq :: Expr Bool -> Expr Bool -> Expr Bool
@@ -178,8 +177,7 @@ opHeap = [[Infix (reservedOp "*" >> return EHeapSeparate) AssocLeft]]
 
 termHeap =
   parens parseHeap <|> (reserved "emp" >> return EHeapEmp) <|> parseHeapMap <|>
-  parseHeapPointer <|>
-  liftM EHeap identifier
+  parseHeapPointer
 
 -- TODO does opTable allow for parsing different types?
 -- TODO define user-defined data type d

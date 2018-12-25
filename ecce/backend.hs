@@ -20,6 +20,7 @@ import Text.Parsec
   ( Parsec
   , (<|>)
   , alphaNum
+  , between
   , char
   , choice
   , letter
@@ -200,9 +201,7 @@ parseHeapMap = do
   v1 <- parseVarFirst
   string "->"
   d <- liftM EDataStructure identifier
-  char '<'
-  vs <- sepBy parseVarFirst (char ',')
-  char '>'
+  vs <- between (char '<') (char '>') (sepBy parseVarFirst (char ','))
   return $ EHeapMap v1 d vs
 
 parseHeapPointer :: SParsec (Expr Heap)

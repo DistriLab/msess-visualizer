@@ -434,10 +434,10 @@ parseExpr :: SParsec AnyExpr
 parseExpr = do
   e <-
     try (anyExpr parseFormula) <|> try (anyExpr parseFormulaDisjunct) <|>
-    try (anyExpr parsePure) <|>
     try (anyExpr parsePointer) <|>
     try (anyExpr parseHeap) <|>
     try (anyExpr parseBoolInteger) <|>
     try (anyExpr parseInteger) <|>
-    try (anyExpr parseBool)
+    try (anyExpr parseBool) <|>
+    try (anyExpr parsePure)
   return e

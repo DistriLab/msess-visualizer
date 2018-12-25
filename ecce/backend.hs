@@ -105,7 +105,7 @@ data Expr a
   EHeapEmp :: Expr Heap
   EHeapMap
     :: Expr VarFirst -> Expr DataStructure -> [Expr VarFirst] -> Expr Heap
-  EHeapPointer :: [Expr VarFirst] -> Expr Heap
+  EHeapPointer :: Expr Pointer -> [Expr VarFirst] -> Expr Heap
   EHeapSeparate :: Expr Heap -> Expr Heap -> Expr Heap
   EDataStructure :: DataStructure -> Expr DataStructure
   {- π ::= v:t | b | a | π^π | πvπ | ~π | ∃v.π | ∀v.π | γ -}
@@ -267,10 +267,9 @@ parseHeapMap = do
 
 parseHeapPointer :: SParsec (Expr Heap)
 parseHeapPointer = do
-  string "p("
-  vs <- parseVarFirst `sepBy` (char ',')
-  char ')'
-  return $ EHeapPointer vs
+  p <- parsePointer
+  vs <- between (char '(') (char ')') (parseVarFirst `sepBy` (char ','))
+  return $ EHeapPointer p vs
 
 {-
  - SUBSECTION π

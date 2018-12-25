@@ -25,6 +25,7 @@ import Text.Parsec
   , letter
   , parse
   , sepBy
+  , sepBy1
   , string
   , try
   )
@@ -219,7 +220,7 @@ extractParse p s =
  -}
 parseFormulaDisjunct :: SParsec (Expr FormulaDisjunct)
 parseFormulaDisjunct = do
-  fs <- parseFormula `sepBy` (char ',')
+  fs <- parseFormula `sepBy1` (char ',')
   return $ EFormulaDisjunct fs
 
 {-

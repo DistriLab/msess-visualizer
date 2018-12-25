@@ -25,6 +25,7 @@ import Text.Parsec
   , letter
   , many
   , parse
+  , sepBy
   , string
   , try
   )
@@ -78,16 +79,20 @@ type VarFirst = Integer
 
 type Heap = String
 
+type DataStructure = String
+
 data Expr a
   {- pred ::= p(root,v*) = Φ inv π -}
   {- Φ ::= VΔ -}
   {- Δ ::= ∃v*.k^π | Δ*Δ -}
-  {- κ ::= emp | v↦d<v*> | p(v*) | κ*κ | V -}
+  {- κ ::= emp | v↦d<v*> | p(v*) | κ*κ -}
       where
   EHeapEmp :: Expr Heap
-  EHeapMap :: Expr VarFirst -> Expr VarFirst -> Expr Heap
-  EHeapPointer :: Expr VarFirst -> Expr Heap
+  EHeapMap
+    :: Expr VarFirst -> Expr DataStructure -> [Expr VarFirst] -> Expr Heap
+  EHeapPointer :: [Expr VarFirst] -> Expr Heap
   EHeapSeparate :: Expr Heap -> Expr Heap -> Expr Heap
+  EDataStructure :: DataStructure -> Expr DataStructure
   {- π ::= v:t | b | a | π^π | πvπ | ~π | ∃v.π | ∀v.π | γ -}
   {- γ ::= v=v | v=null | v/=v | v/=null -}
   {- b ::= true | false | b=b -}
@@ -179,21 +184,22 @@ termHeap =
   parens parseHeap <|> (reserved "emp" >> return EHeapEmp) <|> parseHeapMap <|>
   parseHeapPointer
 
--- TODO does opTable allow for parsing different types?
--- TODO define user-defined data type d
 parseHeapMap :: SParsec (Expr Heap)
 parseHeapMap = do
   v1 <- parseVarFirst
   string "->"
-  v2 <- parseVarFirst
-  return $ EHeapMap v1 v2
+  d <- liftM EDataStructure identifier
+  char '<'
+  vs <- sepBy parseVarFirst (char ',')
+  char '>'
+  return $ EHeapMap v1 d vs
 
 parseHeapPointer :: SParsec (Expr Heap)
 parseHeapPointer = do
   string "p("
-  v <- parseVarFirst
+  vs <- sepBy parseVarFirst (char ',')
   char ')'
-  return $ EHeapPointer v
+  return $ EHeapPointer vs
 
 {-
  - SUBSECTION π

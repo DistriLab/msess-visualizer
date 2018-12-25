@@ -271,14 +271,14 @@ parseBoolInteger = try parseBoolIntegerEq <|> try parseBoolIntegerLeq
 parseBoolIntegerEq :: SParsec (Expr BoolInteger)
 parseBoolIntegerEq = do
   s1 <- parseInteger
-  char '='
+  reservedOp "="
   s2 <- parseInteger
   return $ EBoolIntegerEq s1 s2
 
 parseBoolIntegerLeq :: SParsec (Expr BoolInteger)
 parseBoolIntegerLeq = do
   s1 <- parseInteger
-  string "<="
+  reservedOp "<="
   s2 <- parseInteger
   return $ EBoolIntegerLeq s1 s2
 

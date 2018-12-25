@@ -304,11 +304,7 @@ parseIntegerVarFirst = do
 
 -- Also define VarFirst
 parseVarFirst :: SParsec (Expr VarFirst)
-parseVarFirst = buildExpressionParser opVarFirst termVarFirst
-
-opVarFirst = [[]]
-
-termVarFirst = parens parseVarFirst <|> liftM EVarFirst integer
+parseVarFirst = liftM EVarFirst integer
 
 {-
  - SUBSECTION PROTOCOL

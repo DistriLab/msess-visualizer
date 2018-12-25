@@ -131,8 +131,8 @@ languageDef =
     , Token.commentLine = "//"
     , Token.identStart = letter
     , Token.identLetter = alphaNum
-    , Token.reservedNames = ["true", "false", "~", "^", "v"]
-    , Token.reservedOpNames = ["+", "-", "x", "^", "v", "~"]
+    , Token.reservedNames = ["true", "false", "~", "^", "v", "emp"]
+    , Token.reservedOpNames = ["+", "-", "x", "^", "v", "~", "*", "="]
     }
 
 lexer = Token.makeTokenParser languageDef

@@ -22,9 +22,7 @@ import Text.Parsec
   , alphaNum
   , between
   , char
-  , choice
   , letter
-  , many
   , parse
   , sepBy
   , string
@@ -258,7 +256,7 @@ parsePointerNNull = do
 parseBool :: SParsec (Expr Bool)
 parseBool = buildExpressionParser opBool termBool
 
-opBool = [[Infix (reservedOp "=" >> return (EBoolEq)) AssocLeft]]
+opBool = [[Infix (reservedOp "=" >> return EBoolEq) AssocLeft]]
 
 termBool =
   parens parseBool <|> (reserved "true" >> return (EBool True)) <|>

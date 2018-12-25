@@ -142,9 +142,9 @@ languageDef =
     , Token.commentLine = "//"
     , Token.identStart = letter
     , Token.identLetter = alphaNum
-    , Token.reservedNames = ["true", "false", "~", "^", "v", "emp"]
+    , Token.reservedNames = ["true", "false", "~", "^", "v", "emp", "null"]
     , Token.reservedOpNames =
-        ["+", "-", "x", "^", "v", "~", "*", "=", "<=", "/=", "=null", "/=null"]
+        ["+", "-", "x", "^", "v", "~", "*", "=", "<=", "/=", "=", "/="]
     }
 
 lexer = Token.makeTokenParser languageDef
@@ -232,20 +232,22 @@ parsePointerEq = do
 parsePointerNull :: SParsec (Expr Pointer)
 parsePointerNull = do
   v <- parseVarFirst
-  string "=null"
+  reservedOp "="
+  reserved "null"
   return $ EPointerNull v
 
 parsePointerNeq :: SParsec (Expr Pointer)
 parsePointerNeq = do
   v1 <- parseVarFirst
-  string "/="
+  reservedOp "/="
   v2 <- parseVarFirst
   return $ EPointerNeq v1 v2
 
 parsePointerNNull :: SParsec (Expr Pointer)
 parsePointerNNull = do
   v <- parseVarFirst
-  string "/=null"
+  reservedOp "/="
+  reserved "null"
   return $ EPointerNNull v
 
 {-

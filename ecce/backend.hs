@@ -80,6 +80,10 @@ type Heap = String
 
 type DataStructure = String
 
+type Pure = String
+
+type VarType = String
+
 type Pointer = Integer
 
 type BoolInteger = Integer
@@ -97,6 +101,16 @@ data Expr a
   EHeapSeparate :: Expr Heap -> Expr Heap -> Expr Heap
   EDataStructure :: DataStructure -> Expr DataStructure
   {- π ::= v:t | b | a | π^π | πvπ | ~π | ∃v.π | ∀v.π | γ -}
+  EVarType :: VarType -> Expr VarType
+  EPureVarType :: Expr VarFirst -> Expr VarType -> Expr Pure
+  EPureBool :: Expr Bool -> Expr Pure
+  EPureBoolInteger :: Expr BoolInteger -> Expr Pure
+  EPureAnd :: Expr Pure -> Expr Pure -> Expr Pure
+  EPureOr :: Expr Pure -> Expr Pure -> Expr Pure
+  EPureNot :: Expr Pure -> Expr Pure
+  EPureExists :: Expr VarFirst -> Expr Pure -> Expr Pure
+  EPureForall :: Expr VarFirst -> Expr Pure -> Expr Pure
+  EPurePointer :: Expr Pointer -> Expr Pure
   {- γ ::= v=v | v=null | v/=v | v/=null -}
   EPointerEq :: Expr VarFirst -> Expr VarFirst -> Expr Pointer
   EPointerNull :: Expr VarFirst -> Expr Pointer
@@ -140,9 +154,26 @@ languageDef =
     , Token.commentLine = "//"
     , Token.identStart = letter
     , Token.identLetter = alphaNum
-    , Token.reservedNames = ["true", "false", "~", "^", "v", "emp", "null"]
+    , Token.reservedNames = ["true", "false", "emp", "null"]
     , Token.reservedOpNames =
-        ["+", "-", "x", "^", "v", "~", "*", "=", "<=", "/=", "=", "/="]
+        [ "+"
+        , "-"
+        , "x"
+        , "~"
+        , "^"
+        , "v"
+        , "~"
+        , "*"
+        , "="
+        , "<="
+        , "/="
+        , "="
+        , "/="
+        , ":"
+        , "."
+        , "E"
+        , "A"
+        ]
     }
 
 lexer = Token.makeTokenParser languageDef
@@ -214,6 +245,64 @@ parseHeapPointer = do
 {-
  - SUBSECTION π
  -}
+parsePure :: SParsec (Expr Pure)
+parsePure = buildExpressionParser opPure termPure
+
+opPure =
+  [ [Prefix (reservedOp "~" >> return EPureNot)]
+  , [ Infix (reservedOp "^" >> return EPureAnd) AssocLeft
+    , Infix (reservedOp "v" >> return EPureOr) AssocLeft
+    ]
+  ]
+
+termPure =
+  parens parsePure <|> try parsePureVarType <|> try parsePureBool <|>
+  try parsePureBoolInteger <|>
+  try parsePureExists <|>
+  try parsePureForall <|>
+  try parsePurePointer
+
+parsePureVarType :: SParsec (Expr Pure)
+parsePureVarType = do
+  v <- parseVarFirst
+  reservedOp ":"
+  t <- parseVarType
+  return $ EPureVarType v t
+
+parseVarType :: SParsec (Expr VarType)
+parseVarType = liftM EVarType identifier
+
+parsePureBool :: SParsec (Expr Pure)
+parsePureBool = do
+  b <- parseBool
+  return $ EPureBool b
+
+parsePureBoolInteger :: SParsec (Expr Pure)
+parsePureBoolInteger = do
+  bi <- parseBoolInteger
+  return $ EPureBoolInteger bi
+
+parsePureExists :: SParsec (Expr Pure)
+parsePureExists = do
+  reservedOp "E"
+  v <- parseVarFirst
+  reservedOp "."
+  p <- parsePure
+  return $ EPureExists v p
+
+parsePureForall :: SParsec (Expr Pure)
+parsePureForall = do
+  reservedOp "A"
+  v <- parseVarFirst
+  reservedOp "."
+  p <- parsePure
+  return $ EPureForall v p
+
+parsePurePointer :: SParsec (Expr Pure)
+parsePurePointer = do
+  p <- parsePointer
+  return $ EPurePointer p
+
 {-
  - SUBSECTION γ
  -}
@@ -315,7 +404,8 @@ parseVarFirst = liftM EVarFirst integer
 parseExpr :: SParsec AnyExpr
 parseExpr = do
   e <-
-    try (anyExpr parsePointer) <|> try (anyExpr parseHeap) <|>
+    try (anyExpr parsePure) <|> try (anyExpr parsePointer) <|>
+    try (anyExpr parseHeap) <|>
     try (anyExpr parseBoolInteger) <|>
     try (anyExpr parseInteger) <|>
     try (anyExpr parseBool)

@@ -81,6 +81,8 @@ type Heap = String
 
 type DataStructure = String
 
+type BoolInteger = Integer
+
 data Expr a
   {- pred ::= p(root,v*) = Φ inv π -}
   {- Φ ::= VΔ -}
@@ -98,7 +100,9 @@ data Expr a
   {- b ::= true | false | b=b -}
   EBool :: Bool -> Expr Bool
   EBoolEq :: Expr Bool -> Expr Bool -> Expr Bool
-  {- a ::= s=s | s<=s | TODO maybe V=Δ -}
+  {- a ::= s=s | s<=s -}
+  EBoolIntegerEq :: Expr Integer -> Expr Integer -> Expr BoolInteger
+  EBoolIntegerLeq :: Expr Integer -> Expr Integer -> Expr BoolInteger
   {- s ::= k | v | k x s | s + s | -s -}
   EInteger :: Integer -> Expr Integer
   EVarFirst :: VarFirst -> Expr VarFirst
@@ -132,7 +136,7 @@ languageDef =
     , Token.identStart = letter
     , Token.identLetter = alphaNum
     , Token.reservedNames = ["true", "false", "~", "^", "v", "emp"]
-    , Token.reservedOpNames = ["+", "-", "x", "^", "v", "~", "*", "="]
+    , Token.reservedOpNames = ["+", "-", "x", "^", "v", "~", "*", "=", "<="]
     }
 
 lexer = Token.makeTokenParser languageDef
@@ -222,6 +226,23 @@ termBool =
 {-
  - SUBSECTION a
  -}
+parseBoolInteger :: SParsec (Expr BoolInteger)
+parseBoolInteger = try parseBoolIntegerEq <|> try parseBoolIntegerLeq
+
+parseBoolIntegerEq :: SParsec (Expr BoolInteger)
+parseBoolIntegerEq = do
+  s1 <- parseInteger
+  char '='
+  s2 <- parseInteger
+  return $ EBoolIntegerEq s1 s2
+
+parseBoolIntegerLeq :: SParsec (Expr BoolInteger)
+parseBoolIntegerLeq = do
+  s1 <- parseInteger
+  string "<="
+  s2 <- parseInteger
+  return $ EBoolIntegerLeq s1 s2
+
 {-
  - SUBSECTION s
  -}
@@ -259,6 +280,7 @@ termVarFirst = parens parseVarFirst <|> liftM EVarFirst integer
 parseExpr :: SParsec AnyExpr
 parseExpr = do
   e <-
-    try (anyExpr parseHeap) <|> try (anyExpr parseInteger) <|>
+    try (anyExpr parseHeap) <|> try (anyExpr parseBoolInteger) <|>
+    try (anyExpr parseInteger) <|>
     try (anyExpr parseBool)
   return e

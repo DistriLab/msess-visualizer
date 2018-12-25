@@ -9,13 +9,32 @@
 -- Allows deriving for empty data types
 {-# LANGUAGE EmptyDataDeriving #-}
 
-import Data.List (intercalate)
-import System.IO (IOMode(ReadMode), hClose, hGetContents, openFile)
-
 {-
  - SECTION IMPORTS
+import Text.ParserCombinators.Parsec.Language
  -}
+import Control.Monad (liftM)
+import Data.List (intercalate)
+import System.IO (IOMode(ReadMode), hClose, hGetContents, openFile)
 import Text.Parsec
+  ( Parsec
+  , (<|>)
+  , alphaNum
+  , char
+  , choice
+  , letter
+  , many
+  , parse
+  , string
+  , try
+  )
+import Text.ParserCombinators.Parsec.Expr
+  ( Assoc(AssocLeft)
+  , Operator(Infix, Postfix, Prefix)
+  , buildExpressionParser
+  )
+import Text.ParserCombinators.Parsec.Language (emptyDef)
+import qualified Text.ParserCombinators.Parsec.Token as Token
 
 {-
  - SECTION USER INTERFACE
@@ -55,78 +74,42 @@ interpreter = do
  -}
 type SParsec = Parsec String ()
 
+type VarFirst = Integer
+
 type Heap = String
-
-type Pure = String
-
-type Pointer = String
-
-type BoolInt = Int
-
-type VarType = String
-
-type VarFirst = Int
-
-type VarSecond = String
-
-type Prot = String
-
-type Role = Int
-
-type Chan = Int
-
-type Label = Int
 
 data Expr a
   {- pred ::= p(root,v*) = Φ inv π -}
   {- Φ ::= VΔ -}
   {- Δ ::= ∃v*.k^π | Δ*Δ -}
   {- κ ::= emp | v↦d<v*> | p(v*) | κ*κ | V -}
+  {- π ::= v:t | b | a | π^π | πvπ | ~π | ∃v.π | ∀v.π | γ -}
+  {- γ ::= v=v | v=null | v/=v | v/=null -}
       where
+  EHeap :: Heap -> Expr Heap
   EHeapEmp :: Expr Heap
   EHeapMap :: Expr VarFirst -> Expr VarFirst -> Expr Heap
   EHeapPointer :: Expr VarFirst -> Expr Heap
   EHeapSeparate :: Expr Heap -> Expr Heap -> Expr Heap
-  {- π ::= v:t | b | a | π^π | πvπ | ~π | ∃v.π | ∀v.π | γ -}
-  EVarType :: VarType -> Expr VarType
-  EPureVarType :: Expr VarFirst -> Expr VarType -> Expr Pure
-  EPureBool :: Expr Bool -> Expr Pure
-  EPureBoolInt :: Expr BoolInt -> Expr Pure
-  EPureAnd :: Expr Pure -> Expr Pure -> Expr Pure
-  EPureOr :: Expr Pure -> Expr Pure -> Expr Pure
-  EPureNot :: Expr Pure -> Expr Pure
-  EPureExists :: Expr VarFirst -> Expr Pure -> Expr Pure
-  EPureForall :: Expr VarFirst -> Expr Pure -> Expr Pure
-  EPurePointer :: Expr Pointer -> Expr Pure
-  {- γ ::= v=v | v=null | v/=v | v/=null -}
-  EPointerEq :: Expr VarFirst -> Expr VarFirst -> Expr Pointer
-  EPointerNull :: Expr VarFirst -> Expr Pointer
-  EPointerDiseq :: Expr VarFirst -> Expr VarFirst -> Expr Pointer
-  EPointerNotNull :: Expr VarFirst -> Expr Pointer
   {- b ::= true | false | b=b -}
   EBool :: Bool -> Expr Bool
   EBoolEq :: Expr Bool -> Expr Bool -> Expr Bool
   {- a ::= s=s | s<=s | TODO maybe V=Δ -}
-  EBoolInt :: BoolInt -> Expr BoolInt
-  EBoolIntEq :: Expr Int -> Expr Int -> Expr BoolInt
-  EBoolIntLeq :: Expr Int -> Expr Int -> Expr BoolInt
   {- s ::= k | v | k x s | s + s | -s -}
-  EInt :: Int -> Expr Int
-  EVarFirst :: Expr VarFirst -> Expr Int
-  EIntMul :: Expr Int -> Expr Int -> Expr Int
-  EIntAdd :: Expr Int -> Expr Int -> Expr Int
-  EIntNeg :: Expr Int -> Expr Int
+  EInteger :: Integer -> Expr Integer
+  EVarFirst :: VarFirst -> Expr VarFirst
+  EIntegerVarFirst :: Expr VarFirst -> Expr Integer
+  EIntegerMul :: Expr Integer -> Expr Integer -> Expr Integer
+  EIntegerAdd :: Expr Integer -> Expr Integer -> Expr Integer
+  EIntegerNeg :: Expr Integer -> Expr Integer
   {- G ::= G*G | GVG | G;G -}
-  EConcurrency :: Expr Prot -> Expr Prot -> Expr Prot
-  EChoice :: Expr Prot -> Expr Prot -> Expr Prot
-  ESequencing :: Expr Prot -> Expr Prot -> Expr Prot
+
+deriving instance Show (Expr a)
 
 -- Existentially quantify Expr
 -- Contains a well-formed Expr, but precise type of Expr is secret
 data AnyExpr where
   AnyExpr :: Expr a -> AnyExpr
-
-deriving instance Show (Expr a)
 
 instance Show (AnyExpr) where
   show (AnyExpr a) = show a
@@ -144,21 +127,8 @@ languageDef =
     , Token.commentLine = "//"
     , Token.identStart = letter
     , Token.identLetter = alphaNum
-    , Token.reservedNames =
-        [ "if"
-        , "then"
-        , "else"
-        , "while"
-        , "do"
-        , "skip"
-        , "true"
-        , "false"
-        , "not"
-        , "and"
-        , "or"
-        ]
-    , Token.reservedOpNames =
-        ["+", "-", "*", "/", ":=", "<", ">", "and", "or", "not"]
+    , Token.reservedNames = ["true", "false", "~", "^", "v"]
+    , Token.reservedOpNames = ["+", "-", "x", "^", "v", "~"]
     }
 
 lexer = Token.makeTokenParser languageDef
@@ -180,16 +150,6 @@ semi = Token.semi lexer -- parses a semicolon
 
 whiteSpace = Token.whiteSpace lexer -- parses whitespace
 
-aOperators =
-  [ [Prefix (reservedOp "-" >> return (Neg))]
-  , [ Infix (reservedOp "*" >> return (ABinary Multiply)) AssocLeft
-    , Infix (reservedOp "/" >> return (ABinary Divide)) AssocLeft
-    ]
-  , [ Infix (reservedOp "+" >> return (ABinary Add)) AssocLeft
-    , Infix (reservedOp "-" >> return (ABinary Subtract)) AssocLeft
-    ]
-  ]
-
 {-
  - SECTION PARSERS
  -}
@@ -198,19 +158,6 @@ extractParse p s =
   case parse p "" s of
     Left x -> error $ show x
     Right x -> x
-
-aTerm = parens aExpression <|> liftM Var identifier <|> liftM IntConst integer
-
-bTerm =
-  parens bExpression <|> (reserved "true" >> return (BoolConst True)) <|>
-  (reserved "false" >> return (BoolConst False)) <|>
-  rExpression
-
-aExpression :: Parser AExpr
-aExpression = buildExpressionParser aOperators aTerm
-
-bExpression :: Parser BExpr
-bExpression = buildExpressionParser bOperators bTerm
 
 {-
  - SUBSECTION pred
@@ -225,14 +172,16 @@ bExpression = buildExpressionParser bOperators bTerm
  - SUBSECTION κ
  -}
 parseHeap :: SParsec (Expr Heap)
-parseHeap =
-  choice [parseHeapEmp, parseHeapMap, parseHeapPointer, parseHeapSeparate]
+parseHeap = buildExpressionParser opHeap termHeap
 
-parseHeapEmp :: SParsec (Expr Heap)
-parseHeapEmp = do
-  string "emp"
-  return $ EHeapEmp
+opHeap = [[Infix (reservedOp "*" >> return EHeapSeparate) AssocLeft]]
 
+termHeap =
+  parens parseHeap <|> (reserved "emp" >> return EHeapEmp) <|> parseHeapMap <|>
+  parseHeapPointer <|>
+  liftM EHeap identifier
+
+-- TODO does opTable allow for parsing different types?
 -- TODO define user-defined data type d
 parseHeapMap :: SParsec (Expr Heap)
 parseHeapMap = do
@@ -245,215 +194,57 @@ parseHeapPointer :: SParsec (Expr Heap)
 parseHeapPointer = do
   string "p("
   v <- parseVarFirst
-  string "*)"
+  char ')'
   return $ EHeapPointer v
-
-parseHeapSeparate :: SParsec (Expr Heap)
-parseHeapSeparate = do
-  p1 <- parseHeap
-  char '*'
-  p2 <- parseHeap
-  return $ EHeapSeparate p1 p2
 
 {-
  - SUBSECTION π
  -}
-parsePure :: SParsec (Expr Pure)
-parsePure =
-  try parsePureVarType <|> try parsePureAnd <|> try parsePureOr <|>
-  try parsePureBool <|>
-  try parsePureBoolInt <|>
-  try parsePureNot <|>
-  try parsePureExists <|>
-  try parsePureForall <|>
-  try parsePurePointer
-
-pureOperators =
-  [ [Prefix (reservedOp "~" >> return (EPureNot))]
-  , [ Infix (reservedOp "^" >> return (EPureAnd)) AssocLeft
-    , Infix (reservedOp "v" >> return (EPureOr)) AssocLeft
-    ]
-  ]
-
--- Helper function, lift VarType into Expr VarType
-parseVarType :: SParsec (Expr VarType)
-parseVarType = do
-  t <- many alphaNum
-  return $ EVarType t
-
-parsePureVarType :: SParsec (Expr Pure)
-parsePureVarType = do
-  v <- parseVarFirst
-  char ':'
-  t <- parseVarType
-  return $ EPureVarType v t
-
-parsePureBool :: SParsec (Expr Pure)
-parsePureBool = do
-  b <- parseBool
-  return $ EPureBool b
-
-parsePureBoolInt :: SParsec (Expr Pure)
-parsePureBoolInt = do
-  bi <- parseBoolInt
-  return $ EPureBoolInt bi
-
-parsePureAnd :: SParsec (Expr Pure)
-parsePureAnd = do
-  p1 <- parsePure
-  char '^'
-  p2 <- parsePure
-  return $ EPureAnd p1 p2
-
-parsePureOr :: SParsec (Expr Pure)
-parsePureOr = do
-  p1 <- parsePure
-  char 'v'
-  p2 <- parsePure
-  return $ EPureOr p1 p2
-
-parsePureNot :: SParsec (Expr Pure)
-parsePureNot = do
-  char '~'
-  p <- parsePure
-  return $ EPureNot p
-
-parsePureExists :: SParsec (Expr Pure)
-parsePureExists = do
-  char 'E'
-  v <- parseVarFirst
-  p <- parsePure
-  return $ EPureExists v p
-
-parsePureForall :: SParsec (Expr Pure)
-parsePureForall = do
-  char 'A'
-  v <- parseVarFirst
-  p <- parsePure
-  return $ EPureForall v p
-
-parsePurePointer :: SParsec (Expr Pure)
-parsePurePointer = do
-  p <- parsePointer
-  return $ EPurePointer p
-
 {-
  - SUBSECTION γ
  -}
-parsePointer :: SParsec (Expr Pointer)
-parsePointer =
-  choice
-    [parsePointerEq, parsePointerNull, parsePointerDiseq, parsePointerNotNull]
-
-parsePointerEq :: SParsec (Expr Pointer)
-parsePointerEq = do
-  v1 <- parseVarFirst
-  char '='
-  v2 <- parseVarFirst
-  return $ EPointerEq v1 v2
-
-parsePointerNull :: SParsec (Expr Pointer)
-parsePointerNull = do
-  v <- parseVarFirst
-  string "=null"
-  return $ EPointerNull v
-
-parsePointerDiseq :: SParsec (Expr Pointer)
-parsePointerDiseq = do
-  v1 <- parseVarFirst
-  string "/="
-  v2 <- parseVarFirst
-  return $ EPointerEq v1 v2
-
-parsePointerNotNull :: SParsec (Expr Pointer)
-parsePointerNotNull = do
-  v <- parseVarFirst
-  string "/=null"
-  return $ EPointerNull v
-
 {-
  - SUBSECTION b
  -}
 parseBool :: SParsec (Expr Bool)
-parseBool = parseBoolEq
+parseBool = buildExpressionParser opBool termBool
 
-parseBoolLit :: SParsec (Expr Bool)
-parseBoolLit = do
-  b <-
-    (do string "True"
-        return $ EBool True) <|>
-    (do string "False"
-        return $ EBool False)
-  return b
+opBool = [[Infix (reservedOp "=" >> return (EBoolEq)) AssocLeft]]
 
-parseBoolEq :: SParsec (Expr Bool)
-parseBoolEq = do
-  parseBoolLit `chainl1`
-    (do char '='
-        return EBoolEq)
-
-bOperators =
-  [ [Prefix (reservedOp "not" >> return (Not))]
-  , [ Infix (reservedOp "and" >> return (BBinary And)) AssocLeft
-    , Infix (reservedOp "or" >> return (BBinary Or)) AssocLeft
-    ]
-  ]
+termBool =
+  parens parseBool <|> (reserved "true" >> return (EBool True)) <|>
+  (reserved "false" >> return (EBool False))
 
 {-
  - SUBSECTION a
  -}
-parseBoolInt :: SParsec (Expr BoolInt)
-parseBoolInt = do
-  choice [parseBoolIntEq, parseBoolIntLeq]
-
-parseBoolIntEq :: SParsec (Expr BoolInt)
-parseBoolIntEq = do
-  s1 <- parseInt
-  char '='
-  s2 <- parseInt
-  return $ EBoolIntEq s1 s2
-
-parseBoolIntLeq :: SParsec (Expr BoolInt)
-parseBoolIntLeq = do
-  s1 <- parseInt
-  string "<="
-  s2 <- parseInt
-  return $ EBoolIntLeq s1 s2
-
 {-
  - SUBSECTION s
  -}
-parseInt :: SParsec (Expr Int)
-parseInt = between (char '(') (char ')') parseIntAdd <|> parseIntAdd
+parseInteger :: SParsec (Expr Integer)
+parseInteger = buildExpressionParser opInteger termInteger
 
-parseIntLit :: SParsec (Expr Int)
-parseIntLit = do
-  s <- many digit
-  return $ EInt (read s)
+opInteger =
+  [ [Prefix (reservedOp "-" >> return EIntegerNeg)]
+  , [Infix (reservedOp "x" >> return EIntegerMul) AssocLeft]
+  , [Infix (reservedOp "+" >> return EIntegerAdd) AssocLeft]
+  ]
 
-parseVarFirst :: SParsec (Expr Int)
-parseVarFirst = do
-  v <- parseInt
-  return $ EVarFirst v
+termInteger =
+  parens parseInteger <|> liftM EInteger integer <|> parseIntegerVarFirst
 
-parseIntMul :: SParsec (Expr Int)
-parseIntMul = do
-  k <- parseIntNeg <|> parseIntLit
-  char 'x'
-  s <- parseInt
-  return $ EIntMul k s
+parseIntegerVarFirst :: SParsec (Expr Integer)
+parseIntegerVarFirst = do
+  v <- parseVarFirst
+  return $ EIntegerVarFirst v
 
-parseIntAdd :: SParsec (Expr Int)
-parseIntAdd =
-  (try parseIntMul <|> try parseIntNeg <|> try parseIntLit) `chainl1`
-  (do char '+'
-      return EIntAdd)
+-- Also define VarFirst
+parseVarFirst :: SParsec (Expr VarFirst)
+parseVarFirst = buildExpressionParser opVarFirst termVarFirst
 
-parseIntNeg :: SParsec (Expr Int)
-parseIntNeg = do
-  char '-'
-  i <- (between (char '(') (char ')') parseInt) <|> parseIntLit
-  return $ EIntNeg i
+opVarFirst = [[]]
+
+termVarFirst = parens parseVarFirst <|> liftM EVarFirst integer
 
 {-
  - SUBSECTION PROTOCOL
@@ -463,5 +254,7 @@ parseIntNeg = do
  -}
 parseExpr :: SParsec AnyExpr
 parseExpr = do
-  e <- anyExpr parseBool
+  e <-
+    try (anyExpr parseHeap) <|> try (anyExpr parseInteger) <|>
+    try (anyExpr parseBool)
   return e

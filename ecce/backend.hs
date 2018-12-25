@@ -81,6 +81,8 @@ type Heap = String
 
 type DataStructure = String
 
+type Pointer = Integer
+
 type BoolInteger = Integer
 
 data Expr a
@@ -97,6 +99,10 @@ data Expr a
   EDataStructure :: DataStructure -> Expr DataStructure
   {- π ::= v:t | b | a | π^π | πvπ | ~π | ∃v.π | ∀v.π | γ -}
   {- γ ::= v=v | v=null | v/=v | v/=null -}
+  EPointerEq :: Expr VarFirst -> Expr VarFirst -> Expr Pointer
+  EPointerNull :: Expr VarFirst -> Expr Pointer
+  EPointerNeq :: Expr VarFirst -> Expr VarFirst -> Expr Pointer
+  EPointerNNull :: Expr VarFirst -> Expr Pointer
   {- b ::= true | false | b=b -}
   EBool :: Bool -> Expr Bool
   EBoolEq :: Expr Bool -> Expr Bool -> Expr Bool
@@ -136,7 +142,8 @@ languageDef =
     , Token.identStart = letter
     , Token.identLetter = alphaNum
     , Token.reservedNames = ["true", "false", "~", "^", "v", "emp"]
-    , Token.reservedOpNames = ["+", "-", "x", "^", "v", "~", "*", "=", "<="]
+    , Token.reservedOpNames =
+        ["+", "-", "x", "^", "v", "~", "*", "=", "<=", "/=", "=null", "/=null"]
     }
 
 lexer = Token.makeTokenParser languageDef
@@ -211,6 +218,37 @@ parseHeapPointer = do
 {-
  - SUBSECTION γ
  -}
+parsePointer :: SParsec (Expr Pointer)
+parsePointer =
+  try parsePointerEq <|> try parsePointerNull <|> try parsePointerNeq <|>
+  try parsePointerNNull
+
+parsePointerEq :: SParsec (Expr Pointer)
+parsePointerEq = do
+  v1 <- parseVarFirst
+  char '='
+  v2 <- parseVarFirst
+  return $ EPointerEq v1 v2
+
+parsePointerNull :: SParsec (Expr Pointer)
+parsePointerNull = do
+  v <- parseVarFirst
+  string "=null"
+  return $ EPointerNull v
+
+parsePointerNeq :: SParsec (Expr Pointer)
+parsePointerNeq = do
+  v1 <- parseVarFirst
+  string "/="
+  v2 <- parseVarFirst
+  return $ EPointerNeq v1 v2
+
+parsePointerNNull :: SParsec (Expr Pointer)
+parsePointerNNull = do
+  v <- parseVarFirst
+  string "/=null"
+  return $ EPointerNNull v
+
 {-
  - SUBSECTION b
  -}
@@ -280,7 +318,8 @@ termVarFirst = parens parseVarFirst <|> liftM EVarFirst integer
 parseExpr :: SParsec AnyExpr
 parseExpr = do
   e <-
-    try (anyExpr parseHeap) <|> try (anyExpr parseBoolInteger) <|>
+    try (anyExpr parsePointer) <|> try (anyExpr parseHeap) <|>
+    try (anyExpr parseBoolInteger) <|>
     try (anyExpr parseInteger) <|>
     try (anyExpr parseBool)
   return e

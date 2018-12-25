@@ -74,6 +74,10 @@ interpreter = do
  -}
 type SParsec = Parsec String ()
 
+type FormulaDisjunct = String
+
+type Formula = String
+
 type VarFirst = Integer
 
 type Heap = String
@@ -91,9 +95,12 @@ type BoolInteger = Integer
 data Expr a
   {- pred ::= p(root,v*) = Φ inv π -}
   {- Φ ::= VΔ -}
-  {- Δ ::= ∃v*.k^π | Δ*Δ -}
-  {- κ ::= emp | v↦d<v*> | p(v*) | κ*κ -}
       where
+  EFormulaDisjunct :: [Expr Formula] -> Expr FormulaDisjunct
+  {- Δ ::= ∃v*.κ^π | Δ*Δ -}
+  EFormulaExists :: [Expr VarFirst] -> Expr Heap -> Expr Pure -> Expr Formula
+  EFormulaSeparate :: Expr Formula -> Expr Formula -> Expr Formula
+  {- κ ::= emp | v↦d<v*> | p(v*) | κ*κ -}
   EHeapEmp :: Expr Heap
   EHeapMap
     :: Expr VarFirst -> Expr DataStructure -> [Expr VarFirst] -> Expr Heap
@@ -210,9 +217,31 @@ extractParse p s =
 {-
  - SUBSECTION Φ
  -}
+parseFormulaDisjunct :: SParsec (Expr FormulaDisjunct)
+parseFormulaDisjunct = do
+  fs <- parseFormula `sepBy` (char ',')
+  return $ EFormulaDisjunct fs
+
 {-
  - SUBSECTION Δ
  -}
+parseFormula :: SParsec (Expr Formula)
+parseFormula = buildExpressionParser opFormula termFormula
+
+opFormula = [[Infix (reservedOp "*" >> return EFormulaSeparate) AssocLeft]]
+
+termFormula = parens parseFormula <|> parseFormulaExists
+
+parseFormulaExists :: SParsec (Expr Formula)
+parseFormulaExists = do
+  reservedOp "E"
+  vs <- parseVarFirst `sepBy` (char ',')
+  reservedOp "."
+  h <- parseHeap
+  reservedOp "^"
+  p <- parsePure
+  return $ EFormulaExists vs h p
+
 {-
  - SUBSECTION κ
  -}
@@ -232,13 +261,13 @@ parseHeapMap = do
   v1 <- parseVarFirst
   string "->"
   d <- liftM EDataStructure identifier
-  vs <- between (char '<') (char '>') (sepBy parseVarFirst (char ','))
+  vs <- between (char '<') (char '>') (parseVarFirst `sepBy` (char ','))
   return $ EHeapMap v1 d vs
 
 parseHeapPointer :: SParsec (Expr Heap)
 parseHeapPointer = do
   string "p("
-  vs <- sepBy parseVarFirst (char ',')
+  vs <- parseVarFirst `sepBy` (char ',')
   char ')'
   return $ EHeapPointer vs
 
@@ -404,7 +433,9 @@ parseVarFirst = liftM EVarFirst integer
 parseExpr :: SParsec AnyExpr
 parseExpr = do
   e <-
-    try (anyExpr parsePure) <|> try (anyExpr parsePointer) <|>
+    try (anyExpr parseFormula) <|> try (anyExpr parseFormulaDisjunct) <|>
+    try (anyExpr parsePure) <|>
+    try (anyExpr parsePointer) <|>
     try (anyExpr parseHeap) <|>
     try (anyExpr parseBoolInteger) <|>
     try (anyExpr parseInteger) <|>

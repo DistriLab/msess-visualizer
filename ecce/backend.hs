@@ -99,6 +99,8 @@ type SParsec = Parsec String ()
  -}
 type VarFirst = Integer
 
+type VarType = String
+
 type DataStructure = String
 
 type Role = Integer
@@ -117,8 +119,6 @@ data Formula
 data Heap
 
 data Pure
-
-type VarType = String
 
 data Pointer
 

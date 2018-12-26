@@ -151,7 +151,7 @@ data Expr a
     -> Expr FormulaDisjunct
     -> Expr Pure
     -> Expr SymbolicPredicate
-  {- Φ ::= VΔ -}
+  {- Φ ::= vΔ -}
   EFormulaDisjunct :: [Expr Formula] -> Expr FormulaDisjunct
   {- Δ ::= ∃v*.κ^π | Δ*Δ -}
   EFormulaExists :: [Expr VarFirst] -> Expr Heap -> Expr Pure -> Expr Formula
@@ -328,7 +328,7 @@ parseSymbolicPredicate = do
  -}
 parseFormulaDisjunct :: SParsec (Expr FormulaDisjunct)
 parseFormulaDisjunct = do
-  fs <- parseFormula `sepBy1` (char ',')
+  fs <- parseFormula `sepBy1` (char 'v')
   return $ EFormulaDisjunct fs
 
 {-

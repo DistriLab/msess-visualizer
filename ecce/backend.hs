@@ -231,9 +231,9 @@ anyExpr e = fmap AnyExpr e
  -}
 languageDef =
   emptyDef
-    { Token.commentStart = "/*"
-    , Token.commentEnd = "*/"
-    , Token.commentLine = "//"
+    { Token.commentStart = "{-"
+    , Token.commentEnd = "-}"
+    , Token.commentLine = "--"
     , Token.identStart = letter
     , Token.identLetter = alphaNum
     , Token.reservedNames = ["true", "false", "emp", "null"]

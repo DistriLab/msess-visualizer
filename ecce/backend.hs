@@ -21,9 +21,12 @@ import Text.Parsec
   ( Parsec
   , (<|>)
   , alphaNum
+  , anyChar
   , between
   , char
   , letter
+  , many
+  , optionMaybe
   , parse
   , sepBy
   , sepBy1
@@ -47,10 +50,7 @@ main = do
 
 welcome :: IO ()
 welcome = do
-  mapM_ putStrLn $
-    "Welcome!" :
-    "Type at the prompt. Either:" :
-    "1) Type out expression, or" : "2) Load file (load <file>)" : "" : []
+  mapM_ putStrLn $ "Welcome!" : "Type \"help\" for more information." : "" : []
 
 interpreter :: IO ()
 interpreter = do
@@ -61,18 +61,32 @@ interpreter = do
 interpret :: String -> IO ()
 interpret inputLine = do
   inputLines <-
-    if take loadStringLength inputLine == loadString
-      then do
-        handle <- openFile (drop loadStringLength inputLine) ReadMode
+    case command of
+      Nothing -> do
+        return [inputLine]
+      Just "help" -> do
+        mapM_ putStrLn $ "Here are a list of commands:" : commands
+        return []
+      Just "load" -> do
+        handle <- openFile restInputLine ReadMode
         contents <- hGetContents handle
         seq (hClose handle) (return $ lines contents)
-      else do
-        return [inputLine]
   let s = intercalate "\n" $ map (show . extractParse parseExpr) inputLines
    in putStrLn s
   where
-    loadString = "load "
-    loadStringLength = length loadString
+    command = extractParse parseCommand inputLine
+    restInputLine = extractParse parseRestInputLine inputLine
+
+parseCommand :: SParsec (Maybe String)
+parseCommand = optionMaybe $ foldl (<|>) h t
+  where
+    (h:t) = map string commands
+
+parseRestInputLine :: SParsec String
+parseRestInputLine = parseCommand >> whiteSpace >> many anyChar
+
+commands :: [String]
+commands = ["help", "load"]
 
 {-
  - SECTION TYPES

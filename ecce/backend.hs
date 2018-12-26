@@ -53,7 +53,7 @@ welcome = do
 
 interpreter :: IO ()
 interpreter = do
-  putStr "msess> "
+  putStr "ecce> "
   inputLine <- getLine
   inputLines <-
     if take loadStringLength inputLine == loadString

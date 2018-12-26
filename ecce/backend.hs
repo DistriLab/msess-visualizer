@@ -108,31 +108,31 @@ type Channel = Integer
 type Label = Integer
 
 {- Figure 2.2 -}
-type SymbolicPredicate = String
+data SymbolicPredicate
 
-type FormulaDisjunct = String
+data FormulaDisjunct
 
-type Formula = String
+data Formula
 
-type Heap = String
+data Heap
 
-type Pure = String
+data Pure
 
 type VarType = String
 
-type Pointer = Integer
+data Pointer
 
-type BoolInteger = Integer
+data BoolInteger
 
 {- Figure 4.1 -}
-type GlobalProtocol = String
+data GlobalProtocol
 
 {- Figure 4.3 -}
-type Event = String
+data Event
 
-type Constraint = String
+data Constraint
 
-type Assertion = String
+data Assertion
 
 data Expr a
   {- Helper parsers -}

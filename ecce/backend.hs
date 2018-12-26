@@ -191,7 +191,7 @@ data Expr a
   EIntegerAdd :: Expr Integer -> Expr Integer -> Expr Integer
   EIntegerNeg :: Expr Integer -> Expr Integer
   {- Figure 4.1 -}
-  {- G ::= S--i->R:c<v.Δ> | G*G | GvG | G;G | (+)(Ψ) | (-)(Ψ) | emp -}
+  {- G ::= S--(i)->R:c<v.Δ> | G*G | GvG | G;G | (+)(Ψ) | (-)(Ψ) | emp -}
   EGlobalProtocolTransmission
     :: Expr Role
     -> Expr Label
@@ -557,7 +557,7 @@ termGlobalProtocol = parens parseGlobalProtocol
 parseGlobalProtocolTransmission :: SParsec (Expr GlobalProtocol)
 parseGlobalProtocolTransmission = do
   s <- parseRole
-  i <- between (string "--") (string "->") parseLabel
+  i <- between (string "--") (string "->") (parens parseLabel)
   r <- parseRole
   reservedOp ":"
   c <- parseChannel

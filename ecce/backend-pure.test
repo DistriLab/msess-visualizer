@@ -1,12 +1,8 @@
-~false
-~true
-falsevfalse
-falsevtrue
-truevfalse
-truevtrue
-false^false
-false^true
-true^false
-true^true
-0
-1+1
+~(1=null)
+EPureNot (EPurePointer (EPointerNull (EVarFirst 1)))
+falsev1
+EPureOr (EPureBool (EBool True))
+E1.(1<=2)
+EPureExists (EVarFirst 1) (EPureBoolInteger (EBoolIntegerLeq (EInteger 1) (EInteger 2)))
+A1.true=false
+EPureForall (EVarFirst 1) (EPureBool (EBoolEq (EBool True) (EBool False)))

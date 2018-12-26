@@ -66,6 +66,10 @@ interpret inputLine =
     Nothing -> (putStrLn . show . extractParse parseExpr) inputLine
     Just "help" -> mapM_ putStrLn $ "Here are a list of commands:" : commands
     Just "load" -> parseFile restInputLine parseExpr >>= mapM_ putStrLn
+    Just "test" ->
+      parseTestFile (concat $ "backend-" : restInputLine : ".test" : []) >>=
+      mapM_ putStrLn
+    -- TODO fix double parsing
   where
     command = extractParse parseCommand inputLine
     restInputLine = extractParse parseRestInputLine inputLine
@@ -86,8 +90,32 @@ parseFile filePath parser = do
     Left (e :: Control.Exception.SomeException) -> return [show e]
     Right xs -> return $ map (show . extractParse parser) xs
 
+-- All test files must follow a strict format:
+-- Filename: backend-*.test
+-- File contents: must be even number of lines long
+-- Each pairs of lines are:
+-- (1) Input expression
+-- (2) Expected result of running (1)
+parseTestFile :: FilePath -> IO [String]
+parseTestFile filePath = do
+  xs <- Control.Exception.try $ fmap lines $ readFile filePath
+  case xs of
+    Left (e :: Control.Exception.SomeException) -> return [show e]
+    Right xs -> return $ map parseTest (uncurry zip $ splitOddEven xs)
+  where
+    splitOddEven :: [a] -> ([a], [a])
+    splitOddEven = foldr (\x ~(y2, y1) -> (x : y1, y2)) ([], [])
+
+parseTest :: (String, String) -> String
+parseTest (i, o) =
+  if show e == o
+    then concat $ "passed: " : o : []
+    else concat $ "failed: " : o : []
+  where
+    e = extractParse parseExpr i
+
 commands :: [String]
-commands = ["help", "load"]
+commands = ["help", "load", "test"]
 
 {-
  - SECTION TYPES

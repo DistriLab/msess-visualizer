@@ -1,4 +1,8 @@
 false
+EBool False
 true
+EBool True
 false=false
-false=true=false=true
+EBoolEq (EBool False) (EBool False)
+false=true=true
+EBoolEq (EBoolEq (EBool False) (EBool True)) (EBool True)

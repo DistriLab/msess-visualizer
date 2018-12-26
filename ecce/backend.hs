@@ -401,7 +401,7 @@ parseFormula = buildExpressionParser opFormula termFormula
 
 opFormula = [[Infix (reservedOp "*" >> return EFormulaSeparate) AssocLeft]]
 
-termFormula = parens parseFormula <|> parseFormulaExists
+termFormula = parens parseFormula <|> try parseFormulaExists
 
 parseFormulaExists :: SParsec (Expr Formula)
 parseFormulaExists = do
@@ -422,7 +422,8 @@ parseHeap = buildExpressionParser opHeap termHeap
 opHeap = [[Infix (reservedOp "*" >> return EHeapSeparate) AssocLeft]]
 
 termHeap =
-  parens parseHeap <|> parseHeapEmp <|> parseHeapMap <|> parseHeapPointer
+  parens parseHeap <|> try parseHeapEmp <|> try parseHeapMap <|>
+  try parseHeapPointer
 
 parseHeapEmp :: SParsec (Expr Heap)
 parseHeapEmp = reserved "emp" >> return EHeapEmp
@@ -615,10 +616,10 @@ opGlobalProtocol =
   ]
 
 termGlobalProtocol =
-  parens parseGlobalProtocol <|> parseGlobalProtocolTransmission <|>
-  parseGlobalProtocolAssumption <|>
-  parseGlobalProtocolGuard <|>
-  parseGlobalProtocolEmp
+  parens parseGlobalProtocol <|> try parseGlobalProtocolTransmission <|>
+  try parseGlobalProtocolAssumption <|>
+  try parseGlobalProtocolGuard <|>
+  try parseGlobalProtocolEmp
 
 parseGlobalProtocolTransmission :: SParsec (Expr GlobalProtocol)
 parseGlobalProtocolTransmission = do
@@ -660,7 +661,7 @@ parseEvent = do
 {-
  - SUBSECTION ν
  -}
-parseConstraint = try parseConstraintCommunicates <|> parseConstraintHappens
+parseConstraint = try parseConstraintCommunicates <|> try parseConstraintHappens
 
 parseConstraintCommunicates :: SParsec (Expr Constraint)
 parseConstraintCommunicates = do
@@ -684,8 +685,8 @@ parseAssertion = buildExpressionParser opAssertion termAssertion
 opAssertion = [[Infix (reservedOp "^" >> return EAssertionAnd) AssocLeft]]
 
 termAssertion =
-  parens parseAssertion <|> parseAssertionNEvent <|> parseAssertionEvent <|>
-  parseAssertionImplies
+  parens parseAssertion <|> try parseAssertionNEvent <|> try parseAssertionEvent <|>
+  try parseAssertionImplies
 
 parseAssertionEvent :: SParsec (Expr Assertion)
 parseAssertionEvent = do
@@ -720,10 +721,10 @@ opPartyProtocol =
   ]
 
 termPartyProtocol =
-  parens parsePartyProtocol <|> parsePartyProtocolSend <|>
-  parsePartyProtocolReceive <|>
-  parsePartyProtocolGuard <|>
-  parsePartyProtocolAssumption
+  parens parsePartyProtocol <|> try parsePartyProtocolSend <|>
+  try parsePartyProtocolReceive <|>
+  try parsePartyProtocolGuard <|>
+  try parsePartyProtocolAssumption
 
 parsePartyProtocolSend :: SParsec (Expr PartyProtocol)
 parsePartyProtocolSend = do
@@ -771,10 +772,10 @@ opEndpointProtocol =
   ]
 
 termEndpointProtocol =
-  parens parseEndpointProtocol <|> parseEndpointProtocolSend <|>
-  parseEndpointProtocolReceive <|>
-  parseEndpointProtocolGuard <|>
-  parseEndpointProtocolAssumption
+  parens parseEndpointProtocol <|> try parseEndpointProtocolSend <|>
+  try parseEndpointProtocolReceive <|>
+  try parseEndpointProtocolGuard <|>
+  try parseEndpointProtocolAssumption
 
 parseEndpointProtocolSend :: SParsec (Expr EndpointProtocol)
 parseEndpointProtocolSend = do
@@ -822,9 +823,9 @@ opChannelProtocol =
   ]
 
 termChannelProtocol =
-  parens parseChannelProtocol <|> parseChannelProtocolTransmission <|>
-  parseChannelProtocolGuard <|>
-  parseChannelProtocolAssumption
+  parens parseChannelProtocol <|> try parseChannelProtocolTransmission <|>
+  try parseChannelProtocolGuard <|>
+  try parseChannelProtocolAssumption
 
 parseChannelProtocolTransmission :: SParsec (Expr ChannelProtocol)
 parseChannelProtocolTransmission = do

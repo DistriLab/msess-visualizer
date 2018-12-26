@@ -552,7 +552,11 @@ opGlobalProtocol =
     ]
   ]
 
-termGlobalProtocol = parens parseGlobalProtocol
+termGlobalProtocol =
+  parens parseGlobalProtocol <|> parseGlobalProtocolTransmission <|>
+  parseGlobalProtocolAssumption <|>
+  parseGlobalProtocolGuard <|>
+  parseGlobalProtocolEmp
 
 parseGlobalProtocolTransmission :: SParsec (Expr GlobalProtocol)
 parseGlobalProtocolTransmission = do

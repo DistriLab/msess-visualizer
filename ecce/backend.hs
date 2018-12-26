@@ -130,7 +130,7 @@ data Expr a
   {- γ ::= v=v | v=null | v/=v | v/=null -}
   EPointerEq :: Expr VarFirst -> Expr VarFirst -> Expr Pointer
   EPointerNull :: Expr VarFirst -> Expr Pointer
-  EPointerNeq :: Expr VarFirst -> Expr VarFirst -> Expr Pointer
+  EPointerNEq :: Expr VarFirst -> Expr VarFirst -> Expr Pointer
   EPointerNNull :: Expr VarFirst -> Expr Pointer
   {- b ::= true | false | b=b -}
   EBool :: Bool -> Expr Bool
@@ -355,7 +355,7 @@ parsePurePointer = do
  -}
 parsePointer :: SParsec (Expr Pointer)
 parsePointer =
-  try parsePointerEq <|> try parsePointerNull <|> try parsePointerNeq <|>
+  try parsePointerEq <|> try parsePointerNull <|> try parsePointerNEq <|>
   try parsePointerNNull
 
 parsePointerEq :: SParsec (Expr Pointer)
@@ -372,12 +372,12 @@ parsePointerNull = do
   reserved "null"
   return $ EPointerNull v
 
-parsePointerNeq :: SParsec (Expr Pointer)
-parsePointerNeq = do
+parsePointerNEq :: SParsec (Expr Pointer)
+parsePointerNEq = do
   v1 <- parseVarFirst
   reservedOp "/="
   v2 <- parseVarFirst
-  return $ EPointerNeq v1 v2
+  return $ EPointerNEq v1 v2
 
 parsePointerNNull :: SParsec (Expr Pointer)
 parsePointerNNull = do

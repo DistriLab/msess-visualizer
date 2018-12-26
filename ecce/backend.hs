@@ -134,6 +134,13 @@ data Constraint
 
 data Assertion
 
+{- Figure 4.5 -}
+data PartyProtocol
+
+data EndpointProtocol
+
+data ChannelProtocol
+
 {- SUBSECTION EXPR -}
 data Expr a
   {- HELPERS -}
@@ -221,6 +228,61 @@ data Expr a
   EAssertionConstraint :: Expr Constraint -> Expr Assertion
   EAssertionAnd :: Expr Assertion -> Expr Assertion -> Expr Assertion
   EAssertionImplies :: Expr Event -> Expr Assertion -> Expr Assertion
+  {- Figure 4.5 -}
+  {- γ ::= c(i)!v.Δ | c(i)?v.Δ | γ*γ | γvγ | γ;γ | (-)(Ψ) | (+)(Ψ) -}
+  EPartyProtocolSend
+    :: Expr Channel
+    -> Expr Label
+    -> Expr VarFirst
+    -> Expr Formula
+    -> Expr PartyProtocol
+  EPartyProtocolReceive
+    :: Expr Channel
+    -> Expr Label
+    -> Expr VarFirst
+    -> Expr Formula
+    -> Expr PartyProtocol
+  EPartyProtocolConcurrency
+    :: Expr PartyProtocol -> Expr PartyProtocol -> Expr PartyProtocol
+  EPartyProtocolChoice
+    :: Expr PartyProtocol -> Expr PartyProtocol -> Expr PartyProtocol
+  EPartyProtocolSequencing
+    :: Expr PartyProtocol -> Expr PartyProtocol -> Expr PartyProtocol
+  EPartyProtocolAssumption :: Expr Assertion -> Expr PartyProtocol
+  EPartyProtocolGuard :: Expr Assertion -> Expr PartyProtocol
+  {- L ::= (i)!v.Δ | (i)?v.Δ | LvL | L;L | (-)(Ψ) | (+)(Ψ) -}
+  EEndpointProtocolSend
+    :: Expr Channel
+    -> Expr Label
+    -> Expr VarFirst
+    -> Expr Formula
+    -> Expr EndpointProtocol
+  EEndpointProtocolReceive
+    :: Expr Channel
+    -> Expr Label
+    -> Expr VarFirst
+    -> Expr Formula
+    -> Expr EndpointProtocol
+  EEndpointProtocolChoice
+    :: Expr EndpointProtocol -> Expr EndpointProtocol -> Expr EndpointProtocol
+  EEndpointProtocolSequencing
+    :: Expr EndpointProtocol -> Expr EndpointProtocol -> Expr EndpointProtocol
+  EEndpointProtocolAssumption :: Expr Assertion -> Expr EndpointProtocol
+  EEndpointProtocolGuard :: Expr Assertion -> Expr EndpointProtocol
+  {- Z ::= P--(i)->P:v.Δ | ZvZ | Z;Z | (-)(Ψ) | (+)(Ψ) -}
+  EChannelProtocolTransmission
+    :: Expr Role
+    -> Expr Label
+    -> Expr Role
+    -> Expr VarFirst
+    -> Expr Formula
+    -> Expr ChannelProtocol
+  EChannelProtocolChoice
+    :: Expr ChannelProtocol -> Expr ChannelProtocol -> Expr ChannelProtocol
+  EChannelProtocolSequencing
+    :: Expr ChannelProtocol -> Expr ChannelProtocol -> Expr ChannelProtocol
+  EChannelProtocolAssumption :: Expr Assertion -> Expr ChannelProtocol
+  EChannelProtocolGuard :: Expr Assertion -> Expr ChannelProtocol
 
 deriving instance Show (Expr a)
 
@@ -642,6 +704,148 @@ parseAssertionImplies = do
   reservedOp "==>"
   a <- parseAssertion
   return $ EAssertionImplies e a
+
+{- Figure 4.5 -}
+{-
+ - SUBSECTION γ
+ -}
+parsePartyProtocol :: SParsec (Expr PartyProtocol)
+parsePartyProtocol = buildExpressionParser opPartyProtocol termPartyProtocol
+
+opPartyProtocol =
+  [ [ Infix (reservedOp "*" >> return EPartyProtocolConcurrency) AssocLeft
+    , Infix (reservedOp "v" >> return EPartyProtocolChoice) AssocLeft
+    , Infix (reservedOp ";" >> return EPartyProtocolSequencing) AssocLeft
+    ]
+  ]
+
+termPartyProtocol =
+  parens parsePartyProtocol <|> parsePartyProtocolSend <|>
+  parsePartyProtocolReceive <|>
+  parsePartyProtocolGuard <|>
+  parsePartyProtocolAssumption
+
+parsePartyProtocolSend :: SParsec (Expr PartyProtocol)
+parsePartyProtocolSend = do
+  c <- parseChannel
+  i <- parens parseLabel
+  reservedOp "!"
+  reservedOp ":"
+  v <- parseVarFirst
+  reservedOp "."
+  f <- parseFormula
+  return $ EPartyProtocolSend c i v f
+
+parsePartyProtocolReceive :: SParsec (Expr PartyProtocol)
+parsePartyProtocolReceive = do
+  c <- parseChannel
+  i <- parens parseLabel
+  reservedOp "!"
+  reservedOp ":"
+  v <- parseVarFirst
+  reservedOp "."
+  f <- parseFormula
+  return $ EPartyProtocolReceive c i v f
+
+parsePartyProtocolGuard :: SParsec (Expr PartyProtocol)
+parsePartyProtocolGuard = do
+  a <- parseAssertion
+  return $ EPartyProtocolAssumption a
+
+parsePartyProtocolAssumption :: SParsec (Expr PartyProtocol)
+parsePartyProtocolAssumption = do
+  a <- parseAssertion
+  return $ EPartyProtocolAssumption a
+
+{-
+ - SUBSECTION L
+ -}
+parseEndpointProtocol :: SParsec (Expr EndpointProtocol)
+parseEndpointProtocol =
+  buildExpressionParser opEndpointProtocol termEndpointProtocol
+
+opEndpointProtocol =
+  [ [ Infix (reservedOp "v" >> return EEndpointProtocolChoice) AssocLeft
+    , Infix (reservedOp ";" >> return EEndpointProtocolSequencing) AssocLeft
+    ]
+  ]
+
+termEndpointProtocol =
+  parens parseEndpointProtocol <|> parseEndpointProtocolSend <|>
+  parseEndpointProtocolReceive <|>
+  parseEndpointProtocolGuard <|>
+  parseEndpointProtocolAssumption
+
+parseEndpointProtocolSend :: SParsec (Expr EndpointProtocol)
+parseEndpointProtocolSend = do
+  c <- parseChannel
+  i <- parens parseLabel
+  reservedOp "!"
+  reservedOp ":"
+  v <- parseVarFirst
+  reservedOp "."
+  f <- parseFormula
+  return $ EEndpointProtocolSend c i v f
+
+parseEndpointProtocolReceive :: SParsec (Expr EndpointProtocol)
+parseEndpointProtocolReceive = do
+  c <- parseChannel
+  i <- parens parseLabel
+  reservedOp "!"
+  reservedOp ":"
+  v <- parseVarFirst
+  reservedOp "."
+  f <- parseFormula
+  return $ EEndpointProtocolReceive c i v f
+
+parseEndpointProtocolGuard :: SParsec (Expr EndpointProtocol)
+parseEndpointProtocolGuard = do
+  a <- parseAssertion
+  return $ EEndpointProtocolAssumption a
+
+parseEndpointProtocolAssumption :: SParsec (Expr EndpointProtocol)
+parseEndpointProtocolAssumption = do
+  a <- parseAssertion
+  return $ EEndpointProtocolAssumption a
+
+{-
+ - SUBSECTION Z
+ -}
+parseChannelProtocol :: SParsec (Expr ChannelProtocol)
+parseChannelProtocol =
+  buildExpressionParser opChannelProtocol termChannelProtocol
+
+opChannelProtocol =
+  [ [ Infix (reservedOp "v" >> return EChannelProtocolChoice) AssocLeft
+    , Infix (reservedOp ";" >> return EChannelProtocolSequencing) AssocLeft
+    ]
+  ]
+
+termChannelProtocol =
+  parens parseChannelProtocol <|> parseChannelProtocolTransmission <|>
+  parseChannelProtocolGuard <|>
+  parseChannelProtocolAssumption
+
+parseChannelProtocolTransmission :: SParsec (Expr ChannelProtocol)
+parseChannelProtocolTransmission = do
+  s <- parseRole
+  i <- between (string "--") (string "->") (parens parseLabel)
+  r <- parseRole
+  reservedOp ":"
+  v <- parseVarFirst
+  reservedOp "."
+  f <- parseFormula
+  return $ EChannelProtocolTransmission s i r v f
+
+parseChannelProtocolGuard :: SParsec (Expr ChannelProtocol)
+parseChannelProtocolGuard = do
+  a <- parseAssertion
+  return $ EChannelProtocolAssumption a
+
+parseChannelProtocolAssumption :: SParsec (Expr ChannelProtocol)
+parseChannelProtocolAssumption = do
+  a <- parseAssertion
+  return $ EChannelProtocolAssumption a
 
 {-
  - SUBSECTION EXPR

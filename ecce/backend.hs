@@ -606,7 +606,7 @@ parseConstraintHappens = do
   return $ EConstraintHappens e1 e2
 
 {- SUBSECTION Ψ -}
-parseAssertion = buildExpressionParser opGlobalProtocol termGlobalProtocol
+parseAssertion = buildExpressionParser opAssertion termAssertion
 
 opAssertion = [[Infix (reservedOp "^" >> return EAssertionAnd) AssocLeft]]
 

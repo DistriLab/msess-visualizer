@@ -375,6 +375,8 @@ reservedOp = Token.reservedOp lexer
 
 parens = Token.parens lexer
 
+angles = Token.angles lexer
+
 integer = Token.integer lexer
 
 semi = Token.semi lexer
@@ -467,13 +469,13 @@ parseHeapMap = do
   v1 <- parseVarFirst
   string "->"
   d <- parseDataStructure
-  vs <- between (char '<') (char '>') (parseVarFirst `sepBy` (char ','))
+  vs <- angles $ parseVarFirst `sepBy` (char ',')
   return $ EHeapMap v1 d vs
 
 parseHeapPointer :: SParsec (Expr Heap)
 parseHeapPointer = do
   p <- parsePointer
-  vs <- between (char '(') (char ')') (parseVarFirst `sepBy` (char ','))
+  vs <- parens $ parseVarFirst `sepBy` (char ',')
   return $ EHeapPointer p vs
 
 {-

@@ -75,17 +75,21 @@ interpreter = do
  -}
 type SParsec = Parsec String ()
 
+{-
+ - SUBSECTION Helper Parsers
+ -}
+type VarFirst = Integer
+
+type DataStructure = String
+
+{- Figure 2.2 -}
 type SymbolicPredicate = String
 
 type FormulaDisjunct = String
 
 type Formula = String
 
-type VarFirst = Integer
-
 type Heap = String
-
-type DataStructure = String
 
 type Pure = String
 
@@ -96,8 +100,12 @@ type Pointer = Integer
 type BoolInteger = Integer
 
 data Expr a
-  {- pred ::= p(root,v*) = Φ inv π -}
+  {- Helper parsers -}
       where
+  EVarFirst :: VarFirst -> Expr VarFirst
+  EDataStructure :: DataStructure -> Expr DataStructure
+  {- Figure 2.2 -}
+  {- pred ::= p(root,v*) = Φ inv π -}
   ESymbolicPredicate
     :: Expr Pointer
     -> [Expr VarFirst]
@@ -115,7 +123,6 @@ data Expr a
     :: Expr VarFirst -> Expr DataStructure -> [Expr VarFirst] -> Expr Heap
   EHeapPointer :: Expr Pointer -> [Expr VarFirst] -> Expr Heap
   EHeapSeparate :: Expr Heap -> Expr Heap -> Expr Heap
-  EDataStructure :: DataStructure -> Expr DataStructure
   {- π ::= v:t | b | a | π^π | πvπ | ~π | ∃v.π | ∀v.π | γ -}
   EVarType :: VarType -> Expr VarType
   EPureVarType :: Expr VarFirst -> Expr VarType -> Expr Pure
@@ -140,7 +147,6 @@ data Expr a
   EBoolIntegerLeq :: Expr Integer -> Expr Integer -> Expr BoolInteger
   {- s ::= k | v | k x s | s + s | -s -}
   EInteger :: Integer -> Expr Integer
-  EVarFirst :: VarFirst -> Expr VarFirst
   EIntegerVarFirst :: Expr VarFirst -> Expr Integer
   EIntegerMul :: Expr Integer -> Expr Integer -> Expr Integer
   EIntegerAdd :: Expr Integer -> Expr Integer -> Expr Integer
@@ -221,6 +227,14 @@ extractParse p s =
     Right x -> x
 
 {-
+ - SUBSECTION Helper Parsers
+ -}
+parseVarFirst = liftM EVarFirst integer
+
+parseDataStructure = liftM EDataStructure identifier
+
+{- Figure 2.2 -}
+{-
  - SUBSECTION pred
  -}
 parseSymbolicPredicate :: SParsec (Expr SymbolicPredicate)
@@ -279,7 +293,7 @@ parseHeapMap :: SParsec (Expr Heap)
 parseHeapMap = do
   v1 <- parseVarFirst
   string "->"
-  d <- liftM EDataStructure identifier
+  d <- parseDataStructure
   vs <- between (char '<') (char '>') (parseVarFirst `sepBy` (char ','))
   return $ EHeapMap v1 d vs
 

@@ -104,7 +104,7 @@ parseTestFile filePath = do
     Right xs -> return $ map parseTest (uncurry zip $ splitOddEven xs)
   where
     splitOddEven :: [a] -> ([a], [a])
-    splitOddEven = foldr (\x ~(y2, y1) -> (x : y1, y2)) ([], [])
+    splitOddEven = foldr (\x ~(xs2, xs1) -> (x : xs1, xs2)) ([], [])
 
 parseTest :: (String, String) -> String
 parseTest (i, o) =

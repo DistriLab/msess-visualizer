@@ -16,7 +16,7 @@ import Control.Monad (liftM)
  -}
 import Control.Monad (join)
 import Control.Monad.IO.Class (liftIO)
-import System.IO (readFile)
+import System.IO (FilePath, readFile)
 import Text.Parsec
   ( Parsec
   , (<|>)
@@ -63,9 +63,7 @@ interpret inputLine =
   case command of
     Nothing -> (putStrLn . show . extractParse parseExpr) inputLine
     Just "help" -> mapM_ putStrLn $ "Here are a list of commands:" : commands
-    Just "load" -> do
-      xs <- fmap lines $ readFile restInputLine
-      mapM_ putStrLn $ map (show . extractParse parseExpr) xs
+    Just "load" -> parseFile restInputLine parseExpr >>= mapM_ putStrLn
   where
     command = extractParse parseCommand inputLine
     restInputLine = extractParse parseRestInputLine inputLine
@@ -77,6 +75,12 @@ parseCommand = optionMaybe $ foldl (<|>) h t
 
 parseRestInputLine :: SParsec String
 parseRestInputLine = parseCommand >> whiteSpace >> many anyChar
+
+-- Parse file at filePath with parser
+parseFile :: Show a => FilePath -> SParsec a -> IO [String]
+parseFile filePath parser = do
+  xs <- fmap lines $ readFile filePath
+  return $ map (show . extractParse parser) xs
 
 commands :: [String]
 commands = ["help", "load"]

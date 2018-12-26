@@ -109,8 +109,8 @@ parseTestFile filePath = do
 parseTest :: (String, String) -> String
 parseTest (i, o) =
   if show e == o
-    then concat $ "passed: " : o : []
-    else concat $ "failed: " : o : []
+    then concat $ "P" : []
+    else concat $ "F: " : o : []
   where
     e = extractParse parseExpr i
 

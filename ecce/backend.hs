@@ -82,6 +82,12 @@ type VarFirst = Integer
 
 type DataStructure = String
 
+type Role = Integer
+
+type Channel = Integer
+
+type Label = Integer
+
 {- Figure 2.2 -}
 type SymbolicPredicate = String
 
@@ -99,11 +105,24 @@ type Pointer = Integer
 
 type BoolInteger = Integer
 
+{- Figure 4.1 -}
+type GlobalProtocol = String
+
+{- Figure 4.3 -}
+type Event = String
+
+type Constraint = String
+
+type Assertion = String
+
 data Expr a
   {- Helper parsers -}
       where
   EVarFirst :: VarFirst -> Expr VarFirst
   EDataStructure :: DataStructure -> Expr DataStructure
+  ERole :: Role -> Expr Role
+  EChannel :: Channel -> Expr Channel
+  ELabel :: Label -> Expr Label
   {- Figure 2.2 -}
   {- pred ::= p(root,v*) = Φ inv π -}
   ESymbolicPredicate
@@ -151,7 +170,37 @@ data Expr a
   EIntegerMul :: Expr Integer -> Expr Integer -> Expr Integer
   EIntegerAdd :: Expr Integer -> Expr Integer -> Expr Integer
   EIntegerNeg :: Expr Integer -> Expr Integer
-  {- G ::= G*G | GVG | G;G -}
+  {- Figure 4.1 -}
+  {- G ::= S--i->R:c<v.Δ> | G*G | GvG | G;G | (+)(Ψ) | (-)(Ψ) | emp -}
+  EGlobalProtocolTransmission
+    :: Expr Role
+    -> Expr Label
+    -> Expr Role
+    -> Expr Channel
+    -> Expr VarFirst
+    -> Expr Formula
+    -> Expr GlobalProtocol
+  EGlobalProtocolConcurrency
+    :: Expr GlobalProtocol -> Expr GlobalProtocol -> Expr GlobalProtocol
+  EGlobalProtocolChoice
+    :: Expr GlobalProtocol -> Expr GlobalProtocol -> Expr GlobalProtocol
+  EGlobalProtocolSequencing
+    :: Expr GlobalProtocol -> Expr GlobalProtocol -> Expr GlobalProtocol
+  EGlobalProtocolAssumption :: Expr Assertion -> Expr GlobalProtocol
+  EGlobalProtocolGuard :: Expr Assertion -> Expr GlobalProtocol
+  EGlobalProtocolEmp :: Expr GlobalProtocol
+  {- Figure 4.3 -}
+  {- E ::= P(i) -}
+  EEvent :: Expr Role -> Expr Label -> Expr Event
+  {- ν ::= E<CBE | E<HBE -}
+  EConstraintCommunicates :: Expr Event -> Expr Event -> Expr Constraint
+  EConstraintHappens :: Expr Event -> Expr Event -> Expr Constraint
+  {- Ψ ::= E | ~(E) | ν | Ψ^Ψ | E==>Ψ -}
+  EAssertionEvent :: Expr Event -> Expr Assertion
+  EAssertionNEvent :: Expr Event -> Expr Assertion
+  EAssertionConstraint :: Expr Constraint -> Expr Assertion
+  EAssertionAnd :: Expr Assertion -> Expr Assertion -> Expr Assertion
+  EAssertionImplies :: Expr Event -> Expr Assertion -> Expr Assertion
 
 deriving instance Show (Expr a)
 
@@ -192,9 +241,13 @@ languageDef =
         , "="
         , "/="
         , ":"
+        , ";"
         , "."
         , "E"
         , "A"
+        , "<CB"
+        , "<HB"
+        , "==>"
         ]
     }
 
@@ -232,6 +285,12 @@ extractParse p s =
 parseVarFirst = liftM EVarFirst integer
 
 parseDataStructure = liftM EDataStructure identifier
+
+parseRole = liftM ERole integer
+
+parseChannel = liftM EChannel integer
+
+parseLabel = liftM ELabel integer
 
 {- Figure 2.2 -}
 {-
@@ -462,20 +521,112 @@ parseIntegerVarFirst = do
   v <- parseVarFirst
   return $ EIntegerVarFirst v
 
--- Also define VarFirst
-parseVarFirst :: SParsec (Expr VarFirst)
-parseVarFirst = liftM EVarFirst integer
-
+{- Figure 4.1 -}
 {-
- - SUBSECTION PROTOCOL
+ - SUBSECTION G
  -}
+parseGlobalProtocol :: SParsec (Expr GlobalProtocol)
+parseGlobalProtocol = buildExpressionParser opGlobalProtocol termGlobalProtocol
+
+opGlobalProtocol =
+  [ [ Infix (reservedOp "*" >> return EGlobalProtocolConcurrency) AssocLeft
+    , Infix (reservedOp "v" >> return EGlobalProtocolChoice) AssocLeft
+    , Infix (reservedOp ";" >> return EGlobalProtocolSequencing) AssocLeft
+    ]
+  ]
+
+termGlobalProtocol = parens parseGlobalProtocol
+
+parseGlobalProtocolTransmission :: SParsec (Expr GlobalProtocol)
+parseGlobalProtocolTransmission = do
+  s <- parseRole
+  i <- between (string "--") (string "->") parseLabel
+  r <- parseRole
+  reservedOp ":"
+  c <- parseChannel
+  char '<'
+  v <- parseVarFirst
+  reservedOp "."
+  f <- parseFormula
+  char '>'
+  return $ EGlobalProtocolTransmission s i r c v f
+
+parseGlobalProtocolAssumption :: SParsec (Expr GlobalProtocol)
+parseGlobalProtocolAssumption = do
+  a <- parseAssertion
+  return $ EGlobalProtocolAssumption a
+
+parseGlobalProtocolGuard :: SParsec (Expr GlobalProtocol)
+parseGlobalProtocolGuard = do
+  a <- parseAssertion
+  return $ EGlobalProtocolAssumption a
+
+parseGlobalProtocolEmp :: SParsec (Expr GlobalProtocol)
+parseGlobalProtocolEmp = reserved "emp" >> return EGlobalProtocolEmp
+
+{- Figure 4.3 -}
+{- SUBSECTION E -}
+parseEvent :: SParsec (Expr Event)
+parseEvent = do
+  p <- parseRole
+  i <- parseLabel
+  return $ EEvent p i
+
+{- SUBSECTION ν -}
+parseConstraint = try parseConstraintCommunicates <|> parseConstraintHappens
+
+parseConstraintCommunicates :: SParsec (Expr Constraint)
+parseConstraintCommunicates = do
+  e1 <- parseEvent
+  reservedOp "<CB"
+  e2 <- parseEvent
+  return $ EConstraintCommunicates e1 e2
+
+parseConstraintHappens :: SParsec (Expr Constraint)
+parseConstraintHappens = do
+  e1 <- parseEvent
+  reservedOp "<HB"
+  e2 <- parseEvent
+  return $ EConstraintHappens e1 e2
+
+{- SUBSECTION Ψ -}
+parseAssertion = buildExpressionParser opGlobalProtocol termGlobalProtocol
+
+opAssertion = [[Infix (reservedOp "^" >> return EAssertionAnd) AssocLeft]]
+
+termAssertion =
+  parens parseAssertion <|> parseAssertionNEvent <|> parseAssertionEvent <|>
+  parseAssertionImplies
+
+parseAssertionEvent :: SParsec (Expr Assertion)
+parseAssertionEvent = do
+  e <- parseEvent
+  return $ EAssertionEvent e
+
+parseAssertionNEvent :: SParsec (Expr Assertion)
+parseAssertionNEvent = do
+  reservedOp "~"
+  e <- parens parseEvent
+  return $ EAssertionNEvent e
+
+parseAssertionImplies :: SParsec (Expr Assertion)
+parseAssertionImplies = do
+  e <- parseEvent
+  reservedOp "==>"
+  a <- parseAssertion
+  return $ EAssertionImplies e a
+
 {-
  - SUBSECTION EXPR
  -}
 parseExpr :: SParsec AnyExpr
 parseExpr = do
   e <-
-    try (anyExpr parseSymbolicPredicate) <|> try (anyExpr parseFormula) <|>
+    try (anyExpr parseConstraint) <|> try (anyExpr parseAssertion) <|>
+    try (anyExpr parseGlobalProtocol) <|>
+    try (anyExpr parseEvent) <|>
+    try (anyExpr parseSymbolicPredicate) <|>
+    try (anyExpr parseFormula) <|>
     try (anyExpr parseFormulaDisjunct) <|>
     try (anyExpr parsePointer) <|>
     try (anyExpr parseHeap) <|>

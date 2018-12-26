@@ -1,0 +1,2 @@
+emp*1->n<>
+EHeapSeparate EHeapEmp (EHeapMap (EVarFirst 1) (EDataStructure "n") [])

@@ -1,6 +1,9 @@
 ~(1=null)
 EPureNot (EPurePointer (EPointerNull (EVarFirst 1)))
-falsev1
+1:n^2:n
+EPureAnd (EPureVarType (EVarFirst 1) (EVarType "n")) (EPureVarType (EVarFirst 2) (EVarType "n"))
+false|1<=1
+EPureOr (EPureBool (EBool False)) (EPureBoolInteger (EBoolIntegerLeq (EInteger 1) (EInteger 1)))
 EPureOr (EPureBool (EBool True))
 E1.(1<=2)
 EPureExists (EVarFirst 1) (EPureBoolInteger (EBoolIntegerLeq (EInteger 1) (EInteger 2)))

@@ -16,7 +16,7 @@ import Control.Monad (liftM)
  -}
 import Control.Monad.IO.Class (liftIO)
 import Data.List (intercalate)
-import System.IO (IOMode(ReadMode), hClose, hGetContents, openFile)
+import System.IO (readFile)
 import Text.Parsec
   ( Parsec
   , (<|>)
@@ -67,10 +67,7 @@ interpret inputLine = do
       Just "help" -> do
         mapM_ putStrLn $ "Here are a list of commands:" : commands
         return []
-      Just "load" -> do
-        handle <- openFile restInputLine ReadMode
-        contents <- hGetContents handle
-        seq (hClose handle) (return $ lines contents)
+      Just "load" -> lines `fmap` readFile restInputLine
   let s = intercalate "\n" $ map (show . extractParse parseExpr) inputLines
    in putStrLn s
   where

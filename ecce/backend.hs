@@ -268,22 +268,19 @@ languageDef =
 
 lexer = Token.makeTokenParser languageDef
 
-identifier = Token.identifier lexer -- parses an identifier
+identifier = Token.identifier lexer
 
-reserved = Token.reserved lexer -- parses a reserved name
+reserved = Token.reserved lexer
 
-reservedOp = Token.reservedOp lexer -- parses an operator
+reservedOp = Token.reservedOp lexer
 
-parens = Token.parens lexer -- parses surrounding parenthesis:
-                                    --   parens p
-                                    -- takes care of the parenthesis and
-                                    -- uses p to parse what's inside them
+parens = Token.parens lexer
 
-integer = Token.integer lexer -- parses an integer
+integer = Token.integer lexer
 
-semi = Token.semi lexer -- parses a semicolon
+semi = Token.semi lexer
 
-whiteSpace = Token.whiteSpace lexer -- parses whitespace
+whiteSpace = Token.whiteSpace lexer
 
 {-
  - SECTION PARSERS

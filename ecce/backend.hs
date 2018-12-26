@@ -655,7 +655,7 @@ parseGlobalProtocolEmp = reserved "emp" >> return EGlobalProtocolEmp
 parseEvent :: SParsec (Expr Event)
 parseEvent = do
   p <- parseRole
-  i <- parseLabel
+  i <- parens parseLabel
   return $ EEvent p i
 
 {-

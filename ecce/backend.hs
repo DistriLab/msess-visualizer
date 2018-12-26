@@ -187,7 +187,7 @@ data Expr a
     -> Expr FormulaDisjunct
     -> Expr Pure
     -> Expr SymbolicPredicate
-  {- Φ ::= vΔ -}
+  {- Φ ::= |Δ -}
   EFormulaDisjunct :: [Expr Formula] -> Expr FormulaDisjunct
   {- Δ ::= ∃v*.κ^π | Δ*Δ -}
   EFormulaExists :: [Expr VarFirst] -> Expr Heap -> Expr Pure -> Expr Formula
@@ -198,7 +198,7 @@ data Expr a
     :: Expr VarFirst -> Expr DataStructure -> [Expr VarFirst] -> Expr Heap
   EHeapPointer :: Expr Pointer -> [Expr VarFirst] -> Expr Heap
   EHeapSeparate :: Expr Heap -> Expr Heap -> Expr Heap
-  {- π ::= v:t | b | a | π^π | πvπ | ~π | ∃v.π | ∀v.π | γ -}
+  {- π ::= v:t | b | a | π^π | π|π | ~π | ∃v.π | ∀v.π | γ -}
   EPureVarType :: Expr VarFirst -> Expr VarType -> Expr Pure
   EPureBool :: Expr Bool -> Expr Pure
   EPureBoolInteger :: Expr BoolInteger -> Expr Pure
@@ -226,7 +226,7 @@ data Expr a
   EIntegerAdd :: Expr Integer -> Expr Integer -> Expr Integer
   EIntegerNeg :: Expr Integer -> Expr Integer
   {- Figure 4.1 -}
-  {- G ::= S--(i)->R:c<v.Δ> | G*G | GvG | G;G | (+)(Ψ) | (-)(Ψ) | emp -}
+  {- G ::= S--(i)->R:c<v.Δ> | G*G | G|G | G;G | (+)(Ψ) | (-)(Ψ) | emp -}
   EGlobalProtocolTransmission
     :: Expr Role
     -> Expr Label
@@ -257,7 +257,7 @@ data Expr a
   EAssertionAnd :: Expr Assertion -> Expr Assertion -> Expr Assertion
   EAssertionImplies :: Expr Event -> Expr Assertion -> Expr Assertion
   {- Figure 4.5 -}
-  {- γ ::= c(i)!v.Δ | c(i)?v.Δ | γ*γ | γvγ | γ;γ | (-)(Ψ) | (+)(Ψ) -}
+  {- γ ::= c(i)!v.Δ | c(i)?v.Δ | γ*γ | γ|γ | γ;γ | (-)(Ψ) | (+)(Ψ) -}
   EPartyProtocolSend
     :: Expr Channel
     -> Expr Label
@@ -278,7 +278,7 @@ data Expr a
     :: Expr PartyProtocol -> Expr PartyProtocol -> Expr PartyProtocol
   EPartyProtocolAssumption :: Expr Assertion -> Expr PartyProtocol
   EPartyProtocolGuard :: Expr Assertion -> Expr PartyProtocol
-  {- L ::= (i)!v.Δ | (i)?v.Δ | LvL | L;L | (-)(Ψ) | (+)(Ψ) -}
+  {- L ::= (i)!v.Δ | (i)?v.Δ | L|L | L;L | (-)(Ψ) | (+)(Ψ) -}
   EEndpointProtocolSend
     :: Expr Channel
     -> Expr Label
@@ -297,7 +297,7 @@ data Expr a
     :: Expr EndpointProtocol -> Expr EndpointProtocol -> Expr EndpointProtocol
   EEndpointProtocolAssumption :: Expr Assertion -> Expr EndpointProtocol
   EEndpointProtocolGuard :: Expr Assertion -> Expr EndpointProtocol
-  {- Z ::= P--(i)->P:v.Δ | ZvZ | Z;Z | (-)(Ψ) | (+)(Ψ) -}
+  {- Z ::= P--(i)->P:v.Δ | Z|Z | Z;Z | (-)(Ψ) | (+)(Ψ) -}
   EChannelProtocolTransmission
     :: Expr Role
     -> Expr Label
@@ -342,7 +342,7 @@ languageDef =
         , "x"
         , "~"
         , "^"
-        , "v"
+        , "|"
         , "~"
         , "*"
         , "="
@@ -426,7 +426,7 @@ parseSymbolicPredicate = do
  -}
 parseFormulaDisjunct :: SParsec (Expr FormulaDisjunct)
 parseFormulaDisjunct = do
-  fs <- parseFormula `sepBy1` (char 'v')
+  fs <- parseFormula `sepBy1` (reservedOp "|")
   return $ EFormulaDisjunct fs
 
 {-
@@ -487,7 +487,7 @@ parsePure = buildExpressionParser opPure termPure
 opPure =
   [ [Prefix (reservedOp "~" >> return EPureNot)]
   , [ Infix (reservedOp "^" >> return EPureAnd) AssocLeft
-    , Infix (reservedOp "v" >> return EPureOr) AssocLeft
+    , Infix (reservedOp "|" >> return EPureOr) AssocLeft
     ]
   ]
 
@@ -643,7 +643,7 @@ parseGlobalProtocol = buildExpressionParser opGlobalProtocol termGlobalProtocol
 
 opGlobalProtocol =
   [ [ Infix (reservedOp "*" >> return EGlobalProtocolConcurrency) AssocLeft
-    , Infix (reservedOp "v" >> return EGlobalProtocolChoice) AssocLeft
+    , Infix (reservedOp "|" >> return EGlobalProtocolChoice) AssocLeft
     , Infix (reservedOp ";" >> return EGlobalProtocolSequencing) AssocLeft
     ]
   ]
@@ -750,7 +750,7 @@ parsePartyProtocol = buildExpressionParser opPartyProtocol termPartyProtocol
 
 opPartyProtocol =
   [ [ Infix (reservedOp "*" >> return EPartyProtocolConcurrency) AssocLeft
-    , Infix (reservedOp "v" >> return EPartyProtocolChoice) AssocLeft
+    , Infix (reservedOp "|" >> return EPartyProtocolChoice) AssocLeft
     , Infix (reservedOp ";" >> return EPartyProtocolSequencing) AssocLeft
     ]
   ]
@@ -803,7 +803,7 @@ parseEndpointProtocol =
   buildExpressionParser opEndpointProtocol termEndpointProtocol
 
 opEndpointProtocol =
-  [ [ Infix (reservedOp "v" >> return EEndpointProtocolChoice) AssocLeft
+  [ [ Infix (reservedOp "|" >> return EEndpointProtocolChoice) AssocLeft
     , Infix (reservedOp ";" >> return EEndpointProtocolSequencing) AssocLeft
     ]
   ]
@@ -856,7 +856,7 @@ parseChannelProtocol =
   buildExpressionParser opChannelProtocol termChannelProtocol
 
 opChannelProtocol =
-  [ [ Infix (reservedOp "v" >> return EChannelProtocolChoice) AssocLeft
+  [ [ Infix (reservedOp "|" >> return EChannelProtocolChoice) AssocLeft
     , Infix (reservedOp ";" >> return EChannelProtocolSequencing) AssocLeft
     ]
   ]

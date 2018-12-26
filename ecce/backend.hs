@@ -8,12 +8,14 @@
 {-# LANGUAGE UndecidableInstances #-}
 -- Allows deriving for empty data types
 {-# LANGUAGE EmptyDataDeriving #-}
-
-import Control.Monad (liftM)
+-- Allows type signatures in patterns
+{-# LANGUAGE ScopedTypeVariables #-}
 
 {-
  - SECTION IMPORTS
  -}
+import qualified Control.Exception (SomeException, try)
+import Control.Monad (liftM)
 import Control.Monad (join)
 import Control.Monad.IO.Class (liftIO)
 import System.IO (FilePath, readFile)
@@ -79,8 +81,10 @@ parseRestInputLine = parseCommand >> whiteSpace >> many anyChar
 -- Parse file at filePath with parser
 parseFile :: Show a => FilePath -> SParsec a -> IO [String]
 parseFile filePath parser = do
-  xs <- fmap lines $ readFile filePath
-  return $ map (show . extractParse parser) xs
+  xs <- Control.Exception.try $ fmap lines $ readFile filePath
+  case xs of
+    Left (e :: Control.Exception.SomeException) -> return [show e]
+    Right xs -> return $ map (show . extractParse parser) xs
 
 commands :: [String]
 commands = ["help", "load"]

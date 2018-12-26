@@ -95,7 +95,7 @@ commands = ["help", "load"]
 type SParsec = Parsec String ()
 
 {-
- - SUBSECTION Helper Parsers
+ - SUBSECTION HELPERS
  -}
 type VarFirst = Integer
 
@@ -134,8 +134,9 @@ data Constraint
 
 data Assertion
 
+{- SUBSECTION EXPR -}
 data Expr a
-  {- Helper parsers -}
+  {- HELPERS -}
       where
   EVarFirst :: VarFirst -> Expr VarFirst
   EDataStructure :: DataStructure -> Expr DataStructure
@@ -296,7 +297,7 @@ extractParse p s =
     Right x -> x
 
 {-
- - SUBSECTION Helper Parsers
+ - SUBSECTION HELPERS
  -}
 parseVarFirst = liftM EVarFirst integer
 
@@ -581,14 +582,18 @@ parseGlobalProtocolEmp :: SParsec (Expr GlobalProtocol)
 parseGlobalProtocolEmp = reserved "emp" >> return EGlobalProtocolEmp
 
 {- Figure 4.3 -}
-{- SUBSECTION E -}
+{-
+ - SUBSECTION E
+ -}
 parseEvent :: SParsec (Expr Event)
 parseEvent = do
   p <- parseRole
   i <- parseLabel
   return $ EEvent p i
 
-{- SUBSECTION ν -}
+{-
+ - SUBSECTION ν
+ -}
 parseConstraint = try parseConstraintCommunicates <|> parseConstraintHappens
 
 parseConstraintCommunicates :: SParsec (Expr Constraint)
@@ -605,7 +610,9 @@ parseConstraintHappens = do
   e2 <- parseEvent
   return $ EConstraintHappens e1 e2
 
-{- SUBSECTION Ψ -}
+{-
+ - SUBSECTION Ψ
+ -}
 parseAssertion = buildExpressionParser opAssertion termAssertion
 
 opAssertion = [[Infix (reservedOp "^" >> return EAssertionAnd) AssocLeft]]

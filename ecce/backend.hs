@@ -127,9 +127,9 @@ type SParsec = Parsec String ()
  -}
 type VarFirst = Integer
 
-type VarType = String
-
 type DataStructure = String
+
+type VarType = String
 
 type Role = Integer
 
@@ -175,6 +175,7 @@ data Expr a
       where
   EVarFirst :: VarFirst -> Expr VarFirst
   EDataStructure :: DataStructure -> Expr DataStructure
+  EVarType :: VarType -> Expr VarType
   ERole :: Role -> Expr Role
   EChannel :: Channel -> Expr Channel
   ELabel :: Label -> Expr Label
@@ -198,7 +199,6 @@ data Expr a
   EHeapPointer :: Expr Pointer -> [Expr VarFirst] -> Expr Heap
   EHeapSeparate :: Expr Heap -> Expr Heap -> Expr Heap
   {- π ::= v:t | b | a | π^π | πvπ | ~π | ∃v.π | ∀v.π | γ -}
-  EVarType :: VarType -> Expr VarType
   EPureVarType :: Expr VarFirst -> Expr VarType -> Expr Pure
   EPureBool :: Expr Bool -> Expr Pure
   EPureBoolInteger :: Expr BoolInteger -> Expr Pure
@@ -397,6 +397,8 @@ parseVarFirst = liftM EVarFirst integer
 
 parseDataStructure = liftM EDataStructure identifier
 
+parseVarType = liftM EVarType identifier
+
 parseRole = liftM ERole integer
 
 parseChannel = liftM EChannel integer
@@ -500,9 +502,6 @@ parsePureVarType = do
   reservedOp ":"
   t <- parseVarType
   return $ EPureVarType v t
-
-parseVarType :: SParsec (Expr VarType)
-parseVarType = liftM EVarType identifier
 
 parsePureBool :: SParsec (Expr Pure)
 parsePureBool = do

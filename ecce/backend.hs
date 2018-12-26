@@ -9,11 +9,12 @@
 -- Allows deriving for empty data types
 {-# LANGUAGE EmptyDataDeriving #-}
 
+import Control.Monad (liftM)
+
 {-
  - SECTION IMPORTS
-import Text.ParserCombinators.Parsec.Language
  -}
-import Control.Monad (liftM)
+import Control.Monad.IO.Class (liftIO)
 import Data.List (intercalate)
 import System.IO (IOMode(ReadMode), hClose, hGetContents, openFile)
 import Text.Parsec
@@ -55,6 +56,10 @@ interpreter :: IO ()
 interpreter = do
   putStr "ecce> "
   inputLine <- getLine
+  (liftIO $ interpret inputLine) >> interpreter
+
+interpret :: String -> IO ()
+interpret inputLine = do
   inputLines <-
     if take loadStringLength inputLine == loadString
       then do
@@ -65,7 +70,6 @@ interpreter = do
         return [inputLine]
   let s = intercalate "\n" $ map (show . extractParse parseExpr) inputLines
    in putStrLn s
-  interpreter
   where
     loadString = "load "
     loadStringLength = length loadString

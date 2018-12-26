@@ -14,8 +14,8 @@ import Control.Monad (liftM)
 {-
  - SECTION IMPORTS
  -}
+import Control.Monad (join)
 import Control.Monad.IO.Class (liftIO)
-import Data.List (intercalate)
 import System.IO (readFile)
 import Text.Parsec
   ( Parsec
@@ -59,17 +59,13 @@ interpreter = do
   (liftIO $ interpret inputLine) >> interpreter
 
 interpret :: String -> IO ()
-interpret inputLine = do
-  inputLines <-
-    case command of
-      Nothing -> do
-        return [inputLine]
-      Just "help" -> do
-        mapM_ putStrLn $ "Here are a list of commands:" : commands
-        return []
-      Just "load" -> lines `fmap` readFile restInputLine
-  let s = intercalate "\n" $ map (show . extractParse parseExpr) inputLines
-   in putStrLn s
+interpret inputLine =
+  case command of
+    Nothing -> (putStrLn . show . extractParse parseExpr) inputLine
+    Just "help" -> mapM_ putStrLn $ "Here are a list of commands:" : commands
+    Just "load" -> do
+      xs <- fmap lines $ readFile restInputLine
+      mapM_ putStrLn $ map (show . extractParse parseExpr) xs
   where
     command = extractParse parseCommand inputLine
     restInputLine = extractParse parseRestInputLine inputLine

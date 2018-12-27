@@ -702,8 +702,10 @@ parseAssertion = buildExpressionParser opAssertion termAssertion
 opAssertion = [[Infix (reservedOp "^" >> return EAssertionAnd) AssocLeft]]
 
 termAssertion =
-  parens parseAssertion <|> try parseAssertionNEvent <|> try parseAssertionEvent <|>
-  try parseAssertionImplies
+  parens parseAssertion <|> try parseAssertionImplies <|>
+  try parseAssertionConstraint <|>
+  try parseAssertionNEvent <|>
+  try parseAssertionEvent
 
 parseAssertionEvent = do
   e <- parseEvent
@@ -713,6 +715,10 @@ parseAssertionNEvent = do
   reservedOp "~"
   e <- parens parseEvent
   return $ EAssertionNEvent e
+
+parseAssertionConstraint = do
+  c <- parseConstraint
+  return $ EAssertionConstraint c
 
 parseAssertionImplies = do
   e <- parseEvent
@@ -860,7 +866,7 @@ parseChannelProtocolAssumption = do
 parseExpr :: SParsec AnyExpr
 parseExpr = do
   e <-
-    try (anyExpr parseConstraint) <|> try (anyExpr parseAssertion) <|>
+    try (anyExpr parseAssertion) <|> try (anyExpr parseConstraint) <|>
     try (anyExpr parseGlobalProtocol) <|>
     try (anyExpr parseEvent) <|>
     try (anyExpr parseSymbolicPredicate) <|>

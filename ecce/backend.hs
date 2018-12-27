@@ -437,7 +437,7 @@ parseSymbolicPredicate = do
  - SUBSECTION Φ
  -}
 parseFormulaDisjunct = do
-  fs <- parseFormula `sepBy1` (reservedOp "|")
+  fs <- parseFormula `sepBy1` (reservedOp "*")
   return $ EFormulaDisjunct fs
 
 {-

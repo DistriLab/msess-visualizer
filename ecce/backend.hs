@@ -379,6 +379,8 @@ languageDef =
         , "(+)"
         , "!"
         , "?"
+        , "->"
+        , "inv"
         ]
     }
 
@@ -433,9 +435,9 @@ parseLabel = liftM ELabel integer
 parseSymbolicPredicate = do
   po <- parsePointer
   vs <- between (string "(root,") (char ')') (parseVarFirst `sepBy` (char ','))
-  string " = "
+  reservedOp "="
   fd <- parseFormulaDisjunct
-  string "inv"
+  reservedOp "inv"
   pu <- parsePure
   return $ ESymbolicPredicate po vs fd pu
 
@@ -479,7 +481,7 @@ parseHeapEmp = reserved "emp" >> return EHeapEmp
 
 parseHeapMap = do
   v1 <- parseVarFirst
-  string "->"
+  reservedOp "->"
   d <- parseDataStructure
   vs <- angles $ parseVarFirst `sepBy` (char ',')
   return $ EHeapMap v1 d vs

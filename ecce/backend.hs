@@ -6,8 +6,6 @@
 {-# LANGUAGE GADTs #-}
 -- Allows more than one StandaloneDeriving
 {-# LANGUAGE UndecidableInstances #-}
--- Allows deriving for empty data types
-{-# LANGUAGE EmptyDataDeriving #-}
 -- Allows type signatures in patterns
 {-# LANGUAGE ScopedTypeVariables #-}
 

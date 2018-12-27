@@ -99,12 +99,16 @@ parseFile filePath parser = do
 parseTestFile :: FilePath -> IO [String]
 parseTestFile filePath = do
   xs <- extractFile filePath
-  case xs of
-    Left e -> return $ "Usage: test <relativepath>" : ("Error: " ++ show e) : []
-    Right xs -> return $ map parseTest (uncurry (zip3 [0 ..]) $ splitEvenOdd xs)
+  return $
+    either
+      (\e -> "Usage: test <relativepath>" : "Error: " : e)
+      (\xs -> map parseTest $ (indexAndPair . splitEvenOdd) xs)
+      xs
   where
     splitEvenOdd :: [a] -> ([a], [a])
     splitEvenOdd = foldr (\x ~(xs2, xs1) -> (x : xs1, xs2)) ([], [])
+    indexAndPair :: ([a], [a]) -> [(Integer, a, a)]
+    indexAndPair = uncurry (zip3 [0 ..])
 
 extractFile :: FilePath -> IO (Either [String] [String])
 extractFile filePath = do

@@ -16,7 +16,15 @@ import Control.Exception (SomeException)
 import qualified Control.Exception (try)
 import Control.Monad (join, liftM)
 import Control.Monad.IO.Class (liftIO)
-import System.IO (FilePath, readFile)
+import System.Console.Haskeline
+  ( InputT
+  , defaultSettings
+  , getInputLine
+  , outputStrLn
+  , runInputT
+  )
+import System.Directory (getDirectoryContents)
+import System.IO (FilePath, IOMode(ReadMode), readFile)
 import Text.Parsec
   ( ParseError
   , Parsec
@@ -47,19 +55,21 @@ import qualified Text.ParserCombinators.Parsec.Token as Token
  -}
 type Test = (Integer, String, String)
 
+main :: IO ()
 main = do
   welcome
-  interpreter
+  runInputT defaultSettings interpreter
 
 welcome :: IO ()
 welcome = do
   mapM_ putStrLn $ "Welcome!" : "Type \"help\" for more information." : "" : []
 
-interpreter :: IO ()
+interpreter :: InputT IO ()
 interpreter = do
-  putStr "ecce> "
-  inputLine <- getLine
-  (liftIO $ interpret inputLine) >> interpreter
+  mInputLine <- getInputLine "ecce> "
+  case mInputLine of
+    Nothing -> outputStrLn "Quitting"
+    Just inputLine -> (liftIO $ interpret inputLine) >> interpreter
 
 interpret :: String -> IO ()
 interpret inputLine =
@@ -87,7 +97,8 @@ parseFile :: Show a => FilePath -> SParsec a -> IO [String]
 parseFile filePath parser = do
   xs <- extractFile filePath
   case xs of
-    Left e -> return $ "Usage: test <relativepath>" : ("Error: " ++ show e) : []
+    Left e ->
+      return $ "Usage:\n\ttest <relativepath>" : ("Error: " ++ show e) : []
     Right xs -> return $ map (extractParseShow parser) xs
 
 -- All test files must follow a strict format:
@@ -101,7 +112,9 @@ parseTestFile filePath = do
   xs <- extractFile filePath
   return $
     either
-      (\e -> "Usage: test <relativepath>" : "Error: " : e)
+      (\e ->
+         "Usage:\n\ttest <relativepath>\n\ttest list <relativepath>" :
+         "Error: " : e)
       (\xs -> map parseTest $ (indexAndPair . splitEvenOdd) xs)
       xs
   where

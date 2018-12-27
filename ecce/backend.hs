@@ -625,22 +625,12 @@ parseInteger = buildExpressionParser opInteger termInteger
 
 opInteger =
   [ [Prefix (reservedOp "-" >> return EIntegerNeg)]
+  , [Infix (reservedOp "x" >> return EIntegerMul) AssocLeft]
   , [Infix (reservedOp "+" >> return EIntegerAdd) AssocLeft]
   ]
 
 termInteger =
-  parens parseInteger <|> try parseIntegerMul <|> try parseIntegerLit <|>
-  try parseIntegerVarFirst
-
-parseIntegerLit :: SParsec (Expr Integer)
-parseIntegerLit = liftM EInteger integer
-
-parseIntegerMul :: SParsec (Expr Integer)
-parseIntegerMul = do
-  k <- parseIntegerLit
-  reservedOp "x"
-  s <- parseInteger
-  return $ EIntegerMul k s
+  parens parseInteger <|> liftM EInteger integer <|> try parseIntegerVarFirst
 
 parseIntegerVarFirst :: SParsec (Expr Integer)
 parseIntegerVarFirst = do

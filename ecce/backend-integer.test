@@ -3,15 +3,17 @@ EInteger 0
 1+2
 EIntegerAdd (EInteger 1) (EInteger 2)
 1x2+3
-EIntegerMul (EInteger 1) (EIntegerAdd (EInteger 2) (EInteger 3))
+EIntegerAdd (EIntegerMul (EInteger 1) (EInteger 2)) (EInteger 3)
 1x2+3x4+5
-EIntegerMul (EInteger 1) (EIntegerAdd (EInteger 2) (EIntegerMul (EInteger 3) (EIntegerAdd (EInteger 4) (EInteger 5))))
+EIntegerAdd (EIntegerAdd (EIntegerMul (EInteger 1) (EInteger 2)) (EIntegerMul (EInteger 3) (EInteger 4))) (EInteger 5)
 1+2x(3x(4+5))
 EIntegerAdd (EInteger 1) (EIntegerMul (EInteger 2) (EIntegerMul (EInteger 3) (EIntegerAdd (EInteger 4) (EInteger 5))))
 -1x2
 EIntegerMul (EIntegerNeg (EInteger 1)) (EInteger 2)
 1x-2
-EIntegerMul ((EInteger 1) (EIntegerNeg (EInteger 2)))
+EIntegerMul (EInteger 1) (EIntegerNeg (EInteger 2))
+1x(-2)
+EIntegerMul (EInteger 1) (EIntegerNeg (EInteger 2))
 -(1x2)
 EIntegerNeg (EIntegerMul (EInteger 1) (EInteger 2))
 -1+2

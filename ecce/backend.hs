@@ -27,7 +27,7 @@ import Text.Parsec
   , anyChar
   , between
   , char
-  , letter
+  , lower
   , many
   , optionMaybe
   , parse
@@ -350,7 +350,7 @@ languageDef =
     { Token.commentStart = "{-"
     , Token.commentEnd = "-}"
     , Token.commentLine = "--"
-    , Token.identStart = letter
+    , Token.identStart = lower
     , Token.identLetter = alphaNum
     , Token.reservedNames = ["true", "false", "emp", "null"]
     , Token.reservedOpNames =

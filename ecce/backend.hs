@@ -380,7 +380,7 @@ languageDef =
         , "?"
         , "--"
         , "->"
-        , "inv"
+        , "Inv"
         ]
     }
 
@@ -437,7 +437,7 @@ parseSymbolicPredicate = do
   vs <- between (string "(root,") (char ')') (parseVarFirst `sepBy` (char ','))
   reservedOp "="
   fd <- parseFormulaDisjunct
-  reservedOp "inv"
+  reservedOp "Inv"
   pu <- parsePure
   return $ ESymbolicPredicate po vs fd pu
 

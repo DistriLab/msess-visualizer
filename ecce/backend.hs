@@ -121,13 +121,12 @@ extractFile filePath = do
 
 parseTest :: Test -> String
 parseTest (n, i, o) =
-  if s == o
+  if e == o
     then concat $ "#" : show n : ":\tP" : []
     else concat $
-         "#" : show n : ":\tF\n\texpect\t" : o : "\n\tactual\t" : s : []
+         "#" : show n : ":\tF\n\texpect\t" : o : "\n\tactual\t" : e : []
   where
     e = extractParseShow parseExpr i
-    s = show e
 
 commands :: [String]
 commands = "help" : "load" : "test" : []

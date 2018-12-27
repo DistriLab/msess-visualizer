@@ -32,7 +32,6 @@ import Text.Parsec
   , alphaNum
   , anyChar
   , between
-  , char
   , lower
   , many
   , optionMaybe
@@ -444,13 +443,13 @@ parseLabel = liftM ELabel integer
 {-
  - SUBSECTION pred
  -}
+-- TODO sympred(root,) is not valid syntax
 parseSymbolicPredicate = do
   pr <- parsePredicate
   vs <-
-    between
-      (string "(root,")
-      (char ')')
-      (parseVarFirst `sepBy` (reservedOp ","))
+    parens
+      (do string "root,"
+          parseVarFirst `sepBy` (reservedOp ","))
   reservedOp "="
   fd <- parseFormulaDisjunct
   reservedOp "Inv"
@@ -567,7 +566,7 @@ parsePointer =
 
 parsePointerEq = do
   v1 <- parseVarFirst
-  char '='
+  reservedOp "="
   v2 <- parseVarFirst
   return $ EPointerEq v1 v2
 
@@ -660,11 +659,12 @@ parseGlobalProtocolTransmission = do
   r <- parseRole
   reservedOp ":"
   c <- parseChannel
-  char '<'
-  v <- parseVarFirst
-  reservedOp "."
-  f <- parseFormula
-  char '>'
+  (v, f) <-
+    angles
+      (do v <- parseVarFirst
+          reservedOp "."
+          f <- parseFormula
+          return (v, f))
   return $ EGlobalProtocolTransmission s i r c v f
 
 parseGlobalProtocolAssumption = do

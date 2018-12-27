@@ -369,6 +369,7 @@ languageDef =
         , ":"
         , ";"
         , "."
+        , ","
         , "E"
         , "A"
         , "<CB"
@@ -434,7 +435,11 @@ parseLabel = liftM ELabel integer
  -}
 parseSymbolicPredicate = do
   po <- parsePointer
-  vs <- between (string "(root,") (char ')') (parseVarFirst `sepBy` (char ','))
+  vs <-
+    between
+      (string "(root,")
+      (char ')')
+      (parseVarFirst `sepBy` (reservedOp ","))
   reservedOp "="
   fd <- parseFormulaDisjunct
   reservedOp "Inv"
@@ -459,7 +464,7 @@ termFormula = parens parseFormula <|> try parseFormulaExists
 
 parseFormulaExists = do
   reservedOp "E"
-  vs <- parseVarFirst `sepBy` (char ',')
+  vs <- parseVarFirst `sepBy` (reservedOp ",")
   reservedOp "."
   h <- parseHeap
   reservedOp "^"
@@ -483,12 +488,12 @@ parseHeapMap = do
   v1 <- parseVarFirst
   reservedOp "->"
   d <- parseDataStructure
-  vs <- angles $ parseVarFirst `sepBy` (char ',')
+  vs <- angles $ parseVarFirst `sepBy` (reservedOp ",")
   return $ EHeapMap v1 d vs
 
 parseHeapPredicate = do
   p <- parsePredicate
-  vs <- parens $ parseVarFirst `sepBy` (char ',')
+  vs <- parens $ parseVarFirst `sepBy` (reservedOp ",")
   return $ EHeapPredicate p vs
 
 {-
@@ -640,7 +645,7 @@ termGlobalProtocol =
 
 parseGlobalProtocolTransmission = do
   s <- parseRole
-  i <- between (string "--") (string "->") (parens parseLabel)
+  i <- between (reservedOp "--") (reservedOp "->") (parens parseLabel)
   r <- parseRole
   reservedOp ":"
   c <- parseChannel
@@ -831,7 +836,7 @@ termChannelProtocol =
 
 parseChannelProtocolTransmission = do
   s <- parseRole
-  i <- between (string "--") (string "->") (parens parseLabel)
+  i <- between (reservedOp "--") (reservedOp "->") (parens parseLabel)
   r <- parseRole
   reservedOp ":"
   v <- parseVarFirst

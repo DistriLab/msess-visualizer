@@ -1,6 +1,6 @@
 1x2<=3
 EBoolIntegerLeq (EIntegerMul (EInteger 1) (EInteger 2)) (EInteger 3)
-1x2<=-3
+1x2<=(-3)
 EBoolIntegerLeq (EIntegerMul (EInteger 1) (EInteger 2)) (EIntegerNeg (EInteger 3))
 -1=-2
 EBoolIntegerEq (EIntegerNeg (EInteger 1)) (EIntegerNeg (EInteger 2))

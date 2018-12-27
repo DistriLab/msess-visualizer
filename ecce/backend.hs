@@ -1,6 +1,6 @@
 {- SECTION PRAGMAS -}
--- Allows putting `deriving` on a standalone line, needed for GADTs to derive 
--- (Show)
+-- Allows putting `deriving` on a standalone line
+-- Needed for GADTs to derive (Show)
 {-# LANGUAGE StandaloneDeriving #-}
 -- Allows constrained ASTs
 {-# LANGUAGE GADTs #-}
@@ -16,8 +16,7 @@
  -}
 import Control.Exception (SomeException)
 import qualified Control.Exception (try)
-import Control.Monad (liftM)
-import Control.Monad (join)
+import Control.Monad (join, liftM)
 import Control.Monad.IO.Class (liftIO)
 import System.IO (FilePath, readFile)
 import Text.Parsec
@@ -109,7 +108,7 @@ parseTestFile filePath = do
 
 extractFile :: FilePath -> IO (Either [String] [String])
 extractFile filePath = do
-  xs <- Control.Exception.try $ fmap lines $ readFile filePath
+  xs <- (Control.Exception.try . fmap lines . readFile) filePath
   case xs of
     Left (e :: SomeException) -> return $ Left $ show e : []
     Right xs -> return $ Right $ xs

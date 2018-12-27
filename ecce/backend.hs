@@ -199,7 +199,7 @@ data Expr a
   {- Figure 2.2 -}
   {- pred ::= p(root,v*) = Φ inv π -}
   ESymbolicPredicate
-    :: Expr Pointer
+    :: Expr Predicate
     -> [Expr VarFirst]
     -> Expr FormulaDisjunct
     -> Expr Pure
@@ -434,7 +434,7 @@ parseLabel = liftM ELabel integer
  - SUBSECTION pred
  -}
 parseSymbolicPredicate = do
-  po <- parsePointer
+  pr <- parsePredicate
   vs <-
     between
       (string "(root,")
@@ -444,7 +444,7 @@ parseSymbolicPredicate = do
   fd <- parseFormulaDisjunct
   reservedOp "Inv"
   pu <- parsePure
-  return $ ESymbolicPredicate po vs fd pu
+  return $ ESymbolicPredicate pr vs fd pu
 
 {-
  - SUBSECTION Φ

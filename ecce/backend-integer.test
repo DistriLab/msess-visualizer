@@ -10,8 +10,6 @@ EIntegerAdd (EIntegerAdd (EIntegerMul (EInteger 1) (EInteger 2)) (EIntegerMul (E
 EIntegerAdd (EInteger 1) (EIntegerMul (EInteger 2) (EIntegerMul (EInteger 3) (EIntegerAdd (EInteger 4) (EInteger 5))))
 -1x2
 EIntegerMul (EIntegerNeg (EInteger 1)) (EInteger 2)
-1x-2
-EIntegerMul (EInteger 1) (EIntegerNeg (EInteger 2))
 1x(-2)
 EIntegerMul (EInteger 1) (EIntegerNeg (EInteger 2))
 -(1x2)

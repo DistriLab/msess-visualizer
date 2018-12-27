@@ -1,1 +1,2 @@
 E1.emp^true|E2.emp^false
+EFormulaSeparate (EFormulaExists [EVarFirst 1] EHeapEmp (EPureBool (EBool True))) (EFormulaExists [EVarFirst 2] EHeapEmp (EPureBool (EBool False)))

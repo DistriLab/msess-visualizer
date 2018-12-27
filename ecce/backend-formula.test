@@ -1,4 +1,4 @@
 E1,2.1->n<2>^true^false
-EFormulaExists [EVarFirst 1,EVarFirst 2] (EHeapMap (EVarFirst 1) (EDataStructure "n") [EVarFirst 2]) (EPureAnd (EPureBool (EBool True)) (EPureBool (EBool False))
+EFormulaExists [EVarFirst 1,EVarFirst 2] (EHeapMap (EVarFirst 1) (EDataStructure "n") [EVarFirst 2]) (EPureAnd (EPureBool (EBool True)) (EPureBool (EBool False)))
 E1.emp^1=1*E2.emp^1=null
 EFormulaSeparate (EFormulaExists [EVarFirst 1] EHeapEmp (EPureBoolInteger (EBoolIntegerEq (EInteger 1) (EInteger 1)))) (EFormulaExists [EVarFirst 2] EHeapEmp (EPurePointer (EPointerNull (EVarFirst 1))))

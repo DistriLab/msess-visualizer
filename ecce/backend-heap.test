@@ -1,2 +1,4 @@
 emp*1->n<>
 EHeapSeparate EHeapEmp (EHeapMap (EVarFirst 1) (EDataStructure "n") [])
+1=null(2,3)
+EHeapPointer (EPointerNull (EVarFirst 1)) [EVarFirst 2,EVarFirst 3]

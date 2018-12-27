@@ -881,8 +881,8 @@ parseExpr = do
     try (anyExpr parseGlobalProtocol) <|>
     try (anyExpr parseEvent) <|>
     try (anyExpr parseSymbolicPredicate) <|>
-    try (anyExpr parseFormula) <|>
     try (anyExpr parseFormulaDisjunct) <|>
+    try (anyExpr parseFormula) <|>
     try (anyExpr parsePointer) <|>
     try (anyExpr parseHeap) <|>
     try (anyExpr parseBoolInteger) <|>

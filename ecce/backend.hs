@@ -145,6 +145,8 @@ type DataStructure = String
 
 type VarType = String
 
+type Predicate = String
+
 type Role = Integer
 
 type Channel = Integer
@@ -190,6 +192,7 @@ data Expr a
   EVarFirst :: VarFirst -> Expr VarFirst
   EDataStructure :: DataStructure -> Expr DataStructure
   EVarType :: VarType -> Expr VarType
+  EPredicate :: Predicate -> Expr Predicate
   ERole :: Role -> Expr Role
   EChannel :: Channel -> Expr Channel
   ELabel :: Label -> Expr Label
@@ -210,7 +213,7 @@ data Expr a
   EHeapEmp :: Expr Heap
   EHeapMap
     :: Expr VarFirst -> Expr DataStructure -> [Expr VarFirst] -> Expr Heap
-  EHeapPointer :: Expr Pointer -> [Expr VarFirst] -> Expr Heap
+  EHeapPredicate :: Expr Predicate -> [Expr VarFirst] -> Expr Heap
   EHeapSeparate :: Expr Heap -> Expr Heap -> Expr Heap
   {- π ::= v:t | b | a | π^π | π|π | ~π | ∃v.π | ∀v.π | γ -}
   EPureVarType :: Expr VarFirst -> Expr VarType -> Expr Pure
@@ -415,6 +418,8 @@ parseDataStructure = liftM EDataStructure identifier
 
 parseVarType = liftM EVarType identifier
 
+parsePredicate = liftM EPredicate identifier
+
 parseRole = liftM ERole integer
 
 parseChannel = liftM EChannel integer
@@ -468,7 +473,7 @@ opHeap = [[Infix (reservedOp "*" >> return EHeapSeparate) AssocLeft]]
 
 termHeap =
   parens parseHeap <|> try parseHeapEmp <|> try parseHeapMap <|>
-  try parseHeapPointer
+  try parseHeapPredicate
 
 parseHeapEmp = reserved "emp" >> return EHeapEmp
 
@@ -479,10 +484,10 @@ parseHeapMap = do
   vs <- angles $ parseVarFirst `sepBy` (char ',')
   return $ EHeapMap v1 d vs
 
-parseHeapPointer = do
-  p <- parsePointer
+parseHeapPredicate = do
+  p <- parsePredicate
   vs <- parens $ parseVarFirst `sepBy` (char ',')
-  return $ EHeapPointer p vs
+  return $ EHeapPredicate p vs
 
 {-
  - SUBSECTION π

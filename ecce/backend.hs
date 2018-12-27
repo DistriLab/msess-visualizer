@@ -14,7 +14,8 @@
 {-
  - SECTION IMPORTS
  -}
-import qualified Control.Exception (SomeException, try)
+import Control.Exception (SomeException)
+import qualified Control.Exception (try)
 import Control.Monad (liftM)
 import Control.Monad (join)
 import Control.Monad.IO.Class (liftIO)
@@ -46,6 +47,8 @@ import qualified Text.ParserCombinators.Parsec.Token as Token
 {-
  - SECTION USER INTERFACE
  -}
+type Test = (Integer, String, String)
+
 main = do
   welcome
   interpreter
@@ -66,9 +69,7 @@ interpret inputLine =
     Nothing -> (putStrLn . show . extractParse parseExpr) inputLine
     Just "help" -> mapM_ putStrLn $ "Here are a list of commands:" : commands
     Just "load" -> parseFile restInputLine parseExpr >>= mapM_ putStrLn
-    Just "test" ->
-      parseTestFile (concat $ "backend-" : restInputLine : ".test" : []) >>=
-      mapM_ putStrLn
+    Just "test" -> parseTestFile restInputLine >>= mapM_ putStrLn
     -- TODO fix double parsing
   where
     command = extractParse parseCommand inputLine
@@ -85,9 +86,9 @@ parseRestInputLine = parseCommand >> whiteSpace >> many anyChar
 -- Parse file at filePath with parser
 parseFile :: Show a => FilePath -> SParsec a -> IO [String]
 parseFile filePath parser = do
-  xs <- Control.Exception.try $ fmap lines $ readFile filePath
+  xs <- extractFile filePath
   case xs of
-    Left (e :: Control.Exception.SomeException) -> return [show e]
+    Left e -> return $ "Usage: test <relativepath>" : ("Error: " ++ show e) : []
     Right xs -> return $ map (show . extractParse parser) xs
 
 -- All test files must follow a strict format:
@@ -98,24 +99,33 @@ parseFile filePath parser = do
 -- (2) Expected result of running (1)
 parseTestFile :: FilePath -> IO [String]
 parseTestFile filePath = do
+  xs <- extractFile filePath
+  case xs of
+    Left e -> return $ "Usage: test <relativepath>" : ("Error: " ++ show e) : []
+    Right xs -> return $ map parseTest (uncurry (zip3 [0 ..]) $ splitEvenOdd xs)
+  where
+    splitEvenOdd :: [a] -> ([a], [a])
+    splitEvenOdd = foldr (\x ~(xs2, xs1) -> (x : xs1, xs2)) ([], [])
+
+extractFile :: FilePath -> IO (Either [String] [String])
+extractFile filePath = do
   xs <- Control.Exception.try $ fmap lines $ readFile filePath
   case xs of
-    Left (e :: Control.Exception.SomeException) -> return [show e]
-    Right xs -> return $ map parseTest (uncurry zip $ splitOddEven xs)
-  where
-    splitOddEven :: [a] -> ([a], [a])
-    splitOddEven = foldr (\x ~(xs2, xs1) -> (x : xs1, xs2)) ([], [])
+    Left (e :: SomeException) -> return $ Left $ show e : []
+    Right xs -> return $ Right $ xs
 
-parseTest :: (String, String) -> String
-parseTest (i, o) =
-  if show e == o
-    then concat $ "P" : []
-    else concat $ "F: " : o : []
+parseTest :: Test -> String
+parseTest (n, i, o) =
+  if s == o
+    then concat $ "#" : show n : ":\tP" : []
+    else concat $
+         "#" : show n : ":\tF\n\texpect\t" : o : "\n\tactual\t" : s : []
   where
     e = extractParse parseExpr i
+    s = show e
 
 commands :: [String]
-commands = ["help", "load", "test"]
+commands = "help" : "load" : "test" : []
 
 {-
  - SECTION TYPES

@@ -1,1 +1,2 @@
-1=null(root,1,2) = E1.emp^true|E2.emp^false inv ~(false<=true)
+sympred(root,1,2)=(E1.emp^true)|(E2.emp^false)Inv(~1/=null)
+ESymbolicPredicate (EPredicate "sympred") [EVarFirst 1,EVarFirst 2] (EFormulaDisjunct [EFormulaExists [EVarFirst 1] EHeapEmp (EPureBool (EBool True)),EFormulaExists [EVarFirst 2] EHeapEmp (EPureBool (EBool False))]) (EPureNot (EPurePointer (EPointerNNull (EVarFirst 1))))

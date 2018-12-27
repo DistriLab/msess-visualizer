@@ -20,7 +20,8 @@ import Control.Monad (join, liftM)
 import Control.Monad.IO.Class (liftIO)
 import System.IO (FilePath, readFile)
 import Text.Parsec
-  ( Parsec
+  ( ParseError
+  , Parsec
   , (<|>)
   , alphaNum
   , anyChar
@@ -65,14 +66,15 @@ interpreter = do
 interpret :: String -> IO ()
 interpret inputLine =
   case command of
-    Nothing -> (putStrLn . show . extractParse parseExpr) inputLine
+    Nothing -> putStrLn $ extractParseShow parseExpr inputLine
     Just "help" -> mapM_ putStrLn $ "Here are a list of commands:" : commands
     Just "load" -> parseFile restInputLine parseExpr >>= mapM_ putStrLn
     Just "test" -> parseTestFile restInputLine >>= mapM_ putStrLn
     -- TODO fix double parsing
+    -- TODO find better way to extract parsed expression than (Right .. =)
   where
-    command = extractParse parseCommand inputLine
-    restInputLine = extractParse parseRestInputLine inputLine
+    Right command = extractParse parseCommand inputLine
+    Right restInputLine = extractParse parseRestInputLine inputLine
 
 parseCommand :: SParsec (Maybe String)
 parseCommand = optionMaybe $ foldl (<|>) h t
@@ -88,7 +90,7 @@ parseFile filePath parser = do
   xs <- extractFile filePath
   case xs of
     Left e -> return $ "Usage: test <relativepath>" : ("Error: " ++ show e) : []
-    Right xs -> return $ map (show . extractParse parser) xs
+    Right xs -> return $ map (extractParseShow parser) xs
 
 -- All test files must follow a strict format:
 -- Filename: backend-*.test
@@ -124,7 +126,7 @@ parseTest (n, i, o) =
     else concat $
          "#" : show n : ":\tF\n\texpect\t" : o : "\n\tactual\t" : s : []
   where
-    e = extractParse parseExpr i
+    e = extractParseShow parseExpr i
     s = show e
 
 commands :: [String]
@@ -399,11 +401,11 @@ whiteSpace = Token.whiteSpace lexer
 {-
  - SECTION PARSERS
  -}
-extractParse :: SParsec a -> String -> a
-extractParse p s =
-  case parse p "" s of
-    Left x -> error $ show x
-    Right x -> x
+extractParse :: SParsec a -> String -> Either ParseError a
+extractParse p s = parse p "" s
+
+extractParseShow :: Show a => SParsec a -> String -> String
+extractParseShow p s = either show show $ extractParse p s
 
 {-
  - SUBSECTION HELPERS

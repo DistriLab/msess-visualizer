@@ -349,7 +349,6 @@ languageDef =
   emptyDef
     { Token.commentStart = "{-"
     , Token.commentEnd = "-}"
-    , Token.commentLine = "--"
     , Token.identStart = lower
     , Token.identLetter = alphaNum
     , Token.reservedNames = ["true", "false", "emp", "null"]
@@ -379,6 +378,7 @@ languageDef =
         , "(+)"
         , "!"
         , "?"
+        , "--"
         , "->"
         , "inv"
         ]

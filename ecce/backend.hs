@@ -424,7 +424,6 @@ parseLabel = liftM ELabel integer
 {-
  - SUBSECTION pred
  -}
-parseSymbolicPredicate :: SParsec (Expr SymbolicPredicate)
 parseSymbolicPredicate = do
   po <- parsePointer
   vs <- between (string "(root,") (char ')') (parseVarFirst `sepBy` (char ','))
@@ -437,7 +436,6 @@ parseSymbolicPredicate = do
 {-
  - SUBSECTION Φ
  -}
-parseFormulaDisjunct :: SParsec (Expr FormulaDisjunct)
 parseFormulaDisjunct = do
   fs <- parseFormula `sepBy1` (reservedOp "|")
   return $ EFormulaDisjunct fs
@@ -445,14 +443,12 @@ parseFormulaDisjunct = do
 {-
  - SUBSECTION Δ
  -}
-parseFormula :: SParsec (Expr Formula)
 parseFormula = buildExpressionParser opFormula termFormula
 
 opFormula = [[Infix (reservedOp "*" >> return EFormulaSeparate) AssocLeft]]
 
 termFormula = parens parseFormula <|> try parseFormulaExists
 
-parseFormulaExists :: SParsec (Expr Formula)
 parseFormulaExists = do
   reservedOp "E"
   vs <- parseVarFirst `sepBy` (char ',')
@@ -465,7 +461,6 @@ parseFormulaExists = do
 {-
  - SUBSECTION κ
  -}
-parseHeap :: SParsec (Expr Heap)
 parseHeap = buildExpressionParser opHeap termHeap
 
 opHeap = [[Infix (reservedOp "*" >> return EHeapSeparate) AssocLeft]]
@@ -474,10 +469,8 @@ termHeap =
   parens parseHeap <|> try parseHeapEmp <|> try parseHeapMap <|>
   try parseHeapPointer
 
-parseHeapEmp :: SParsec (Expr Heap)
 parseHeapEmp = reserved "emp" >> return EHeapEmp
 
-parseHeapMap :: SParsec (Expr Heap)
 parseHeapMap = do
   v1 <- parseVarFirst
   string "->"
@@ -485,7 +478,6 @@ parseHeapMap = do
   vs <- angles $ parseVarFirst `sepBy` (char ',')
   return $ EHeapMap v1 d vs
 
-parseHeapPointer :: SParsec (Expr Heap)
 parseHeapPointer = do
   p <- parsePointer
   vs <- parens $ parseVarFirst `sepBy` (char ',')
@@ -494,7 +486,6 @@ parseHeapPointer = do
 {-
  - SUBSECTION π
  -}
-parsePure :: SParsec (Expr Pure)
 parsePure = buildExpressionParser opPure termPure
 
 opPure =
@@ -511,24 +502,20 @@ termPure =
   try parsePureForall <|>
   try parsePurePointer
 
-parsePureVarType :: SParsec (Expr Pure)
 parsePureVarType = do
   v <- parseVarFirst
   reservedOp ":"
   t <- parseVarType
   return $ EPureVarType v t
 
-parsePureBool :: SParsec (Expr Pure)
 parsePureBool = do
   b <- parseBool
   return $ EPureBool b
 
-parsePureBoolInteger :: SParsec (Expr Pure)
 parsePureBoolInteger = do
   bi <- parseBoolInteger
   return $ EPureBoolInteger bi
 
-parsePureExists :: SParsec (Expr Pure)
 parsePureExists = do
   reservedOp "E"
   v <- parseVarFirst
@@ -536,7 +523,6 @@ parsePureExists = do
   p <- parsePure
   return $ EPureExists v p
 
-parsePureForall :: SParsec (Expr Pure)
 parsePureForall = do
   reservedOp "A"
   v <- parseVarFirst
@@ -544,7 +530,6 @@ parsePureForall = do
   p <- parsePure
   return $ EPureForall v p
 
-parsePurePointer :: SParsec (Expr Pure)
 parsePurePointer = do
   p <- parsePointer
   return $ EPurePointer p
@@ -552,33 +537,28 @@ parsePurePointer = do
 {-
  - SUBSECTION γ
  -}
-parsePointer :: SParsec (Expr Pointer)
 parsePointer =
   try parsePointerEq <|> try parsePointerNull <|> try parsePointerNEq <|>
   try parsePointerNNull
 
-parsePointerEq :: SParsec (Expr Pointer)
 parsePointerEq = do
   v1 <- parseVarFirst
   char '='
   v2 <- parseVarFirst
   return $ EPointerEq v1 v2
 
-parsePointerNull :: SParsec (Expr Pointer)
 parsePointerNull = do
   v <- parseVarFirst
   reservedOp "="
   reserved "null"
   return $ EPointerNull v
 
-parsePointerNEq :: SParsec (Expr Pointer)
 parsePointerNEq = do
   v1 <- parseVarFirst
   reservedOp "/="
   v2 <- parseVarFirst
   return $ EPointerNEq v1 v2
 
-parsePointerNNull :: SParsec (Expr Pointer)
 parsePointerNNull = do
   v <- parseVarFirst
   reservedOp "/="
@@ -588,7 +568,6 @@ parsePointerNNull = do
 {-
  - SUBSECTION b
  -}
-parseBool :: SParsec (Expr Bool)
 parseBool = buildExpressionParser opBool termBool
 
 opBool = [[Infix (reservedOp "=" >> return EBoolEq) AssocLeft]]
@@ -600,17 +579,14 @@ termBool =
 {-
  - SUBSECTION a
  -}
-parseBoolInteger :: SParsec (Expr BoolInteger)
 parseBoolInteger = try parseBoolIntegerEq <|> try parseBoolIntegerLeq
 
-parseBoolIntegerEq :: SParsec (Expr BoolInteger)
 parseBoolIntegerEq = do
   s1 <- parseInteger
   reservedOp "="
   s2 <- parseInteger
   return $ EBoolIntegerEq s1 s2
 
-parseBoolIntegerLeq :: SParsec (Expr BoolInteger)
 parseBoolIntegerLeq = do
   s1 <- parseInteger
   reservedOp "<="
@@ -620,7 +596,6 @@ parseBoolIntegerLeq = do
 {-
  - SUBSECTION s
  -}
-parseInteger :: SParsec (Expr Integer)
 parseInteger = buildExpressionParser opInteger termInteger
 
 opInteger =
@@ -632,7 +607,6 @@ opInteger =
 termInteger =
   parens parseInteger <|> liftM EInteger integer <|> try parseIntegerVarFirst
 
-parseIntegerVarFirst :: SParsec (Expr Integer)
 parseIntegerVarFirst = do
   v <- parseVarFirst
   return $ EIntegerVarFirst v
@@ -641,7 +615,6 @@ parseIntegerVarFirst = do
 {-
  - SUBSECTION G
  -}
-parseGlobalProtocol :: SParsec (Expr GlobalProtocol)
 parseGlobalProtocol = buildExpressionParser opGlobalProtocol termGlobalProtocol
 
 opGlobalProtocol =
@@ -657,7 +630,6 @@ termGlobalProtocol =
   try parseGlobalProtocolGuard <|>
   try parseGlobalProtocolEmp
 
-parseGlobalProtocolTransmission :: SParsec (Expr GlobalProtocol)
 parseGlobalProtocolTransmission = do
   s <- parseRole
   i <- between (string "--") (string "->") (parens parseLabel)
@@ -671,26 +643,22 @@ parseGlobalProtocolTransmission = do
   char '>'
   return $ EGlobalProtocolTransmission s i r c v f
 
-parseGlobalProtocolAssumption :: SParsec (Expr GlobalProtocol)
 parseGlobalProtocolAssumption = do
   reservedOp "(+)"
   a <- parens parseAssertion
   return $ EGlobalProtocolAssumption a
 
-parseGlobalProtocolGuard :: SParsec (Expr GlobalProtocol)
 parseGlobalProtocolGuard = do
   reservedOp "(-)"
   a <- parens parseAssertion
   return $ EGlobalProtocolGuard a
 
-parseGlobalProtocolEmp :: SParsec (Expr GlobalProtocol)
 parseGlobalProtocolEmp = reserved "emp" >> return EGlobalProtocolEmp
 
 {- Figure 4.3 -}
 {-
  - SUBSECTION E
  -}
-parseEvent :: SParsec (Expr Event)
 parseEvent = do
   p <- parseRole
   i <- parens parseLabel
@@ -701,14 +669,12 @@ parseEvent = do
  -}
 parseConstraint = try parseConstraintCommunicates <|> try parseConstraintHappens
 
-parseConstraintCommunicates :: SParsec (Expr Constraint)
 parseConstraintCommunicates = do
   e1 <- parseEvent
   reservedOp "<CB"
   e2 <- parseEvent
   return $ EConstraintCommunicates e1 e2
 
-parseConstraintHappens :: SParsec (Expr Constraint)
 parseConstraintHappens = do
   e1 <- parseEvent
   reservedOp "<HB"
@@ -726,18 +692,15 @@ termAssertion =
   parens parseAssertion <|> try parseAssertionNEvent <|> try parseAssertionEvent <|>
   try parseAssertionImplies
 
-parseAssertionEvent :: SParsec (Expr Assertion)
 parseAssertionEvent = do
   e <- parseEvent
   return $ EAssertionEvent e
 
-parseAssertionNEvent :: SParsec (Expr Assertion)
 parseAssertionNEvent = do
   reservedOp "~"
   e <- parens parseEvent
   return $ EAssertionNEvent e
 
-parseAssertionImplies :: SParsec (Expr Assertion)
 parseAssertionImplies = do
   e <- parseEvent
   reservedOp "==>"
@@ -748,7 +711,6 @@ parseAssertionImplies = do
 {-
  - SUBSECTION γ
  -}
-parsePartyProtocol :: SParsec (Expr PartyProtocol)
 parsePartyProtocol = buildExpressionParser opPartyProtocol termPartyProtocol
 
 opPartyProtocol =
@@ -764,7 +726,6 @@ termPartyProtocol =
   try parsePartyProtocolGuard <|>
   try parsePartyProtocolAssumption
 
-parsePartyProtocolSend :: SParsec (Expr PartyProtocol)
 parsePartyProtocolSend = do
   c <- parseChannel
   i <- parens parseLabel
@@ -775,7 +736,6 @@ parsePartyProtocolSend = do
   f <- parseFormula
   return $ EPartyProtocolSend c i v f
 
-parsePartyProtocolReceive :: SParsec (Expr PartyProtocol)
 parsePartyProtocolReceive = do
   c <- parseChannel
   i <- parens parseLabel
@@ -786,13 +746,11 @@ parsePartyProtocolReceive = do
   f <- parseFormula
   return $ EPartyProtocolReceive c i v f
 
-parsePartyProtocolGuard :: SParsec (Expr PartyProtocol)
 parsePartyProtocolGuard = do
   reservedOp "(-)"
   a <- parens parseAssertion
   return $ EPartyProtocolGuard a
 
-parsePartyProtocolAssumption :: SParsec (Expr PartyProtocol)
 parsePartyProtocolAssumption = do
   reservedOp "(+)"
   a <- parens parseAssertion
@@ -801,7 +759,6 @@ parsePartyProtocolAssumption = do
 {-
  - SUBSECTION L
  -}
-parseEndpointProtocol :: SParsec (Expr EndpointProtocol)
 parseEndpointProtocol =
   buildExpressionParser opEndpointProtocol termEndpointProtocol
 
@@ -817,7 +774,6 @@ termEndpointProtocol =
   try parseEndpointProtocolGuard <|>
   try parseEndpointProtocolAssumption
 
-parseEndpointProtocolSend :: SParsec (Expr EndpointProtocol)
 parseEndpointProtocolSend = do
   c <- parseChannel
   i <- parens parseLabel
@@ -828,7 +784,6 @@ parseEndpointProtocolSend = do
   f <- parseFormula
   return $ EEndpointProtocolSend c i v f
 
-parseEndpointProtocolReceive :: SParsec (Expr EndpointProtocol)
 parseEndpointProtocolReceive = do
   c <- parseChannel
   i <- parens parseLabel
@@ -839,13 +794,11 @@ parseEndpointProtocolReceive = do
   f <- parseFormula
   return $ EEndpointProtocolReceive c i v f
 
-parseEndpointProtocolGuard :: SParsec (Expr EndpointProtocol)
 parseEndpointProtocolGuard = do
   reservedOp "(-)"
   a <- parens parseAssertion
   return $ EEndpointProtocolGuard a
 
-parseEndpointProtocolAssumption :: SParsec (Expr EndpointProtocol)
 parseEndpointProtocolAssumption = do
   reservedOp "(+)"
   a <- parens parseAssertion
@@ -854,7 +807,6 @@ parseEndpointProtocolAssumption = do
 {-
  - SUBSECTION Z
  -}
-parseChannelProtocol :: SParsec (Expr ChannelProtocol)
 parseChannelProtocol =
   buildExpressionParser opChannelProtocol termChannelProtocol
 
@@ -869,7 +821,6 @@ termChannelProtocol =
   try parseChannelProtocolGuard <|>
   try parseChannelProtocolAssumption
 
-parseChannelProtocolTransmission :: SParsec (Expr ChannelProtocol)
 parseChannelProtocolTransmission = do
   s <- parseRole
   i <- between (string "--") (string "->") (parens parseLabel)
@@ -880,13 +831,11 @@ parseChannelProtocolTransmission = do
   f <- parseFormula
   return $ EChannelProtocolTransmission s i r v f
 
-parseChannelProtocolGuard :: SParsec (Expr ChannelProtocol)
 parseChannelProtocolGuard = do
   reservedOp "(-)"
   a <- parens parseAssertion
   return $ EChannelProtocolGuard a
 
-parseChannelProtocolAssumption :: SParsec (Expr ChannelProtocol)
 parseChannelProtocolAssumption = do
   reservedOp "(+)"
   a <- parens parseAssertion

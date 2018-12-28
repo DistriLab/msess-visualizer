@@ -305,6 +305,7 @@ data Expr a
     :: Expr PartyProtocol -> Expr PartyProtocol -> Expr PartyProtocol
   EPartyProtocolAssumption :: Expr Assertion -> Expr PartyProtocol
   EPartyProtocolGuard :: Expr Assertion -> Expr PartyProtocol
+  EPartyProtocolEmp :: Expr PartyProtocol
   {- L ::= (i)!v.Δ | (i)?v.Δ | L|L | L;L | (-)(Ψ) | (+)(Ψ) -}
   EEndpointProtocolSend
     :: Expr Channel
@@ -324,6 +325,7 @@ data Expr a
     :: Expr EndpointProtocol -> Expr EndpointProtocol -> Expr EndpointProtocol
   EEndpointProtocolAssumption :: Expr Assertion -> Expr EndpointProtocol
   EEndpointProtocolGuard :: Expr Assertion -> Expr EndpointProtocol
+  EEndpointProtocolEmp :: Expr EndpointProtocol
   {- Z ::= P--(i)->P:v.Δ | Z|Z | Z;Z | (-)(Ψ) | (+)(Ψ) -}
   EChannelProtocolTransmission
     :: Expr Role
@@ -338,6 +340,7 @@ data Expr a
     :: Expr ChannelProtocol -> Expr ChannelProtocol -> Expr ChannelProtocol
   EChannelProtocolAssumption :: Expr Assertion -> Expr ChannelProtocol
   EChannelProtocolGuard :: Expr Assertion -> Expr ChannelProtocol
+  EChannelProtocolEmp :: Expr ChannelProtocol
 
 deriving instance Show (Expr a)
 
@@ -754,7 +757,8 @@ termPartyProtocol =
   parens parsePartyProtocol <|> try parsePartyProtocolSend <|>
   try parsePartyProtocolReceive <|>
   try parsePartyProtocolGuard <|>
-  try parsePartyProtocolAssumption
+  try parsePartyProtocolAssumption <|>
+  try parsePartyProtocolEmp
 
 parsePartyProtocolSend = do
   c <- parseChannel
@@ -786,6 +790,8 @@ parsePartyProtocolAssumption = do
   a <- parens parseAssertion
   return $ EPartyProtocolAssumption a
 
+parsePartyProtocolEmp = reserved "emp" >> return EPartyProtocolEmp
+
 {-
  - SUBSECTION L
  -}
@@ -802,7 +808,8 @@ termEndpointProtocol =
   parens parseEndpointProtocol <|> try parseEndpointProtocolSend <|>
   try parseEndpointProtocolReceive <|>
   try parseEndpointProtocolGuard <|>
-  try parseEndpointProtocolAssumption
+  try parseEndpointProtocolAssumption <|>
+  try parseEndpointProtocolEmp
 
 parseEndpointProtocolSend = do
   c <- parseChannel
@@ -834,6 +841,8 @@ parseEndpointProtocolAssumption = do
   a <- parens parseAssertion
   return $ EEndpointProtocolAssumption a
 
+parseEndpointProtocolEmp = reserved "emp" >> return EEndpointProtocolEmp
+
 {-
  - SUBSECTION Z
  -}
@@ -849,7 +858,8 @@ opChannelProtocol =
 termChannelProtocol =
   parens parseChannelProtocol <|> try parseChannelProtocolTransmission <|>
   try parseChannelProtocolGuard <|>
-  try parseChannelProtocolAssumption
+  try parseChannelProtocolAssumption <|>
+  try parseChannelProtocolEmp
 
 parseChannelProtocolTransmission = do
   s <- parseRole
@@ -870,6 +880,8 @@ parseChannelProtocolAssumption = do
   reservedOp "(+)"
   a <- parens parseAssertion
   return $ EChannelProtocolAssumption a
+
+parseChannelProtocolEmp = reserved "emp" >> return EChannelProtocolEmp
 
 {-
  - SUBSECTION EXPR

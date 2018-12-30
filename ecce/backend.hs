@@ -1,6 +1,6 @@
 {- SECTION PRAGMAS -}
 -- Allows putting `deriving` on a standalone line
--- Needed for GADTs to derive (Show)
+-- Needed for GADTs to derive typeclasses
 {-# LANGUAGE StandaloneDeriving #-}
 -- Allows constrained ASTs
 {-# LANGUAGE GADTs #-}
@@ -350,7 +350,7 @@ data AnyExpr where
   AnyExpr :: Expr a -> AnyExpr
 
 instance Show (AnyExpr) where
-  show (AnyExpr a) = show a
+  show (AnyExpr e) = show e
 
 anyExpr :: SParsec (Expr a) -> SParsec AnyExpr
 anyExpr e = fmap AnyExpr e

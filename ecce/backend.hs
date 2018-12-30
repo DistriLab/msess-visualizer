@@ -4,6 +4,9 @@
 {-# LANGUAGE UndecidableInstances #-} -- Allows >1 StandaloneDeriving
 {-# LANGUAGE ScopedTypeVariables #-} -- Allows type signatures in patterns
 
+{- SECTION MODULE -}
+module Backend where
+
 {-
  - SECTION IMPORTS
  -}

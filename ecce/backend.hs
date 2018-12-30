@@ -1,13 +1,8 @@
 {- SECTION PRAGMAS -}
--- Allows putting `deriving` on a standalone line
--- Needed for GADTs to derive typeclasses
-{-# LANGUAGE StandaloneDeriving #-}
--- Allows constrained ASTs
-{-# LANGUAGE GADTs #-}
--- Allows more than one StandaloneDeriving
-{-# LANGUAGE UndecidableInstances #-}
--- Allows type signatures in patterns
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE StandaloneDeriving #-} -- Allows `deriving` on its own line
+{-# LANGUAGE GADTs #-} -- Allows constrained ASTs
+{-# LANGUAGE UndecidableInstances #-} -- Allows >1 StandaloneDeriving
+{-# LANGUAGE ScopedTypeVariables #-} -- Allows type signatures in patterns
 
 {-
  - SECTION IMPORTS

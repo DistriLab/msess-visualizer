@@ -73,8 +73,8 @@ interpret inputLine =
   case command of
     Nothing -> putStrLn $ extractParseShow parseExpr inputLine
     Just "help" -> mapM_ putStrLn $ "Here are a list of commands:" : commands
-    Just "load" -> parseFile restInputLine parseExpr >>= mapM_ putStrLn
-    Just "test" -> parseTestFile restInputLine >>= mapM_ putStrLn
+    Just "load" -> parseFileLoad restInputLine >>= mapM_ putStrLn
+    Just "test" -> parseFileTest restInputLine >>= mapM_ putStrLn
     -- TODO fix double parsing
     -- TODO find better way to extract parsed expression than (Right .. =)
   where
@@ -89,14 +89,25 @@ parseCommand = optionMaybe $ foldl (\p p' -> p <|> try p') (try h) t
 parseRestInputLine :: SParsec String
 parseRestInputLine = parseCommand >> whiteSpace >> many anyChar
 
--- Parse file at filePath with parser
-parseFile :: Show a => FilePath -> SParsec a -> IO [String]
-parseFile filePath parser = do
+-- Parse file at filePath with shower
+parseFile ::
+     Show a
+  => FilePath
+  -> String
+  -> (a -> String)
+  -> ([String] -> [a])
+  -> IO [String]
+parseFile filePath s shower f = do
   xs <- extractFile filePath
-  case xs of
-    Left e ->
-      return $ "Usage:\n\tload <relativepath>" : ("Error: " ++ show e) : []
-    Right xs -> return $ map (extractParseShow parser) xs
+  return $ either (\e -> s : "Error: " : e) (\xs -> map shower (f xs)) xs
+
+parseFileLoad :: FilePath -> IO [String]
+parseFileLoad filePath =
+  parseFile
+    filePath
+    "Usage:\n\tload <relativepath>"
+    (extractParseShow parseExpr)
+    id
 
 -- All test files must follow a strict format:
 -- Filename: backend-*.test
@@ -104,16 +115,13 @@ parseFile filePath parser = do
 -- Each pairs of lines are:
 -- (1) Input expression
 -- (2) Expected result of running (1)
-parseTestFile :: FilePath -> IO [String]
-parseTestFile filePath = do
-  xs <- extractFile filePath
-  return $
-    either
-      (\e ->
-         "Usage:\n\ttest <relativepath>\n\ttest list <relativepath>" :
-         "Error: " : e)
-      (\xs -> map parseTest $ (indexAndPair . splitEvenOdd) xs)
-      xs
+parseFileTest :: FilePath -> IO [String]
+parseFileTest filePath =
+  parseFile
+    filePath
+    "Usage:\n\ttest <relativepath>\n\ttest list <relativepath>"
+    parseTest
+    (indexAndPair . splitEvenOdd)
   where
     splitEvenOdd :: [a] -> ([a], [a])
     splitEvenOdd = foldr (\x ~(xs2, xs1) -> (x : xs1, xs2)) ([], [])

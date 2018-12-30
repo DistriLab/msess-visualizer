@@ -1,12 +1,12 @@
 1=2
-EPointerEq (EInteger 1) (EInteger 2)
+EPointerEq (EVarFirst 1) (EVarFirst 2)
 1/=null
-EPointerNNull (EInteger 1)
+EPointerNNull (EVarFirst 1)
 1/=2
-EPointerNEq (EInteger 1) (EInteger 2)
+EPointerNEq (EVarFirst 1) (EVarFirst 2)
 1=null
-EPointerNull (EInteger 1)
-1x2/=null
-EPointerNNull (EIntegerMul (EInteger 1) (EInteger 2))
-(-1)/=(-2)
-EPointerNEq (EIntegerNeg (EInteger 1)) (EIntegerNeg (EInteger 2))
+EPointerNull (EVarFirst 1)
+1/=null
+EPointerNNull (EVarFirst 1)
+1/=2
+EPointerNEq (EVarFirst 1) (EVarFirst 2)

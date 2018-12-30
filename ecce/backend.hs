@@ -95,7 +95,7 @@ parseFile filePath parser = do
   xs <- extractFile filePath
   case xs of
     Left e ->
-      return $ "Usage:\n\ttest <relativepath>" : ("Error: " ++ show e) : []
+      return $ "Usage:\n\tload <relativepath>" : ("Error: " ++ show e) : []
     Right xs -> return $ map (extractParseShow parser) xs
 
 -- All test files must follow a strict format:

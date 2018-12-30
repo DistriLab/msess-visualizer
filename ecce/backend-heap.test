@@ -1,4 +1,4 @@
 emp*1->n<>
 EHeapSeparate EHeapEmp (EHeapMap (EVarFirst 1) (EDataStructure "n") [])
-heap(2,3)
-EHeapPredicate (EPredicate "heap") [EVarFirst 2,EVarFirst 3]
+heap(emp,emp*1->n<>)
+EHeapPredicate (EPredicate "heap") [EGlobalProtocolEmp,EHeapSeparate EHeapEmp (EHeapMap (EVarFirst 1) (EDataStructure "n") [])]

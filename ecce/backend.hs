@@ -210,7 +210,7 @@ data Expr a
   {- pred ::= p(root,v*) = Φ inv π -}
   ESymbolicPredicate
     :: Expr Predicate
-    -> [Expr VarFirst]
+    -> [AnyExpr]
     -> Expr FormulaDisjunct
     -> Expr Pure
     -> Expr SymbolicPredicate
@@ -223,7 +223,7 @@ data Expr a
   EHeapEmp :: Expr Heap
   EHeapMap
     :: Expr VarFirst -> Expr DataStructure -> [Expr VarFirst] -> Expr Heap
-  EHeapPredicate :: Expr Predicate -> [Expr VarFirst] -> Expr Heap
+  EHeapPredicate :: Expr Predicate -> [AnyExpr] -> Expr Heap
   EHeapSeparate :: Expr Heap -> Expr Heap -> Expr Heap
   {- π ::= v:t | b | a | π^π | π|π | ~π | ∃v.π | ∀v.π | γ -}
   EPureVarType :: Expr VarFirst -> Expr VarType -> Expr Pure
@@ -448,7 +448,7 @@ parseLabel = liftM ELabel integer
  -}
 parseSymbolicPredicate = do
   pr <- parsePredicate
-  vs <- parens (parseVarFirst `sepBy` (reservedOp ","))
+  vs <- parens (parseExpr `sepBy` (reservedOp ","))
   reservedOp "="
   fd <- parseFormulaDisjunct
   reservedOp "Inv"
@@ -502,7 +502,7 @@ parseHeapMap = do
 
 parseHeapPredicate = do
   p <- parsePredicate
-  vs <- parens $ parseVarFirst `sepBy` (reservedOp ",")
+  vs <- parens $ parseExpr `sepBy` (reservedOp ",")
   return $ EHeapPredicate p vs
 
 {-

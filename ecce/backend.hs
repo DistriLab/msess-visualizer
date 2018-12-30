@@ -888,16 +888,16 @@ parseChannelProtocolEmp = reserved "emp" >> return EChannelProtocolEmp
 parseExpr :: SParsec AnyExpr
 parseExpr = do
   e <-
-    try (anyExpr parseAssertion) <|> try (anyExpr parseConstraint) <|>
-    try (anyExpr parseGlobalProtocol) <|>
+    try (anyExpr parseConstraint) <|> try (anyExpr parseAssertion) <|>
     try (anyExpr parseEvent) <|>
+    try (anyExpr parseGlobalProtocol) <|>
     try (anyExpr parseSymbolicPredicate) <|>
     try (anyExpr parseFormulaDisjunct) <|>
     try (anyExpr parseFormula) <|>
     try (anyExpr parsePointer) <|>
     try (anyExpr parseHeap) <|>
     try (anyExpr parseBoolInteger) <|>
+    try (anyExpr parsePure) <|>
     try (anyExpr parseInteger) <|>
-    try (anyExpr parseBool) <|>
-    try (anyExpr parsePure)
+    try (anyExpr parseBool)
   return e

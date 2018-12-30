@@ -446,13 +446,9 @@ parseLabel = liftM ELabel integer
 {-
  - SUBSECTION pred
  -}
--- TODO sympred(root,) is not valid syntax
 parseSymbolicPredicate = do
   pr <- parsePredicate
-  vs <-
-    parens
-      (do string "root,"
-          parseVarFirst `sepBy` (reservedOp ","))
+  vs <- parens (parseVarFirst `sepBy` (reservedOp ","))
   reservedOp "="
   fd <- parseFormulaDisjunct
   reservedOp "Inv"

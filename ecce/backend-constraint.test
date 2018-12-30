@@ -1,4 +1,4 @@
-1(2)<CB3(4)
-EConstraintCommunicates (EEvent (ERole 1) (ELabel 2)) (EEvent (ERole 3) (ELabel 4))
-1(2)<HB3(4)
-EConstraintHappens (EEvent (ERole 1) (ELabel 2)) (EEvent (ERole 3) (ELabel 4))
+s1(1)<CBs1(2)
+EConstraintCommunicates (EEvent (ERole "s1") (ELabel 1)) (EEvent (ERole "s1") (ELabel 2))
+s1(1)<HBs1(2)
+EConstraintHappens (EEvent (ERole "s1") (ELabel 1)) (EEvent (ERole "s1") (ELabel 2))

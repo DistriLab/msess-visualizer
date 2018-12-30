@@ -157,9 +157,9 @@ type VarType = String
 
 type Predicate = String
 
-type Role = Integer
+type Role = String
 
-type Channel = Integer
+type Channel = String
 
 type Label = Integer
 
@@ -436,9 +436,9 @@ parseVarType = liftM EVarType identifier
 
 parsePredicate = liftM EPredicate identifier
 
-parseRole = liftM ERole integer
+parseRole = liftM ERole identifier
 
-parseChannel = liftM EChannel integer
+parseChannel = liftM EChannel identifier
 
 parseLabel = liftM ELabel integer
 

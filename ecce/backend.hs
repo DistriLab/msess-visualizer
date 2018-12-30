@@ -84,7 +84,7 @@ interpret inputLine =
     Right restInputLine = extractParse parseRestInputLine inputLine
 
 parseCommand :: SParsec (Maybe String)
-parseCommand = optionMaybe $ foldl (<|>) h t
+parseCommand = optionMaybe $ foldl (\p p' -> p <|> try p') (try h) t
   where
     (h:t) = map string commands
 

@@ -884,18 +884,20 @@ parseChannelProtocolEmp = reserved "emp" >> return EChannelProtocolEmp
  - SUBSECTION EXPR
  -}
 parseExpr :: SParsec AnyExpr
-parseExpr = do
-  e <-
-    try (anyExpr parseConstraint) <|> try (anyExpr parseAssertion) <|>
-    try (anyExpr parseEvent) <|>
-    try (anyExpr parseGlobalProtocol) <|>
-    try (anyExpr parseSymbolicPredicate) <|>
-    try (anyExpr parseFormulaDisjunct) <|>
-    try (anyExpr parseFormula) <|>
-    try (anyExpr parsePointer) <|>
-    try (anyExpr parseHeap) <|>
-    try (anyExpr parseBoolInteger) <|>
-    try (anyExpr parsePure) <|>
-    try (anyExpr parseInteger) <|>
-    try (anyExpr parseBool)
-  return e
+parseExpr =
+  let parseOrder =
+        anyExpr parseConstraint :
+        anyExpr parseAssertion :
+        anyExpr parseEvent :
+        anyExpr parseGlobalProtocol :
+        anyExpr parseSymbolicPredicate :
+        anyExpr parseFormulaDisjunct :
+        anyExpr parseFormula :
+        anyExpr parsePointer :
+        anyExpr parseHeap :
+        anyExpr parseBoolInteger :
+        anyExpr parsePure : anyExpr parseInteger : anyExpr parseBool : []
+      parseInOrder = foldl (\p p' -> p <|> try p') (try h) t
+        where
+          (h:t) = parseOrder
+   in parseInOrder

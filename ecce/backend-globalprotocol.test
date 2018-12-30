@@ -1,6 +1,6 @@
 emp;s--(1)->r:c<3.E4.emp^true>
 EGlobalProtocolSequencing EGlobalProtocolEmp (EGlobalProtocolTransmission (ERole "s") (ELabel 1) (ERole "r") (EChannel "c") (EVarFirst 3) (EFormulaExists [EVarFirst 4] EHeapEmp (EPureBool (EBool True))))
-emp*(+)(s(1))
+emp*Assumption(s(1))
 EGlobalProtocolConcurrency EGlobalProtocolEmp (EGlobalProtocolAssumption (EAssertionEvent (EEvent (ERole "s") (ELabel 1))))
-(-)(s(1))|emp
+Guard(s(1))|emp
 EGlobalProtocolChoice (EGlobalProtocolGuard (EAssertionEvent (EEvent (ERole "s") (ELabel 1)))) EGlobalProtocolEmp

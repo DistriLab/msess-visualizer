@@ -388,8 +388,8 @@ languageDef =
         , "<CB"
         , "<HB"
         , "==>"
-        , "(-)"
-        , "(+)"
+        , "Guard"
+        , "Assumption"
         , "!"
         , "?"
         , "--"
@@ -670,12 +670,12 @@ parseGlobalProtocolTransmission = do
   return $ EGlobalProtocolTransmission s i r c v f
 
 parseGlobalProtocolAssumption = do
-  reservedOp "(+)"
+  reservedOp "Assumption"
   a <- parens parseAssertion
   return $ EGlobalProtocolAssumption a
 
 parseGlobalProtocolGuard = do
-  reservedOp "(-)"
+  reservedOp "Guard"
   a <- parens parseAssertion
   return $ EGlobalProtocolGuard a
 
@@ -780,12 +780,12 @@ parsePartyProtocolReceive = do
   return $ EPartyProtocolReceive c i v f
 
 parsePartyProtocolGuard = do
-  reservedOp "(-)"
+  reservedOp "Guard"
   a <- parens parseAssertion
   return $ EPartyProtocolGuard a
 
 parsePartyProtocolAssumption = do
-  reservedOp "(+)"
+  reservedOp "Assumption"
   a <- parens parseAssertion
   return $ EPartyProtocolAssumption a
 
@@ -831,12 +831,12 @@ parseEndpointProtocolReceive = do
   return $ EEndpointProtocolReceive c i v f
 
 parseEndpointProtocolGuard = do
-  reservedOp "(-)"
+  reservedOp "Guard"
   a <- parens parseAssertion
   return $ EEndpointProtocolGuard a
 
 parseEndpointProtocolAssumption = do
-  reservedOp "(+)"
+  reservedOp "Assumption"
   a <- parens parseAssertion
   return $ EEndpointProtocolAssumption a
 
@@ -871,12 +871,12 @@ parseChannelProtocolTransmission = do
   return $ EChannelProtocolTransmission s i r v f
 
 parseChannelProtocolGuard = do
-  reservedOp "(-)"
+  reservedOp "Guard"
   a <- parens parseAssertion
   return $ EChannelProtocolGuard a
 
 parseChannelProtocolAssumption = do
-  reservedOp "(+)"
+  reservedOp "Assumption"
   a <- parens parseAssertion
   return $ EChannelProtocolAssumption a
 

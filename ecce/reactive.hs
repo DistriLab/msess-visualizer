@@ -119,15 +119,14 @@ networkDescription esstepper restInputLine = do
           in if any isLeft gs
                then putStrLn "some error"
                else mapM_ putStrLn $
-                    processGlobalProtocol
-                      (ProcessNode $ map ProcessLeaf (rights gs)))
+                    process (ProcessNode $ map ProcessLeaf (rights gs)))
       xs
   estepper <- fromAddHandler (addHandler esstepper)
   estep <- accumE 0 $ (+ 1) <$ estepper
   reactimate $ fmap print estep
 
-processGlobalProtocol :: Process -> [String]
-processGlobalProtocol p =
+process :: Process -> [String]
+process p =
   let aux :: [String] -> Process -> [String]
       aux ss (ProcessLeaf g)
         -- trace ("leaf: " ++ show g) $

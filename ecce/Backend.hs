@@ -56,6 +56,10 @@ import qualified Text.ParserCombinators.Parsec.Token as Token
  -}
 type Test = (Integer, String, String)
 
+-- Every output function must have the same inputs
+-- So that the interpret function can be generalized
+type Output = (String, [String], String) -> IO ()
+
 main :: IO ()
 main = do
   welcome
@@ -70,28 +74,54 @@ interpreter = do
   mInputLine <- getInputLine "ecce> "
   case mInputLine of
     Nothing -> outputStrLn "Quitting"
-    Just inputLine -> (liftIO $ interpret inputLine) >> interpreter
+    Just inputLine ->
+      (liftIO $ interpret commandOutputs incommandOutput inputLine) >>
+      interpreter
 
-interpret :: String -> IO ()
-interpret inputLine =
-  case command of
-    Nothing -> putStrLn $ extractParseShow parseExpr inputLine
-    Just "help" -> mapM_ putStrLn $ "Here are a list of commands:" : commands
-    Just "load" -> parseFileLoad restInputLine >>= mapM_ putStrLn
-    Just "test" -> parseFileTest restInputLine >>= mapM_ putStrLn
+-- Parses inputLine for command, parsers extracted from keys of input (1)
+-- Looks up parsed command in input (1), to determine correct function to call
+-- Inputs:
+-- (1) map of commands to output functions
+-- (2) output function when map lookup fails
+-- (3) inputLine to be interpreted
+-- Output:
+-- (1) IO action
+interpret :: [(String, Output)] -> Output -> String -> IO ()
+interpret commandOutputs incommandOutput inputLine =
+  maybe
+    (incommandOutput (inputLine, commands, restInputLine))
+    ($ (inputLine, commands, restInputLine))
+    (lookup command commandOutputs)
     -- TODO fix double parsing
     -- TODO find better way to extract parsed expression than (Right .. =)
   where
-    Right command = extractParse parseCommand inputLine
-    Right restInputLine = extractParse parseRestInputLine inputLine
+    commands = (fst . unzip) commandOutputs
+    Right (Just command) = extractParse (parseCommand commands) inputLine
+    Right restInputLine = extractParse (parseRestInputLine commands) inputLine
 
-parseCommand :: SParsec (Maybe String)
-parseCommand = optionMaybe $ foldl (\p p' -> p <|> try p') (try h) t
+parseCommand :: [String] -> SParsec (Maybe String)
+parseCommand commands = optionMaybe $ foldl (\p p' -> p <|> try p') (try h) t
   where
     (h:t) = map string commands
 
-parseRestInputLine :: SParsec String
-parseRestInputLine = parseCommand >> whiteSpace >> many anyChar
+parseRestInputLine :: [String] -> SParsec String
+parseRestInputLine commands =
+  parseCommand commands >> whiteSpace >> many anyChar
+
+commandOutputs :: [(String, Output)]
+commandOutputs =
+  [ ( "help"
+    , \(_, commands, _) ->
+        mapM_ putStrLn $ "Here are a list of commands:" : commands)
+  , ( "load"
+    , \(_, _, restInputLine) -> parseFileLoad restInputLine >>= mapM_ putStrLn)
+  , ( "test"
+    , \(_, _, restInputLine) -> parseFileTest restInputLine >>= mapM_ putStrLn)
+  ]
+
+incommandOutput :: Output
+incommandOutput =
+  \(inputLine, _, _) -> putStrLn $ extractParseShow parseExpr inputLine
 
 -- Parse file at filePath with shower
 parseFile ::
@@ -147,9 +177,6 @@ parseTest (n, i, o) =
          "#" : show n : ":\tF\n\texpect\t" : o : "\n\tactual\t" : e : []
   where
     e = extractParseShow parseExpr i
-
-commands :: [String]
-commands = "help" : "load" : "test" : []
 
 {-
  - SECTION TYPES

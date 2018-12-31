@@ -5,6 +5,11 @@
 {-# LANGUAGE ScopedTypeVariables #-} -- Allows type signatures in patterns
 
 {-
+ - SECTION MODULE
+ -}
+module Reactive where
+
+{-
  - SECTION IMPORTS
  -}
 import Backend
@@ -13,17 +18,13 @@ import Backend
   , Expr
   , GlobalProtocol
   , extractFile
-  , extractParse
-  , parseCommand
   , parseGlobalProtocol
-  , parseRestInputLine
-  , welcome
   )
+import Base (extractParse)
 import Control.Monad (join, when)
 import Control.Monad.IO.Class (liftIO)
 import Data.Either (isLeft, rights)
-
--- import Debug.Trace (trace)
+import Interpreter (Output, mainRegular)
 import Reactive.Banana (accumE, compile)
 import Reactive.Banana.Frameworks
   ( AddHandler
@@ -35,43 +36,30 @@ import Reactive.Banana.Frameworks
   , reactimate
   )
 import System.IO (FilePath)
-import Text.Parsec (ParseError)
-
-{-
- - SECTION MODULE
- -}
-module Reactive where
 
 {-
  - SECTION USER INTERFACE
  -}
 main :: IO ()
-main = do
-  welcome
-  interpreter
+main = mainRegular commandOutputs incommandOutput
 
-interpreter :: IO ()
-interpreter = do
-  putStr "ecce> "
-  inputLine <- getLine
-  Main.interpret inputLine
-  interpreter
+commandOutputs :: [(String, Output)]
+commandOutputs =
+  [ ( "help"
+    , \(_, commands, _) ->
+        mapM_ putStrLn $ "Here are a list of commands:" : commands)
+  , ( "load"
+    , \(_, _, restInputLine) ->
+        (do sources <- newAddHandler
+            network <- compile $ networkDescription sources restInputLine
+            actuate network
+            eventLoop sources network))
+  ]
 
-interpret :: String -> IO ()
-interpret inputLine =
-  case command of
-    Nothing -> mapM_ putStrLn $ "Here are a list of commands:" : commands
-    Just "help" -> mapM_ putStrLn $ "Here are a list of commands:" : commands
-    Just "load" -> do
-      sources <- newAddHandler
-      network <- compile $ networkDescription sources restInputLine
-      actuate network
-      eventLoop sources network
-    -- TODO fix double parsing
-    -- TODO find better way to extract parsed expression than (Right .. =)
-  where
-    Right command = extractParse parseCommand inputLine
-    Right restInputLine = extractParse parseRestInputLine inputLine
+incommandOutput :: Output
+incommandOutput =
+  \(_, commands, _) ->
+    mapM_ putStrLn $ "Here are a list of commands:" : commands
 
 -- Read commands and fire corresponding events 
 eventLoop :: EventSource () -> EventNetwork -> IO ()

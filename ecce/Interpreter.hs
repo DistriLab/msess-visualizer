@@ -11,11 +11,10 @@
  -}
 module Interpreter where
 
-import Base (SParsec, extractParse)
-
 {-
  - SECTION IMPORTS
  -}
+import Base (SParsec, extractParse)
 import Control.Monad.IO.Class (liftIO)
 import System.Console.Haskeline
   ( InputT
@@ -42,20 +41,33 @@ type Output = (String, [String], String) -> IO ()
 mainHaskeline :: [(String, Output)] -> Output -> IO ()
 mainHaskeline commandOutputs incommandOutput = do
   welcome
-  runInputT defaultSettings $ interpreter commandOutputs incommandOutput
+  runInputT defaultSettings $
+    interpreterHaskeline commandOutputs incommandOutput
+
+mainRegular :: [(String, Output)] -> Output -> IO ()
+mainRegular commandOutputs incommandOutput = do
+  welcome
+  interpreterRegular commandOutputs incommandOutput
 
 welcome :: IO ()
 welcome = do
   mapM_ putStrLn $ "Welcome!" : "Type \"help\" for more information." : "" : []
 
-interpreter :: [(String, Output)] -> Output -> InputT IO ()
-interpreter commandOutputs incommandOutput = do
+interpreterRegular :: [(String, Output)] -> Output -> IO ()
+interpreterRegular commandOutputs incommandOutput = do
+  putStr "ecce> "
+  inputLine <- getLine
+  interpret commandOutputs incommandOutput inputLine
+  interpreterRegular commandOutputs incommandOutput
+
+interpreterHaskeline :: [(String, Output)] -> Output -> InputT IO ()
+interpreterHaskeline commandOutputs incommandOutput = do
   mInputLine <- getInputLine "ecce> "
   case mInputLine of
     Nothing -> outputStrLn "Quitting"
     Just inputLine ->
       (liftIO $ interpret commandOutputs incommandOutput inputLine) >>
-      interpreter commandOutputs incommandOutput
+      interpreterHaskeline commandOutputs incommandOutput
 
 -- Parses inputLine for command, parsers extracted from keys of input (1)
 -- Looks up parsed command in input (1), to determine correct function to call

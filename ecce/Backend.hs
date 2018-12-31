@@ -17,33 +17,11 @@ module Backend where
 import Base (SParsec, extractParse)
 import Control.Exception (SomeException)
 import qualified Control.Exception (try)
-import Control.Monad (join, liftM)
-import Control.Monad.IO.Class (liftIO)
-import System.Console.Haskeline
-  ( InputT
-  , defaultSettings
-  , getInputLine
-  , outputStrLn
-  , runInputT
-  )
+import Control.Monad (liftM)
+import Interpreter (Output, mainHaskeline)
 import System.Directory (getDirectoryContents)
-import System.IO (FilePath, IOMode(ReadMode), readFile)
-import Text.Parsec
-  ( ParseError
-  , Parsec
-  , (<|>)
-  , alphaNum
-  , anyChar
-  , between
-  , lower
-  , many
-  , optionMaybe
-  , parse
-  , sepBy
-  , sepBy1
-  , string
-  , try
-  )
+import System.IO (FilePath, readFile)
+import Text.Parsec ((<|>), alphaNum, between, lower, sepBy, sepBy1, try)
 import Text.ParserCombinators.Parsec.Expr
   ( Assoc(AssocLeft)
   , Operator(Infix, Postfix, Prefix)
@@ -57,57 +35,8 @@ import qualified Text.ParserCombinators.Parsec.Token as Token
  -}
 type Test = (Integer, String, String)
 
--- Every output function must have the same inputs
--- So that the interpret function can be generalized
-type Output = (String, [String], String) -> IO ()
-
 main :: IO ()
-main = do
-  welcome
-  runInputT defaultSettings interpreter
-
-welcome :: IO ()
-welcome = do
-  mapM_ putStrLn $ "Welcome!" : "Type \"help\" for more information." : "" : []
-
-interpreter :: InputT IO ()
-interpreter = do
-  mInputLine <- getInputLine "ecce> "
-  case mInputLine of
-    Nothing -> outputStrLn "Quitting"
-    Just inputLine ->
-      (liftIO $ interpret commandOutputs incommandOutput inputLine) >>
-      interpreter
-
--- Parses inputLine for command, parsers extracted from keys of input (1)
--- Looks up parsed command in input (1), to determine correct function to call
--- Inputs:
--- (1) map of commands to output functions
--- (2) output function when map lookup fails
--- (3) inputLine to be interpreted
--- Output:
--- (1) IO action
-interpret :: [(String, Output)] -> Output -> String -> IO ()
-interpret commandOutputs incommandOutput inputLine =
-  maybe
-    (incommandOutput (inputLine, commands, restInputLine))
-    ($ (inputLine, commands, restInputLine))
-    (lookup command commandOutputs)
-    -- TODO fix double parsing
-    -- TODO find better way to extract parsed expression than (Right .. =)
-  where
-    commands = (fst . unzip) commandOutputs
-    Right (Just command) = extractParse (parseCommand commands) inputLine
-    Right restInputLine = extractParse (parseRestInputLine commands) inputLine
-
-parseCommand :: [String] -> SParsec (Maybe String)
-parseCommand commands = optionMaybe $ foldl (\p p' -> p <|> try p') (try h) t
-  where
-    (h:t) = map string commands
-
-parseRestInputLine :: [String] -> SParsec String
-parseRestInputLine commands =
-  parseCommand commands >> whiteSpace >> many anyChar
+main = mainHaskeline commandOutputs incommandOutput
 
 commandOutputs :: [(String, Output)]
 commandOutputs =

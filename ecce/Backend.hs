@@ -14,6 +14,7 @@ module Backend where
 {-
  - SECTION IMPORTS
  -}
+import Base (SParsec, extractParse)
 import Control.Exception (SomeException)
 import qualified Control.Exception (try)
 import Control.Monad (join, liftM)
@@ -181,8 +182,6 @@ parseTest (n, i, o) =
 {-
  - SECTION TYPES
  -}
-type SParsec = Parsec String ()
-
 {-
  - SUBSECTION HELPERS
  -}
@@ -456,9 +455,6 @@ whiteSpace = Token.whiteSpace lexer
 {-
  - SECTION PARSERS
  -}
-extractParse :: SParsec a -> String -> Either ParseError a
-extractParse p s = parse p "" s
-
 extractParseShow :: Show a => SParsec a -> String -> String
 extractParseShow p s = either show show $ extractParse p s
 

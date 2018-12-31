@@ -38,6 +38,11 @@ import System.IO (FilePath)
 import Text.Parsec (ParseError)
 
 {-
+ - SECTION MODULE
+ -}
+module Reactive where
+
+{-
  - SECTION USER INTERFACE
  -}
 main :: IO ()
@@ -146,3 +151,65 @@ process p =
         -- trace ("node: " ++ show (p : ps)) $
        = aux (join $ ss : aux [] p : []) (ProcessNode ps)
    in aux [] p
+{-
+    -- The state of the slot machine is captured in Behaviors.
+        
+    -- State: credits that the player has to play the game
+    -- The  ecoin      event adds a coin to the credits
+    -- The  edoesplay  event removes money
+    -- The  ewin       event adds credits because the player has won
+    (ecredits :: Event Money, bcredits :: Behavior Money)
+        <- mapAccum 0 . fmap (\f x -> (f x,f x)) $ unions $
+            [ addCredit    <$ ecoin
+            , removeCredit <$ edoesplay
+            , addWin       <$> ewin
+            ]
+    let
+        -- functions that change the accumulated state
+        addCredit     = (+1)
+        removeCredit  = subtract 1
+        addWin Double = (+5)
+        addWin Triple = (+20)
+
+        -- Event: does the player have enough money to play the game?
+        emayplay :: Event Bool
+        emayplay = (\credits _ -> credits > 0) <$> bcredits <@> eplay
+
+        -- Event: player has enough coins and plays
+        edoesplay :: Event ()
+        edoesplay = () <$ filterE id  emayplay
+        -- Event: event that fires when the player doesn't have enough money
+        edenied   :: Event ()
+        edenied   = () <$ filterE not emayplay
+
+    -- State: random number generator
+    (eroll :: Event Reels, bstdgen :: Behavior StdGen)
+        -- accumulate the random number generator while rolling the reels
+        <- mapAccum initialStdGen $ roll <$> edoesplay
+
+    let
+        -- roll the reels
+        roll :: () -> StdGen -> (Reels, StdGen)
+        roll () gen0 = ((z1,z2,z3),gen3)
+            where
+            random    = randomR(1,4)
+            (z1,gen1) = random gen0
+            (z2,gen2) = random gen1
+            (z3,gen3) = random gen2
+        
+        -- Event: it's a win!
+        ewin :: Event Win
+        ewin = fmap fromJust $ filterE isJust $ fmap checkWin eroll
+        checkWin (z1,z2,z3)
+            | length (nub [z1,z2,z3]) == 1 = Just Triple
+            | length (nub [z1,z2,z3]) == 2 = Just Double
+            | otherwise                    = Nothing
+
+
+    -- ecredits <- changes bcredits
+    reactimate $ putStrLn . showCredit <$> ecredits
+    reactimate $ putStrLn . showRoll   <$> eroll
+    reactimate $ putStrLn . showWin    <$> ewin
+    reactimate $ putStrLn "Not enough credits!" <$ edenied
+
+-}

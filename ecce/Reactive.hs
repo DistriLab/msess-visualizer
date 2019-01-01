@@ -24,7 +24,7 @@ import Base (extractParse)
 import Control.Monad (join, when)
 import Control.Monad.IO.Class (liftIO)
 import Data.Either (isLeft, rights)
-import Interpreter (Output, mainRegular)
+import Interpreter (Output, mainHaskeline)
 import Reactive.Banana (accumE, compile)
 import Reactive.Banana.Frameworks
   ( AddHandler
@@ -41,7 +41,7 @@ import System.IO (FilePath)
  - SECTION USER INTERFACE
  -}
 main :: IO ()
-main = mainRegular commandOutputs incommandOutput
+main = mainHaskeline commandOutputs incommandOutput
 
 commandOutputs :: [(String, Output)]
 commandOutputs =

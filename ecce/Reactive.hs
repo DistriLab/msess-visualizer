@@ -23,6 +23,7 @@ import Base (extractParse)
 import Control.Monad (when)
 import Control.Monad.IO.Class (liftIO)
 import Data.Either (isLeft, rights)
+import Data.Functor ((<$), (<$>))
 import Interpreter (Output, mainHaskeline)
 import Reactive.Banana ((<@>), accumB, compile, filterE)
 import Reactive.Banana.Frameworks

@@ -129,26 +129,26 @@ networkDescription esStepper restInputLine = do
   -- eFinish: indicates whether the debugger is done
   bOutputProc <-
     accumB ("", fmap head (parseContents xs)) $
-    (flip $ const . uncurry processStep) <$> (("", Nothing) <$ eStepper)
+    (flip $ const . uncurry (\_ -> processStep)) <$> (("", Nothing) <$ eStepper)
   let bOutput = fst <$> bOutputProc
   eOutputChanged <- changes bOutput
   reactimate' $ fmap putStrLn <$> eOutputChanged
 
-processStep :: String -> Maybe Process -> (String, Maybe Process)
-processStep _ Nothing = ("", Nothing)
-processStep _ (Just (Leaf g)) =
+processStep :: Maybe Process -> (String, Maybe Process)
+processStep Nothing = ("", Nothing)
+processStep (Just (Leaf g)) =
   case g of
     EGlobalProtocolConcurrency g1 g2 -> ("", Just $ NodeC [Leaf g1, Leaf g2])
     EGlobalProtocolChoice g1 g2 -> ("", Just $ Leaf g2) -- TODO Unhardcode choice to g2
     EGlobalProtocolSequencing g1 g2 -> ("", Just $ NodeS [Leaf g1, Leaf g2])
     otherwise -> (show g, Nothing)
-processStep _ (Just (NodeS [])) = ("", Nothing)
-processStep _ (Just (NodeS (p:ps))) = (s', Just $ NodeS ps')
+processStep (Just (NodeS [])) = ("", Nothing)
+processStep (Just (NodeS (p:ps))) = (s', Just $ NodeS ps')
   where
-    (s', p') = processStep "" (Just p)
+    (s', p') = processStep (Just p)
     ps' = maybe ps (: ps) p'
-processStep _ (Just (NodeC [])) = ("", Nothing)
-processStep _ (Just (NodeC (p:ps))) = (s', Just $ NodeC ps')
+processStep (Just (NodeC [])) = ("", Nothing)
+processStep (Just (NodeC (p:ps))) = (s', Just $ NodeC ps')
   where
-    (s', p') = processStep "" (Just p)
+    (s', p') = processStep (Just p)
     ps' = maybe ps (: ps) p'

@@ -1,8 +1,7 @@
 {-
  - SECTION PRAGMAS
  -}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE ScopedTypeVariables #-} -- Allows type signatures in patterns
+{-# LANGUAGE GADTs #-} -- Allows patterm match on GADT
 
 {-
  - SECTION MODULE

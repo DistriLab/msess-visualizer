@@ -3,7 +3,6 @@
  -}
 {-# LANGUAGE StandaloneDeriving #-} -- Allows `deriving` on its own line
 {-# LANGUAGE GADTs #-} -- Allows constrained ASTs
-{-# LANGUAGE UndecidableInstances #-} -- Allows >1 StandaloneDeriving
 {-# LANGUAGE ScopedTypeVariables #-} -- Allows type signatures in patterns
 
 {-

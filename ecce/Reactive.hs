@@ -29,6 +29,7 @@ import Reactive.Banana ((<@>), accumB, compile, filterE)
 import Reactive.Banana.Frameworks
   ( AddHandler
   , EventNetwork
+  , Handler
   , MomentIO
   , actuate
   , changes
@@ -52,10 +53,10 @@ commandOutputs =
         mapM_ putStrLn $ "Here are a list of commands:" : commands)
   , ( "load"
     , \(_, _, restInputLine) ->
-        (do sources <- newAddHandler
-            network <- compile $ networkDescription sources restInputLine
+        (do (addKeyEvent, fireKey) <- newAddHandler
+            network <- compile (networkDescription addKeyEvent restInputLine)
             actuate network
-            eventLoop sources network))
+            eventLoop fireKey network))
   ]
 
 incommandOutput :: Output
@@ -64,17 +65,16 @@ incommandOutput =
     mapM_ putStrLn $ "Here are a list of commands:" : commands
 
 -- Read commands and fire corresponding events
-eventLoop :: EventSource () -> EventNetwork -> IO ()
-eventLoop esStepper network = loop
+eventLoop :: Handler Char -> EventNetwork -> IO ()
+eventLoop fireKey network = loop
   where
     loop = do
       putStr "> "
       c <- getChar
       putChar '\n'
       case c of
-        's' -> fire esStepper ()
         'q' -> putStrLn "" >> return ()
-        otherwise -> putStrLn " - unknown character"
+        otherwise -> fireKey c
       when (c /= 'q') loop
 
 commands :: [String]
@@ -108,9 +108,10 @@ data Process
   deriving (Show)
 
 -- Set up the program logic in terms of events and behaviors.
-networkDescription :: EventSource () -> FilePath -> MomentIO ()
-networkDescription esStepper restInputLine = do
-  eStepper <- fromAddHandler (addHandler esStepper)
+networkDescription :: AddHandler Char -> FilePath -> MomentIO ()
+networkDescription addKeyEvent restInputLine = do
+  eKey <- fromAddHandler addKeyEvent
+  let eStepper = filterE (== 's') eKey
   -- xs: contents of file
   xs <- liftIO $ extractFile restInputLine
   -- bOutputProc: tuple of two elements:

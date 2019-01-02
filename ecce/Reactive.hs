@@ -25,7 +25,7 @@ import Control.Monad (when)
 import Control.Monad.IO.Class (liftIO)
 import Data.Either (isLeft, rights)
 import Interpreter (Output, mainHaskeline)
-import Reactive.Banana (accumB, compile)
+import Reactive.Banana (accumB, compile, filterE)
 import Reactive.Banana.Frameworks
   ( AddHandler
   , EventNetwork
@@ -69,6 +69,7 @@ eventLoop esStepper network = loop
     loop = do
       putStr "> "
       c <- getChar
+      putChar '\n'
       case c of
         's' -> fire esStepper ()
         'q' -> putStrLn "" >> return ()
@@ -110,18 +111,22 @@ networkDescription :: EventSource () -> FilePath -> MomentIO ()
 networkDescription esStepper restInputLine = do
   eStepper <- fromAddHandler (addHandler esStepper)
   -- xs: contents of file
-  -- gs: parsed contents of file
   xs <- liftIO $ extractFile restInputLine
   -- bOutputProc: tuple of two elements:
   --    (1) output string
   --    (2) process that the debugger currently has
-  -- eFinish: indicates whether the debugger is done
+  -- eDone: indicates whether the debugger is done
   bOutputProc <-
     accumB ("", fmap head (parseContents xs)) $
     (flip $ const . uncurry (\_ -> processStep)) <$> (("", Nothing) <$ eStepper)
   let bOutput = fst <$> bOutputProc
+      bProc = snd <$> bOutputProc
   eOutputChanged <- changes bOutput
+  eProcChanged <- changes bProc
+  let eDone = eProcChanged
+  -- TODO should not print when Output is ""
   reactimate' $ fmap putStrLn <$> eOutputChanged
+  -- reactimate' $ fmap print <$> eDone
 
 parseContents :: Either [String] [String] -> Maybe [Process]
 parseContents xs =

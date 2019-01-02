@@ -126,9 +126,9 @@ process :: Process -> [String]
 process ps =
   let aux :: [String] -> Maybe [Process] -> [String]
       aux ss Nothing = ss
-      aux ss (Just (p:ps)) = aux (ss ++ [s']) (Just ps')
+      aux ss (Just (p:ps)) = aux (ss ++ ss') (Just ps')
         where
-          (s', p') = processStep p
+          (ss', p') = processStep p
           ps' =
             case p' of
               Nothing -> ps
@@ -136,31 +136,31 @@ process ps =
       aux ss (Just _) = ss
    in aux [] (Just [ps])
 
-processStep :: Process -> (String, Maybe Process)
+processStep :: Process -> ([String], Maybe Process)
 processStep p =
-  let aux :: String -> Process -> (String, Maybe Process)
-      aux s (Leaf g) =
+  let aux :: [String] -> Process -> ([String], Maybe Process)
+      aux ss (Leaf g) =
         case g of
           EGlobalProtocolConcurrency g1 g2 ->
-            (s, Just $ NodeC [Leaf g1, Leaf g2])
-          EGlobalProtocolChoice g1 g2 -> (s, Just $ Leaf g2) -- TODO Unhardcode choice to g2
+            (ss, Just $ NodeC [Leaf g1, Leaf g2])
+          EGlobalProtocolChoice g1 g2 -> (ss, Just $ Leaf g2) -- TODO Unhardcode choice to g2
           EGlobalProtocolSequencing g1 g2 ->
-            (s, Just $ NodeS [Leaf g1, Leaf g2])
-          otherwise -> (s ++ show g, Nothing)
-      aux s (NodeS []) = (s, Nothing)
-      aux s (NodeS (p:ps)) = aux s' (NodeS ps')
+            (ss, Just $ NodeS [Leaf g1, Leaf g2])
+          otherwise -> (ss ++ [show g], Nothing)
+      aux ss (NodeS []) = (ss, Nothing)
+      aux ss (NodeS (p:ps)) = aux ss' (NodeS ps')
         where
-          (s', p') = aux s p
+          (ss', p') = aux ss p
           ps' =
             case p' of
               Nothing -> ps
               Just x -> x : ps
-      aux s (NodeC []) = (s, Nothing)
-      aux s (NodeC (p:ps)) = aux s' (NodeC ps')
+      aux ss (NodeC []) = (ss, Nothing)
+      aux ss (NodeC (p:ps)) = aux ss' (NodeC ps')
         where
-          (s', p') = aux s p
+          (ss', p') = aux ss p
           ps' =
             case p' of
               Nothing -> ps
               Just x -> x : ps
-   in aux "" p
+   in aux [] p

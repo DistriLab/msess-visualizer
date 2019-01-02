@@ -126,41 +126,27 @@ process :: Process -> [String]
 process ps =
   let aux :: [String] -> Maybe [Process] -> [String]
       aux ss Nothing = ss
-      aux ss (Just (p:ps)) = aux (ss ++ ss') (Just ps')
+      aux ss (Just (p:ps)) = aux (ss ++ [s']) (Just ps')
         where
-          (ss', p') = processStep p
-          ps' =
-            case p' of
-              Nothing -> ps
-              Just x -> x : ps
+          (s', p') = processStep p
+          ps' = maybe ps (: ps) p'
       aux ss (Just _) = ss
    in aux [] (Just [ps])
 
-processStep :: Process -> ([String], Maybe Process)
-processStep p =
-  let aux :: [String] -> Process -> ([String], Maybe Process)
-      aux ss (Leaf g) =
-        case g of
-          EGlobalProtocolConcurrency g1 g2 ->
-            (ss, Just $ NodeC [Leaf g1, Leaf g2])
-          EGlobalProtocolChoice g1 g2 -> (ss, Just $ Leaf g2) -- TODO Unhardcode choice to g2
-          EGlobalProtocolSequencing g1 g2 ->
-            (ss, Just $ NodeS [Leaf g1, Leaf g2])
-          otherwise -> (ss ++ [show g], Nothing)
-      aux ss (NodeS []) = (ss, Nothing)
-      aux ss (NodeS (p:ps)) = aux ss' (NodeS ps')
-        where
-          (ss', p') = aux ss p
-          ps' =
-            case p' of
-              Nothing -> ps
-              Just x -> x : ps
-      aux ss (NodeC []) = (ss, Nothing)
-      aux ss (NodeC (p:ps)) = aux ss' (NodeC ps')
-        where
-          (ss', p') = aux ss p
-          ps' =
-            case p' of
-              Nothing -> ps
-              Just x -> x : ps
-   in aux [] p
+processStep :: Process -> (String, Maybe Process)
+processStep (Leaf g) =
+  case g of
+    EGlobalProtocolConcurrency g1 g2 -> ("", Just $ NodeC [Leaf g1, Leaf g2])
+    EGlobalProtocolChoice g1 g2 -> ("", Just $ Leaf g2) -- TODO Unhardcode choice to g2
+    EGlobalProtocolSequencing g1 g2 -> ("", Just $ NodeS [Leaf g1, Leaf g2])
+    otherwise -> (show g, Nothing)
+processStep (NodeS []) = ("", Nothing)
+processStep (NodeS (p:ps)) = (s', Just $ NodeS ps')
+  where
+    (s', p') = processStep p
+    ps' = maybe ps (: ps) p'
+processStep (NodeC []) = ("", Nothing)
+processStep (NodeC (p:ps)) = (s', Just $ NodeC ps')
+  where
+    (s', p') = processStep p
+    ps' = maybe ps (: ps) p'

@@ -26,15 +26,16 @@ import Control.Monad.IO.Class (liftIO)
 import Data.Either (isLeft, rights)
 import Debug.Trace (trace)
 import Interpreter (Output, mainHaskeline)
-import Reactive.Banana (accumE, compile)
+import Reactive.Banana (Event, accumB, compile, filterJust)
 import Reactive.Banana.Frameworks
   ( AddHandler
   , EventNetwork
   , MomentIO
   , actuate
+  , changes
   , fromAddHandler
   , newAddHandler
-  , reactimate
+  , reactimate'
   )
 import System.IO (FilePath)
 
@@ -62,15 +63,15 @@ incommandOutput =
   \(_, commands, _) ->
     mapM_ putStrLn $ "Here are a list of commands:" : commands
 
--- Read commands and fire corresponding events 
+-- Read commands and fire corresponding events
 eventLoop :: EventSource () -> EventNetwork -> IO ()
-eventLoop esstepper network = loop
+eventLoop esStepper network = loop
   where
     loop = do
       putStr "> "
       c <- getChar
       case c of
-        's' -> fire esstepper ()
+        's' -> fire esStepper ()
         'q' -> putStrLn "" >> return ()
         otherwise -> putStrLn " - unknown character"
       when (c /= 'q') loop
@@ -107,46 +108,48 @@ data Process
 
 -- Set up the program logic in terms of events and behaviors.
 networkDescription :: EventSource () -> FilePath -> MomentIO ()
-networkDescription esstepper restInputLine = do
+networkDescription esStepper restInputLine = do
+  let parseContents :: Either [String] [String] -> Maybe [Process]
+      parseContents xs =
+        either
+          (const Nothing)
+          (\xs ->
+             let gs = map (extractParse parseGlobalProtocol) xs
+              in if any isLeft gs
+                   then Nothing
+                   else Just $ map Leaf (rights gs))
+          xs
+  -- eStepper: steps the debugger, generates new bOutputProc
+  eStepper <- fromAddHandler (addHandler esStepper)
+  -- xs: contents of file
+  -- gs: parsed contents of file
   xs <- liftIO $ extractFile restInputLine
-  liftIO $
-    either
-      (mapM_ putStrLn)
-      (\xs ->
-         let gs = map (extractParse parseGlobalProtocol) xs
-          in if any isLeft gs
-               then putStrLn "some error"
-               else mapM_ (mapM_ putStrLn . process . Leaf) (rights gs))
-      xs
-  estepper <- fromAddHandler (addHandler esstepper)
-  estep <- accumE 0 $ (+ 1) <$ estepper
-  reactimate $ fmap print estep
+  -- bOutputProc: tuple of two elements:
+  --    (1) output string
+  --    (2) process that the debugger currently has
+  -- eFinish: indicates whether the debugger is done
+  bOutputProc <-
+    accumB ("", fmap head (parseContents xs)) $
+    (flip $ const . uncurry processStep) <$> (("", Nothing) <$ eStepper)
+  let bOutput = fst <$> bOutputProc
+  eOutputChanged <- changes bOutput
+  reactimate' $ fmap putStrLn <$> eOutputChanged
 
-process :: Process -> [String]
-process ps =
-  let aux :: [String] -> Maybe [Process] -> [String]
-      aux ss Nothing = ss
-      aux ss (Just (p:ps)) = aux (ss ++ [s']) (Just ps')
-        where
-          (s', p') = processStep p
-          ps' = maybe ps (: ps) p'
-      aux ss (Just _) = ss
-   in aux [] (Just [ps])
-
-processStep :: Process -> (String, Maybe Process)
-processStep (Leaf g) =
+processStep :: String -> Maybe Process -> (String, Maybe Process)
+processStep _ Nothing = ("", Nothing)
+processStep _ (Just (Leaf g)) =
   case g of
     EGlobalProtocolConcurrency g1 g2 -> ("", Just $ NodeC [Leaf g1, Leaf g2])
     EGlobalProtocolChoice g1 g2 -> ("", Just $ Leaf g2) -- TODO Unhardcode choice to g2
     EGlobalProtocolSequencing g1 g2 -> ("", Just $ NodeS [Leaf g1, Leaf g2])
     otherwise -> (show g, Nothing)
-processStep (NodeS []) = ("", Nothing)
-processStep (NodeS (p:ps)) = (s', Just $ NodeS ps')
+processStep _ (Just (NodeS [])) = ("", Nothing)
+processStep _ (Just (NodeS (p:ps))) = (s', Just $ NodeS ps')
   where
-    (s', p') = processStep p
+    (s', p') = processStep "" (Just p)
     ps' = maybe ps (: ps) p'
-processStep (NodeC []) = ("", Nothing)
-processStep (NodeC (p:ps)) = (s', Just $ NodeC ps')
+processStep _ (Just (NodeC [])) = ("", Nothing)
+processStep _ (Just (NodeC (p:ps))) = (s', Just $ NodeC ps')
   where
-    (s', p') = processStep p
+    (s', p') = processStep "" (Just p)
     ps' = maybe ps (: ps) p'

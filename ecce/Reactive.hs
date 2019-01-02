@@ -99,14 +99,10 @@ fire = snd
 -- A sequential process resolves processes in order:
 -- resolve the head process, then process the tails.
 -- A concurrent process resolves processes without a defined order.
-data PS
-  = PSLeaf (Expr GlobalProtocol)
-  | PSNode [PC]
-  deriving (Show)
-
-data PC
-  = PCLeaf (Expr GlobalProtocol)
-  | PCNode [PS]
+data Process
+  = Leaf (Expr GlobalProtocol)
+  | NodeS [Process]
+  | NodeC [Process]
   deriving (Show)
 
 -- Set up the program logic in terms of events and behaviors.
@@ -120,40 +116,51 @@ networkDescription esstepper restInputLine = do
          let gs = map (extractParse parseGlobalProtocol) xs
           in if any isLeft gs
                then putStrLn "some error"
-               else mapM_ putStrLn $ process (PSNode $ map PCLeaf (rights gs)))
+               else mapM_ putStrLn $ process (NodeS $ map Leaf (rights gs)))
       xs
   estepper <- fromAddHandler (addHandler esstepper)
   estep <- accumE 0 $ (+ 1) <$ estepper
   reactimate $ fmap print estep
 
-process :: PS -> [String]
-process p =
-  let auxPS :: [String] -> PS -> [String]
-      auxPS ss (PSLeaf g) =
-        trace ("PSLeaf: " ++ show g) $
+process :: Process -> [String]
+process ps =
+  let aux :: [String] -> Maybe [Process] -> [String]
+      aux ss Nothing = ss
+      aux ss (Just (p:ps)) = aux (ss ++ [s']) (Just ps')
+        where
+          (s', p') = processStep p
+          ps' =
+            case p' of
+              Nothing -> ps
+              Just x -> x : ps
+      aux ss (Just _) = ss
+   in aux [] (Just [ps])
+
+processStep :: Process -> (String, Maybe Process)
+processStep p =
+  let aux :: String -> Process -> (String, Maybe Process)
+      aux s (Leaf g) =
         case g of
           EGlobalProtocolConcurrency g1 g2 ->
-            auxPC ss (PCNode [PSLeaf g1, PSLeaf g2])
-          EGlobalProtocolChoice g1 g2 -> auxPS ss (PSLeaf g2) -- TODO Unhardcode choice to g2
+            (s, Just $ NodeC [Leaf g1, Leaf g2])
+          EGlobalProtocolChoice g1 g2 -> (s, Just $ Leaf g2) -- TODO Unhardcode choice to g2
           EGlobalProtocolSequencing g1 g2 ->
-            auxPS ss (PSNode [PCLeaf g1, PCLeaf g2])
-          otherwise -> show g : ss
-      auxPS ss (PSNode []) = ss
-      auxPS ss (PSNode (p:ps)) =
-        trace ("PSNode: " ++ show (p : ps)) $
-        auxPS (join $ ss : auxPC [] p : []) (PSNode ps)
-      auxPC :: [String] -> PC -> [String]
-      auxPC ss (PCLeaf g) =
-        trace ("PCLeaf: " ++ show g) $
-        case g of
-          EGlobalProtocolConcurrency g1 g2 ->
-            auxPC ss (PCNode [PSLeaf g1, PSLeaf g2])
-          EGlobalProtocolChoice g1 g2 -> auxPC ss (PCLeaf g2) -- TODO Unhardcode choice to g2
-          EGlobalProtocolSequencing g1 g2 ->
-            auxPS ss (PSNode [PCLeaf g1, PCLeaf g2])
-          otherwise -> show g : ss
-      auxPC ss (PCNode []) = ss
-      auxPC ss (PCNode (p:ps)) =
-        trace ("PCNode: " ++ show (p : ps)) $
-        auxPC (join $ ss : auxPS [] p : []) (PCNode ps)
-   in auxPS [] p
+            (s, Just $ NodeS [Leaf g1, Leaf g2])
+          otherwise -> (s ++ show g, Nothing)
+      aux s (NodeS []) = (s, Nothing)
+      aux s (NodeS (p:ps)) = aux s' (NodeS ps')
+        where
+          (s', p') = aux s p
+          ps' =
+            case p' of
+              Nothing -> ps
+              Just x -> x : ps
+      aux s (NodeC []) = (s, Nothing)
+      aux s (NodeC (p:ps)) = aux s' (NodeC ps')
+        where
+          (s', p') = aux s p
+          ps' =
+            case p' of
+              Nothing -> ps
+              Just x -> x : ps
+   in aux "" p

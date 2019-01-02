@@ -1,0 +1,1 @@
+b1--(1)->s:s<1.E1.emp^1:order>; (s--(2)->b1:b1<2.E2.emp^2:price>*s--(3)->b2:b2<3.E3.emp^3:price>); b1--(4)->b2:b2<4.E4.emp^4:amt>; (b2--(5)->s:s<5.E5.emp^5:no>| (b2--(6)->s:s<6.E6.emp^6:yes>; b2--(7)->s:s<7.E7.emp^7:addr>))

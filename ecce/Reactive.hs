@@ -21,12 +21,11 @@ import Backend
   , parseGlobalProtocol
   )
 import Base (extractParse)
-import Control.Monad (join, when)
+import Control.Monad (when)
 import Control.Monad.IO.Class (liftIO)
 import Data.Either (isLeft, rights)
-import Debug.Trace (trace)
 import Interpreter (Output, mainHaskeline)
-import Reactive.Banana (Event, accumB, compile, filterJust)
+import Reactive.Banana (accumB, compile)
 import Reactive.Banana.Frameworks
   ( AddHandler
   , EventNetwork

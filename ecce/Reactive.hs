@@ -81,19 +81,6 @@ commands :: [String]
 commands = "help" : "load" : []
 
 {-----------------------------------------------------------------------------
-    Event sources
-------------------------------------------------------------------------------}
--- Event Sources - allows you to register event handlers
--- Your GUI framework should provide something like this for you
-type EventSource a = (AddHandler a, a -> IO ())
-
-addHandler :: EventSource a -> AddHandler a
-addHandler = fst
-
-fire :: EventSource a -> a -> IO ()
-fire = snd
-
-{-----------------------------------------------------------------------------
     Program logic
 ------------------------------------------------------------------------------}
 -- A process is either a single GlobalProtocol, or

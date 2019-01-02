@@ -25,7 +25,7 @@ import Control.Monad (when)
 import Control.Monad.IO.Class (liftIO)
 import Data.Either (isLeft, rights)
 import Interpreter (Output, mainHaskeline)
-import Reactive.Banana (accumB, compile, filterE)
+import Reactive.Banana ((<@>), accumB, compile, filterE)
 import Reactive.Banana.Frameworks
   ( AddHandler
   , EventNetwork
@@ -34,6 +34,7 @@ import Reactive.Banana.Frameworks
   , changes
   , fromAddHandler
   , newAddHandler
+  , reactimate
   , reactimate'
   )
 import System.IO (FilePath)
@@ -122,11 +123,11 @@ networkDescription esStepper restInputLine = do
   let bOutput = fst <$> bOutputProc
       bProc = snd <$> bOutputProc
   eOutputChanged <- changes bOutput
-  eProcChanged <- changes bProc
-  let eDone = eProcChanged
+  let eMayDone = (\m _ -> maybe True (const False) m) <$> bProc <@> eStepper
+      eDone = () <$ filterE id eMayDone
   -- TODO should not print when Output is ""
   reactimate' $ fmap putStrLn <$> eOutputChanged
-  -- reactimate' $ fmap print <$> eDone
+  reactimate $ putStrLn "Done!" <$ eDone
 
 parseContents :: Either [String] [String] -> Maybe [Process]
 parseContents xs =

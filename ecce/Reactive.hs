@@ -22,7 +22,7 @@ import Backend
 import Base (extractParse)
 import Control.Monad (when)
 import Control.Monad.IO.Class (liftIO)
-import Data.Either (isLeft, rights)
+import Data.Either (rights)
 import Data.Functor ((<$), (<$>))
 import Interpreter (Output, mainHaskeline)
 import Reactive.Banana ((<@>), accumB, compile, filterE)
@@ -135,7 +135,7 @@ parseContents xs =
     (const Nothing)
     (\xs ->
        let gs = map (extractParse parseGlobalProtocol) xs
-        in if any isLeft gs
+        in if any (either (const True) (const False)) gs
              then Nothing
              else Just $ map Leaf (rights gs))
     xs

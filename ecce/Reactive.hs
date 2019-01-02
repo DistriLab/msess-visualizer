@@ -116,7 +116,7 @@ networkDescription esstepper restInputLine = do
          let gs = map (extractParse parseGlobalProtocol) xs
           in if any isLeft gs
                then putStrLn "some error"
-               else mapM_ putStrLn $ process (NodeS $ map Leaf (rights gs)))
+               else mapM_ (mapM_ putStrLn . process . Leaf) (rights gs))
       xs
   estepper <- fromAddHandler (addHandler esstepper)
   estep <- accumE 0 $ (+ 1) <$ estepper

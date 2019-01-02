@@ -108,17 +108,6 @@ data Process
 -- Set up the program logic in terms of events and behaviors.
 networkDescription :: EventSource () -> FilePath -> MomentIO ()
 networkDescription esStepper restInputLine = do
-  let parseContents :: Either [String] [String] -> Maybe [Process]
-      parseContents xs =
-        either
-          (const Nothing)
-          (\xs ->
-             let gs = map (extractParse parseGlobalProtocol) xs
-              in if any isLeft gs
-                   then Nothing
-                   else Just $ map Leaf (rights gs))
-          xs
-  -- eStepper: steps the debugger, generates new bOutputProc
   eStepper <- fromAddHandler (addHandler esStepper)
   -- xs: contents of file
   -- gs: parsed contents of file
@@ -133,6 +122,17 @@ networkDescription esStepper restInputLine = do
   let bOutput = fst <$> bOutputProc
   eOutputChanged <- changes bOutput
   reactimate' $ fmap putStrLn <$> eOutputChanged
+
+parseContents :: Either [String] [String] -> Maybe [Process]
+parseContents xs =
+  either
+    (const Nothing)
+    (\xs ->
+       let gs = map (extractParse parseGlobalProtocol) xs
+        in if any isLeft gs
+             then Nothing
+             else Just $ map Leaf (rights gs))
+    xs
 
 processStep :: Maybe Process -> (String, Maybe Process)
 processStep Nothing = ("", Nothing)

@@ -126,8 +126,13 @@ networkDescription addKeyEvent restInputLine = do
   eOutputChanged <- changes bOutput
   let eMayDone = (\m _ -> maybe True (const False) m) <$> bProc <@> eStepper
       eDone = () <$ filterE id eMayDone
-  -- TODO should not print when Output is ""
-  reactimate' $ fmap putStrLn <$> eOutputChanged
+  reactimate' $
+    fmap
+      (\x ->
+         case x of
+           "" -> return ()
+           otherwise -> putStrLn x) <$>
+    eOutputChanged
   reactimate $ putStrLn "Done!" <$ eDone
 
 parseContents :: Either [String] [String] -> Maybe [Process]

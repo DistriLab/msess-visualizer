@@ -73,7 +73,7 @@ eventLoop fireKey network = loop
       c <- getChar
       putChar '\n'
       case c of
-        'q' -> putStrLn "" >> return ()
+        'q' -> putStrLn "Quitting" >> return ()
         otherwise -> fireKey c
       when (c /= 'q') loop
 

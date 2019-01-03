@@ -117,7 +117,6 @@ networkDescription addKeyEvent restInputLine =
       -- eChooseMay:
       --    only fires if user may choose
       -- eChooserChoice: choice selected by user
-      -- bChosenChoice: accumulated eChooserChoice, reset if eRunning
       let bProcChoice =
             ((\x ->
                 case x of
@@ -132,10 +131,10 @@ networkDescription addKeyEvent restInputLine =
           eDigit :: Event Char
           eDigit = filterE isDigit eChooseMay
           eChooserChoice = filterE (`elem` "12") eDigit
-          eChosenChoiceRunningNot = bChosenChoice <@ eRunningNot -- TODO
-          eChosenChoiceNotEmpty = bChosenChoice <@ eStepper -- TODO
+          eChosenChoiceRunning = bChosenChoice <@ eStepper -- TODO
+          eChosenChoiceRunningNot = bChosenChoice <@ eChooserChoice -- TODO
       bChosenChoice <-
-        stepper ' ' $ unionWith (flip const) eChooserChoice (' ' <$ eRunning)
+        stepper ' ' $ unionWith (flip const) eChooserChoice (' ' <$ eStepper)
       -- SUBSECTION STEPPER
       -- xs: contents of file
       -- (eOutput, bProc): tuple of two elements:
@@ -146,17 +145,8 @@ networkDescription addKeyEvent restInputLine =
         mapAccum (fmap head (parseContents xs)) $
         (\_ -> processStep) <$> eStepper
       -- SUBSECTION STEPPER STATE
-      -- bRunning:
-      --    whether debugger is running
-      --    not running when user choosing
-      --    running when user chose
-      -- eRunning: whether the debugger is running
-      -- eRunningNot: whether the debugger has stopped running
       -- eDone: whether the debugger is done
-      bRunning <- accumB True $ (const False <$ eChooseMay)
-      let eRunning = whenE bRunning eStepper
-          eRunningNot = whenE (not <$> bRunning) eStepper
-          eDone = whenE ((maybe True (const False)) <$> bProc) eStepper
+      let eDone = whenE ((maybe True (const False)) <$> bProc) eStepper
       reactimate $
         (\x ->
            case x of
@@ -164,11 +154,12 @@ networkDescription addKeyEvent restInputLine =
              otherwise -> putStrLn x) <$>
         eOutput
       reactimate $ putStrLn "Done!" <$ eDone
-      reactimate $ putStrLn . (++ " eRunning") . show <$> eRunning
       reactimate $ putStrLn . (++ " eChooseMay") . show <$> eChooseMay
       reactimate $
-        putStrLn . (++ " eChosenChoiceNotEmpty") . show <$>
-        eChosenChoiceNotEmpty
+        putStrLn . (++ " eChosenChoiceRunning") . show <$> eChosenChoiceRunning
+      reactimate $
+        putStrLn . (++ " eChosenChoiceRunningNot") . show <$>
+        eChosenChoiceRunningNot
 
 parseContents :: Either [String] [String] -> Maybe [Process]
 parseContents xs =

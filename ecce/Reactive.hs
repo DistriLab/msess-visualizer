@@ -125,7 +125,7 @@ networkDescription addKeyEvent restInputLine = do
 parseContents :: Either [String] [String] -> Maybe [Process]
 parseContents xs =
   either
-    (const Nothing)
+    (\e -> error $ "Parse error: " ++ show e)
     (\xs ->
        let gs = map (extractParse parseGlobalProtocol) xs
         in if any (either (const True) (const False)) gs

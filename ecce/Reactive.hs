@@ -115,18 +115,27 @@ networkDescription addKeyEvent restInputLine =
   mdo eKey <- fromAddHandler addKeyEvent
       -- SUBSECTION KEYS
       -- eChooseMay:
-      --    whether user may select a choice
-      let eStepper :: Event Char
-          eStepper = filterE (== 's') eKey
+      --    only fires if user may choose
+      -- eChooserChoice: choice selected by user
+      -- bChosenChoice: accumulated eChooserChoice, reset if eRunning
+      let bProcChoice =
+            ((\x ->
+                case x of
+                  Just (NodeS (Leaf (EGlobalProtocolChoice _ _):_)) -> True -- TODO assumed NodeS, not NodeC
+                  otherwise -> False) <$>
+             bProc)
+          eChooseMay :: Event Char
+          eChooseMay = whenE bProcChoice eKey
+          eChooseMayNot = whenE (not <$> bProcChoice) eKey
+          eStepper :: Event Char
+          eStepper = filterE (== 's') eChooseMayNot
           eDigit :: Event Char
-          eDigit = filterE isDigit eKey
-          eChooseMay :: Event Bool
-          eChooseMay =
-            (\x _ ->
-               case x of
-                 Just (NodeS (Leaf (EGlobalProtocolChoice _ _):_)) -> True -- TODO assumed NodeS, not NodeC
-                 otherwise -> False) <$>
-            bProc <@> eStepper
+          eDigit = filterE isDigit eChooseMay
+          eChooserChoice = filterE (`elem` "12") eDigit
+          eChosenChoiceRunningNot = bChosenChoice <@ eRunningNot -- TODO
+          eChosenChoiceNotEmpty = bChosenChoice <@ eStepper -- TODO
+      bChosenChoice <-
+        stepper ' ' $ unionWith (flip const) eChooserChoice (' ' <$ eRunning)
       -- SUBSECTION STEPPER
       -- xs: contents of file
       -- (eOutput, bProc): tuple of two elements:
@@ -144,19 +153,10 @@ networkDescription addKeyEvent restInputLine =
       -- eRunning: whether the debugger is running
       -- eRunningNot: whether the debugger has stopped running
       -- eDone: whether the debugger is done
-      bRunning <- accumB True $ (flip $ const id) <$> (False <$ eChooseMay)
-      let eRunning = bRunning <@ eStepper
-          eRunningNot = filterE not $ bRunning <@ eStepper
+      bRunning <- accumB True $ (const False <$ eChooseMay)
+      let eRunning = whenE bRunning eStepper
+          eRunningNot = whenE (not <$> bRunning) eStepper
           eDone = whenE ((maybe True (const False)) <$> bProc) eStepper
-      -- SUBSECTION CHOICE
-      -- eChooserChoice: choice selected by user
-      -- bChosenChoice: accumulated eChooserChoice, reset if eRunning
-      bChosenChoice <-
-        stepper ' ' $ unionWith (flip const) eChooserChoice (' ' <$ eRunning)
-      let eChooserChoice = filterE (`elem` "12") eDigit
-          eStepperRunning = whenE bRunning eStepper
-          eChosenChoiceRunningNot = bChosenChoice <@ eRunningNot
-          eChosenChoiceNotEmpty = bChosenChoice <@ eStepper -- TODO
       reactimate $
         (\x ->
            case x of
@@ -164,7 +164,11 @@ networkDescription addKeyEvent restInputLine =
              otherwise -> putStrLn x) <$>
         eOutput
       reactimate $ putStrLn "Done!" <$ eDone
-      reactimate $ putStrLn . show <$> eChosenChoiceNotEmpty
+      reactimate $ putStrLn . (++ " eRunning") . show <$> eRunning
+      reactimate $ putStrLn . (++ " eChooseMay") . show <$> eChooseMay
+      reactimate $
+        putStrLn . (++ " eChosenChoiceNotEmpty") . show <$>
+        eChosenChoiceNotEmpty
 
 parseContents :: Either [String] [String] -> Maybe [Process]
 parseContents xs =

@@ -25,7 +25,7 @@ import Control.Monad.IO.Class (liftIO)
 import Data.Either (rights)
 import Data.Functor ((<$), (<$>))
 import Interpreter (Output, mainHaskeline)
-import Reactive.Banana ((<@>), accumB, compile, filterE)
+import Reactive.Banana ((<@>), accumB, compile, filterE, filterJust)
 import Reactive.Banana.Frameworks
   ( AddHandler
   , EventNetwork
@@ -111,8 +111,9 @@ networkDescription addKeyEvent restInputLine = do
   let bOutput = fst <$> bOutputProc
       bProc = snd <$> bOutputProc
   eOutputChanged <- changes bOutput
-  let eMayDone = (\m _ -> maybe True (const False) m) <$> bProc <@> eStepper
-      eDone = () <$ filterE id eMayDone
+  let eMayDone =
+        (\m _ -> maybe (Just True) (const Nothing) m) <$> bProc <@> eStepper
+      eDone = filterJust eMayDone
   reactimate' $
     fmap
       (\x ->

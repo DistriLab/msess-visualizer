@@ -34,6 +34,7 @@ import Reactive.Banana
   , compile
   , filterE
   , filterJust
+  , mapAccum
   , stepper
   )
 import Reactive.Banana.Frameworks
@@ -46,7 +47,6 @@ import Reactive.Banana.Frameworks
   , fromAddHandler
   , newAddHandler
   , reactimate
-  , reactimate'
   )
 import System.IO (FilePath)
 
@@ -113,15 +113,11 @@ networkDescription addKeyEvent restInputLine = do
       eDigit = filterE isDigit eKey
   -- xs: contents of file
   xs <- liftIO $ extractFile restInputLine
-  -- bOutputProc: tuple of two elements:
+  -- (eOutput, bProc): tuple of two elements:
   --    (1) output string
   --    (2) process that the debugger currently has
-  bOutputProc <-
-    accumB ("", fmap head (parseContents xs)) $
-    (flip $ const . uncurry (\_ -> processStep)) <$> (("", Nothing) <$ eStepper)
-  let bOutput = fst <$> bOutputProc
-      bProc = snd <$> bOutputProc
-  eOutputChange <- changes bOutput
+  (eOutput, bProc) <-
+    mapAccum (fmap head (parseContents xs)) $ (\_ -> processStep) <$> eStepper
   -- eChooseMay:
   --    whether user may select a choice
   --    In this context, happens when bProc has EGlobalProtocolChoice as the 
@@ -153,13 +149,12 @@ networkDescription addKeyEvent restInputLine = do
       eDone = filterJust eDoneMay
   bChooserChoice <- stepper ' ' (filterE (`elem` "12") eDigit)
   let eChooserChoiceRunningNot = bChooserChoice <@ eRunningNot
-  reactimate' $
-    fmap
-      (\x ->
-         case x of
-           "" -> return ()
-           otherwise -> putStrLn x) <$>
-    eOutputChange
+  reactimate $
+    (\x ->
+       case x of
+         "" -> return ()
+         otherwise -> putStrLn x) <$>
+    eOutput
   eChooserChoice <- changes bChooserChoice
   reactimate $ putStrLn "Done!" <$ eDone
   reactimate $ putStrLn . show <$> eRunningNot

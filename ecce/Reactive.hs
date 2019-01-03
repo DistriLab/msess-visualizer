@@ -2,6 +2,7 @@
  - SECTION PRAGMAS
  -}
 {-# LANGUAGE GADTs #-} -- Allows patterm match on GADT
+{-# LANGUAGE RecursiveDo #-} -- Allows mdo
 
 {-
  - SECTION MODULE
@@ -27,7 +28,8 @@ import Data.Either (rights)
 import Data.Functor ((<$), (<$>))
 import Interpreter (Output, mainHaskeline)
 import Reactive.Banana
-  ( Event
+  ( Behavior
+  , Event
   , (<@)
   , (<@>)
   , accumB
@@ -36,6 +38,8 @@ import Reactive.Banana
   , filterJust
   , mapAccum
   , stepper
+  , unionWith
+  , whenE
   )
 import Reactive.Banana.Frameworks
   ( AddHandler
@@ -47,6 +51,7 @@ import Reactive.Banana.Frameworks
   , fromAddHandler
   , newAddHandler
   , reactimate
+  , reactimate'
   )
 import System.IO (FilePath)
 
@@ -104,61 +109,62 @@ data Process
   | NodeC [Process]
   deriving (Show)
 
--- Set up the program logic in terms of events and behaviors.
+-- SECTION NETWORK
 networkDescription :: AddHandler Char -> FilePath -> MomentIO ()
-networkDescription addKeyEvent restInputLine = do
-  eKey <- fromAddHandler addKeyEvent
-  let eStepper = filterE (== 's') eKey
-      eDigit :: Event Char
-      eDigit = filterE isDigit eKey
-  -- xs: contents of file
-  xs <- liftIO $ extractFile restInputLine
-  -- (eOutput, bProc): tuple of two elements:
-  --    (1) output string
-  --    (2) process that the debugger currently has
-  (eOutput, bProc) <-
-    mapAccum (fmap head (parseContents xs)) $ (\_ -> processStep) <$> eStepper
-  -- eChooseMay:
-  --    whether user may select a choice
-  --    In this context, happens when bProc has EGlobalProtocolChoice as the 
-  --    next Process
-  -- eChooserChoice: choice selected by user, scoped to EGlobalPRotocolChoice
-  -- TODO Note:
-  --    `bProc <@ eStepper`: cannot filterE Future, hence use combinator for 
-  --    Behavior and Event
-  let eChooseMay :: Event (Maybe Process)
-      eChooseMay =
-        filterE
-          (\x ->
-             case x of
-               Just (NodeS (Leaf (EGlobalProtocolChoice _ _):_)) -> True -- TODO assumed NodeS, not NodeC
-               otherwise -> False) $
-        bProc <@ eStepper
-  -- bRunning:
-  --    whether debugger is running
-  --    not running when user choosing
-  --    running when user chose
-  bRunning <- accumB True $ (flip $ const id) <$> (False <$ eChooseMay)
-  -- eRunning: whether the debugger is running
-  -- eRunningNot: whether the debugger has stopped running
-  -- eDone: whether the debugger is done
-  let eRunning = bRunning <@ eStepper
-      eRunningNot = filterE not $ bRunning <@ eStepper
-      eDoneMay =
-        (\m _ -> maybe (Just True) (const Nothing) m) <$> bProc <@> eStepper
-      eDone = filterJust eDoneMay
-  bChooserChoice <- stepper ' ' (filterE (`elem` "12") eDigit)
-  let eChooserChoiceRunningNot = bChooserChoice <@ eRunningNot
-  reactimate $
-    (\x ->
-       case x of
-         "" -> return ()
-         otherwise -> putStrLn x) <$>
-    eOutput
-  eChooserChoice <- changes bChooserChoice
-  reactimate $ putStrLn "Done!" <$ eDone
-  reactimate $ putStrLn . show <$> eRunningNot
-  reactimate $ putStrLn . show <$> eChooserChoiceRunningNot
+networkDescription addKeyEvent restInputLine =
+  mdo eKey <- fromAddHandler addKeyEvent
+      -- SUBSECTION KEYS
+      -- eChooseMay:
+      --    whether user may select a choice
+      let eStepper :: Event Char
+          eStepper = filterE (== 's') eKey
+          eDigit :: Event Char
+          eDigit = filterE isDigit eKey
+          eChooseMay :: Event Bool
+          eChooseMay =
+            (\x _ ->
+               case x of
+                 Just (NodeS (Leaf (EGlobalProtocolChoice _ _):_)) -> True -- TODO assumed NodeS, not NodeC
+                 otherwise -> False) <$>
+            bProc <@> eStepper
+      -- SUBSECTION STEPPER
+      -- xs: contents of file
+      -- (eOutput, bProc): tuple of two elements:
+      --    (1) output string
+      --    (2) process that the debugger currently has
+      xs <- liftIO $ extractFile restInputLine
+      (eOutput, bProc) <-
+        mapAccum (fmap head (parseContents xs)) $
+        (\_ -> processStep) <$> eStepper
+      -- SUBSECTION STEPPER STATE
+      -- bRunning:
+      --    whether debugger is running
+      --    not running when user choosing
+      --    running when user chose
+      -- eRunning: whether the debugger is running
+      -- eRunningNot: whether the debugger has stopped running
+      -- eDone: whether the debugger is done
+      bRunning <- accumB True $ (flip $ const id) <$> (False <$ eChooseMay)
+      let eRunning = bRunning <@ eStepper
+          eRunningNot = filterE not $ bRunning <@ eStepper
+          eDone = whenE ((maybe True (const False)) <$> bProc) eStepper
+      -- SUBSECTION CHOICE
+      -- eChooserChoice: choice selected by user
+      -- bChosenChoice: accumulated eChooserChoice, reset if eRunning
+      bChosenChoice <-
+        stepper ' ' $ unionWith (flip const) eChooserChoice (' ' <$ eRunning)
+      let eChooserChoice = filterE (`elem` "12") eDigit
+          eStepperRunning = whenE bRunning eStepper
+          eChosenChoiceRunningNot = bChosenChoice <@ eRunningNot
+          eChosenChoiceNotEmpty = bChosenChoice <@ eStepper -- TODO
+      reactimate $
+        (\x ->
+           case x of
+             "" -> return ()
+             otherwise -> putStrLn x) <$>
+        eOutput
+      reactimate $ putStrLn "Done!" <$ eDone
+      reactimate $ putStrLn . show <$> eChosenChoiceNotEmpty
 
 parseContents :: Either [String] [String] -> Maybe [Process]
 parseContents xs =

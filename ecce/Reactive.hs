@@ -22,10 +22,20 @@ import Backend
 import Base (extractParse)
 import Control.Monad (when)
 import Control.Monad.IO.Class (liftIO)
+import Data.Char (isDigit)
 import Data.Either (rights)
 import Data.Functor ((<$), (<$>))
 import Interpreter (Output, mainHaskeline)
-import Reactive.Banana ((<@>), accumB, compile, filterE, filterJust)
+import Reactive.Banana
+  ( Event
+  , (<@)
+  , (<@>)
+  , accumB
+  , compile
+  , filterE
+  , filterJust
+  , stepper
+  )
 import Reactive.Banana.Frameworks
   ( AddHandler
   , EventNetwork
@@ -99,29 +109,61 @@ networkDescription :: AddHandler Char -> FilePath -> MomentIO ()
 networkDescription addKeyEvent restInputLine = do
   eKey <- fromAddHandler addKeyEvent
   let eStepper = filterE (== 's') eKey
+      eDigit :: Event Char
+      eDigit = filterE isDigit eKey
   -- xs: contents of file
   xs <- liftIO $ extractFile restInputLine
   -- bOutputProc: tuple of two elements:
   --    (1) output string
   --    (2) process that the debugger currently has
-  -- eDone: indicates whether the debugger is done
   bOutputProc <-
     accumB ("", fmap head (parseContents xs)) $
     (flip $ const . uncurry (\_ -> processStep)) <$> (("", Nothing) <$ eStepper)
   let bOutput = fst <$> bOutputProc
       bProc = snd <$> bOutputProc
-  eOutputChanged <- changes bOutput
-  let eMayDone =
+  eOutputChange <- changes bOutput
+  -- eChooseMay:
+  --    whether user may select a choice
+  --    In this context, happens when bProc has EGlobalProtocolChoice as the 
+  --    next Process
+  -- eChooserChoice: choice selected by user, scoped to EGlobalPRotocolChoice
+  -- TODO Note:
+  --    `bProc <@ eStepper`: cannot filterE Future, hence use combinator for 
+  --    Behavior and Event
+  let eChooseMay :: Event (Maybe Process)
+      eChooseMay =
+        filterE
+          (\x ->
+             case x of
+               Just (NodeS (Leaf (EGlobalProtocolChoice _ _):_)) -> True -- TODO assumed NodeS, not NodeC
+               otherwise -> False) $
+        bProc <@ eStepper
+  -- bRunning:
+  --    whether debugger is running
+  --    not running when user choosing
+  --    running when user chose
+  bRunning <- accumB True $ (flip $ const id) <$> (False <$ eChooseMay)
+  -- eRunning: whether the debugger is running
+  -- eRunningNot: whether the debugger has stopped running
+  -- eDone: whether the debugger is done
+  let eRunning = bRunning <@ eStepper
+      eRunningNot = filterE not $ bRunning <@ eStepper
+      eDoneMay =
         (\m _ -> maybe (Just True) (const Nothing) m) <$> bProc <@> eStepper
-      eDone = filterJust eMayDone
+      eDone = filterJust eDoneMay
+  bChooserChoice <- stepper ' ' (filterE (`elem` "12") eDigit)
+  let eChooserChoiceRunningNot = bChooserChoice <@ eRunningNot
   reactimate' $
     fmap
       (\x ->
          case x of
            "" -> return ()
            otherwise -> putStrLn x) <$>
-    eOutputChanged
+    eOutputChange
+  eChooserChoice <- changes bChooserChoice
   reactimate $ putStrLn "Done!" <$ eDone
+  reactimate $ putStrLn . show <$> eRunningNot
+  reactimate $ putStrLn . show <$> eChooserChoiceRunningNot
 
 parseContents :: Either [String] [String] -> Maybe [Process]
 parseContents xs =

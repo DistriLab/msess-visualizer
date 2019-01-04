@@ -13,7 +13,16 @@ module Reactive where
 {-
  - SECTION IMPORTS
  -}
-import Backend
+import Base (extractParse)
+import Control.Monad (when)
+import Control.Monad.Fix (fix)
+import Control.Monad.IO.Class (liftIO)
+import Data.Char (isDigit)
+import Data.Either (rights)
+import Data.Functor ((<$), (<$>))
+import Data.Maybe (fromJust, fromMaybe)
+import Interpreter (Output, mainHaskeline)
+import Parser
   ( Expr(EGlobalProtocolChoice, EGlobalProtocolConcurrency,
      EGlobalProtocolEmp, EGlobalProtocolSequencing, ERole)
   , Expr
@@ -21,14 +30,6 @@ import Backend
   , extractFile
   , parseGlobalProtocol
   )
-import Base (extractParse)
-import Control.Monad (when)
-import Control.Monad.IO.Class (liftIO)
-import Data.Char (isDigit)
-import Data.Either (rights)
-import Data.Functor ((<$), (<$>))
-import Data.Maybe (fromJust)
-import Interpreter (Output, mainHaskeline)
 import Projector (projectGlobalToParty)
 import Reactive.Banana
   ( Behavior

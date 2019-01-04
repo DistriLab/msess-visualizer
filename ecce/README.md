@@ -19,11 +19,11 @@ ecce> load reactive.test
 ...
 ```
 
-## Backend.hs
+## Parser.hs
 ### Running
 ```
-ghci Backend.hs
-*Backend> main
+ghci Parser.hs
+*Parser> main
 ```
 
 ### Example Execution

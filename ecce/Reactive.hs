@@ -27,6 +27,7 @@ import Control.Monad.IO.Class (liftIO)
 import Data.Char (isDigit)
 import Data.Either (rights)
 import Data.Functor ((<$), (<$>))
+import Data.Maybe (fromJust)
 import Interpreter (Output, mainHaskeline)
 import Reactive.Banana
   ( Behavior
@@ -115,9 +116,19 @@ networkDescription :: AddHandler Char -> FilePath -> MomentIO ()
 networkDescription addKeyEvent restInputLine =
   mdo eKey <- fromAddHandler addKeyEvent
       -- SUBSECTION USER INPUT
+      -- bProcChoiceMay:
+      --    looks at bProc to see if current process is EGlobalProtocolChoice
+      -- eProcChoice: process selected by user, fires on eChooserChoice
       -- eChooseMay:
       --    only fires if user may choose
-      -- eChooserChoice: choice selected by user
+      -- eChooserChoice: choice selected by user, fires on eChooseMay
+      -- bProcChoiceFunc:
+      --    to be applied to eChooserChoice, to generate eProcChoice
+      --    looks at bProcChoiceMay to get list of processes to be chosen from
+      --    returns selected process from that list of processes
+      --    always guaranteed to have [Process], not Maybe [Process]
+      --        because of how eChooseMay guarantees bProcChoiceMay will always 
+      --        be (Just ...)
       let bProcChoiceMay :: Behavior (Maybe [Process])
           bProcChoiceMay =
             ((\x ->
@@ -126,6 +137,12 @@ networkDescription addKeyEvent restInputLine =
                     Just [Leaf g1, Leaf g2] -- TODO assumed NodeS, not NodeC
                   otherwise -> Nothing) <$>
              bProc)
+          bProcChoiceFunc :: Behavior (Char -> Process)
+          bProcChoiceFunc =
+            flip ((flip (!!)) . (subtract (fromEnum '1')) . fromEnum) . fromJust <$>
+            bProcChoiceMay
+          eProcChoice :: Event Process
+          eProcChoice = bProcChoiceFunc <@> eChooserChoice
           bProcIsChoice :: Behavior Bool
           bProcIsChoice = maybe False (const True) <$> bProcChoiceMay
           eChooseMay :: Event Char
@@ -151,7 +168,7 @@ networkDescription addKeyEvent restInputLine =
         mapAccum (fmap head (parseContents xs)) $ -- TODO Unmanual extract first parsed content
         unionWith
           const
-          (const <$> (processStep <$> bProc <@ eChooserChoice))
+          (const <$> ((processStep . Just) <$> eProcChoice))
           (const <$> (processStep <$> bProc <@ eStepper))
       -- SUBSECTION STEPPER STATE
       -- eDone: whether the debugger is done
@@ -183,7 +200,6 @@ processStep Nothing = ("", Nothing)
 processStep (Just (Leaf g)) =
   case g of
     EGlobalProtocolConcurrency g1 g2 -> ("", Just $ NodeC [Leaf g1, Leaf g2])
-    EGlobalProtocolChoice g1 g2 -> ("", Just $ Leaf g2) -- TODO Unhardcode choice to g2
     EGlobalProtocolSequencing g1 g2 -> ("", Just $ NodeS [Leaf g1, Leaf g2])
     otherwise -> (show g, Nothing)
 processStep (Just (NodeS [])) = ("", Nothing)

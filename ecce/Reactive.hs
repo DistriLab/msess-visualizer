@@ -146,7 +146,10 @@ networkDescription addKeyEvent restInputLine =
       xs <- liftIO $ extractFile restInputLine
       (eOutput :: Event String, bProc :: Behavior (Maybe Process)) <-
         mapAccum (fmap head (parseContents xs)) $
-        const <$> (processStep <$> bProc <@ eStepper)
+        unionWith
+          const
+          (const <$> (processStep <$> bProc <@ eChooserChoice))
+          (const <$> (processStep <$> bProc <@ eStepper))
       -- SUBSECTION STEPPER STATE
       -- eDone: whether the debugger is done
       let eDone :: Event Char

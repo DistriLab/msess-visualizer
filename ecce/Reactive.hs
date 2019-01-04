@@ -113,7 +113,7 @@ data Process
 networkDescription :: AddHandler Char -> FilePath -> MomentIO ()
 networkDescription addKeyEvent restInputLine =
   mdo eKey <- fromAddHandler addKeyEvent
-      -- SUBSECTION KEYS
+      -- SUBSECTION USER INPUT
       -- eChooseMay:
       --    only fires if user may choose
       -- eChooserChoice: choice selected by user
@@ -131,10 +131,6 @@ networkDescription addKeyEvent restInputLine =
           eDigit :: Event Char
           eDigit = filterE isDigit eChooseMay
           eChooserChoice = filterE (`elem` "12") eDigit
-          eChosenChoiceRunning = bChosenChoice <@ eStepper -- TODO
-          eChosenChoiceRunningNot = bChosenChoice <@ eChooserChoice -- TODO
-      bChosenChoice <-
-        stepper ' ' $ unionWith (flip const) eChooserChoice (' ' <$ eStepper)
       -- SUBSECTION STEPPER
       -- xs: contents of file
       -- (eOutput, bProc): tuple of two elements:
@@ -155,11 +151,7 @@ networkDescription addKeyEvent restInputLine =
         eOutput
       reactimate $ putStrLn "Done!" <$ eDone
       reactimate $ putStrLn . (++ " eChooseMay") . show <$> eChooseMay
-      reactimate $
-        putStrLn . (++ " eChosenChoiceRunning") . show <$> eChosenChoiceRunning
-      reactimate $
-        putStrLn . (++ " eChosenChoiceRunningNot") . show <$>
-        eChosenChoiceRunningNot
+      reactimate $ putStrLn . (++ " eChooserChoice") . show <$> eChooserChoice
 
 parseContents :: Either [String] [String] -> Maybe [Process]
 parseContents xs =

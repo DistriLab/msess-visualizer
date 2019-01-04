@@ -12,16 +12,22 @@ module Projector where
  - SECTION IMPORTS
  -}
 import Parser
-  ( Channel
+  ( Assertion
+  , Channel
+  , Constraint
   , EndpointProtocol
-  , Expr(EChannel, EEndpointProtocolChoice,
-     EEndpointProtocolConcurrency, EEndpointProtocolEmp,
-     EEndpointProtocolReceive, EEndpointProtocolSend,
-     EEndpointProtocolSequencing, EGlobalProtocolChoice,
+  , Event
+  , Expr(EAssertionAnd, EAssertionConstraint, EAssertionEvent,
+     EAssertionImplies, EAssertionNEvent, EChannel,
+     EConstraintCommunicates, EConstraintHappens,
+     EEndpointProtocolChoice, EEndpointProtocolConcurrency,
+     EEndpointProtocolEmp, EEndpointProtocolReceive,
+     EEndpointProtocolSend, EEndpointProtocolSequencing, EEvent,
+     EGlobalProtocolAssumption, EGlobalProtocolChoice,
      EGlobalProtocolConcurrency, EGlobalProtocolEmp,
-     EGlobalProtocolSequencing, EGlobalProtocolSequencing,
-     EGlobalProtocolTransmission, EPartyProtocolChoice,
-     EPartyProtocolConcurrency, EPartyProtocolEmp,
+     EGlobalProtocolGuard, EGlobalProtocolSequencing,
+     EGlobalProtocolSequencing, EGlobalProtocolTransmission,
+     EPartyProtocolChoice, EPartyProtocolConcurrency, EPartyProtocolEmp,
      EPartyProtocolReceive, EPartyProtocolSend,
      EPartyProtocolSequencing, ERole)
   , Expr
@@ -33,6 +39,42 @@ import Parser
 {-
  - SECTION Formal Definitions 4.2.1
  -}
+{-
+ - SUBSECTION EVENT
+ - Note:
+ -  Defined in terms of List, instead of Set in the thesis.
+ -  This is because Set requires Eq to be derived for the Expr datatype,
+ -  which means that certain constructors of Expr like EHeapProtocol and 
+ -  ESymbolicProtocol will also need to derive Eq.
+ -  However, this is not possible because both of those constructors have an 
+ -  argument of type [AnyExpr].
+ -  Hence, in deriving Eq for both of those constructors, we assume Eq for 
+ -  AnyExpr, which assumes Eq for both of those constructors.
+ -  This is circular reasoning.
+ -}
+ev :: Expr GlobalProtocol -> [Expr Event]
+ev (EGlobalProtocolTransmission s i r _ _ _) = [EEvent s i, EEvent r i]
+ev (EGlobalProtocolConcurrency g1 g2) = ev g1 ++ ev g2
+ev (EGlobalProtocolChoice g1 g2) = ev g1 ++ ev g2
+ev (EGlobalProtocolSequencing g1 g2) = ev g1 ++ ev g2
+ev (EGlobalProtocolAssumption a) = evAssertion a
+ev (EGlobalProtocolGuard a) = evAssertion a
+ev EGlobalProtocolEmp = []
+
+-- Paper defines ev on Assumptions and Guards, so,
+-- (1) also define ev on Assertions
+-- (2) also define ev on Constraints
+evAssertion :: Expr Assertion -> [Expr Event]
+evAssertion (EAssertionEvent e) = [e]
+evAssertion (EAssertionNEvent e) = [e]
+evAssertion (EAssertionConstraint c) = evConstraint c
+evAssertion (EAssertionAnd a1 a2) = evAssertion a1 ++ evAssertion a2
+evAssertion (EAssertionImplies e a) = e : evAssertion a
+
+evConstraint :: Expr Constraint -> [Expr Event]
+evConstraint (EConstraintCommunicates e1 e2) = [e1, e2]
+evConstraint (EConstraintHappens e1 e2) = [e1, e2]
+
 {-
  - SUBSECTION GLOBAL SPEC -> PER PARTY SPEC
  -}

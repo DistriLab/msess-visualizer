@@ -30,7 +30,7 @@ import Parser
   , extractFile
   , parseGlobalProtocol
   )
-import Projector (projectGlobalToParty, projectPartyToEndpoint)
+import Projector (ev, projectGlobalToParty, projectPartyToEndpoint)
 import Reactive.Banana
   ( Behavior
   , Event
@@ -196,6 +196,8 @@ networkDescription addKeyEvent restInputLine =
                 (EChannel "1")) . -- TODO unhardcode ERole
            mayProcessToGlobalProtocol) <$>
         eProc
+      reactimate' $
+        fmap (putStrLn . show . ev . mayProcessToGlobalProtocol) <$> eProc
 
 mayProcessToGlobalProtocol :: Maybe Process -> Expr GlobalProtocol
 mayProcessToGlobalProtocol =

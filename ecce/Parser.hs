@@ -282,6 +282,12 @@ data Expr a
     -> Expr VarFirst
     -> Expr Formula
     -> Expr EndpointProtocol
+  -- Note:
+  --    We also define L ::= L*L.
+  --    See Projector.hs, SUBSECTION PER PARTY SPEC -> PER ENDPOINT SPEC Note
+  --    for more details.
+  EEndpointProtocolConcurrency
+    :: Expr EndpointProtocol -> Expr EndpointProtocol -> Expr EndpointProtocol
   EEndpointProtocolChoice
     :: Expr EndpointProtocol -> Expr EndpointProtocol -> Expr EndpointProtocol
   EEndpointProtocolSequencing
@@ -758,7 +764,8 @@ parseEndpointProtocol =
   buildExpressionParser opEndpointProtocol termEndpointProtocol
 
 opEndpointProtocol =
-  [ [ Infix (reservedOp "|" >> return EEndpointProtocolChoice) AssocLeft
+  [ [ Infix (reservedOp "*" >> return EEndpointProtocolConcurrency) AssocLeft
+    , Infix (reservedOp "|" >> return EEndpointProtocolChoice) AssocLeft
     , Infix (reservedOp ";" >> return EEndpointProtocolSequencing) AssocLeft
     ]
   ]

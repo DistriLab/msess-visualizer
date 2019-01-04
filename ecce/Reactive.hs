@@ -23,14 +23,14 @@ import Data.Functor ((<$), (<$>))
 import Data.Maybe (fromJust, fromMaybe)
 import Interpreter (Output, mainHaskeline)
 import Parser
-  ( Expr(EGlobalProtocolChoice, EGlobalProtocolConcurrency,
+  ( Expr(EChannel, EGlobalProtocolChoice, EGlobalProtocolConcurrency,
      EGlobalProtocolEmp, EGlobalProtocolSequencing, ERole)
   , Expr
   , GlobalProtocol
   , extractFile
   , parseGlobalProtocol
   )
-import Projector (projectGlobalToParty)
+import Projector (projectGlobalToParty, projectPartyToEndpoint)
 import Reactive.Banana
   ( Behavior
   , Event
@@ -190,7 +190,10 @@ networkDescription addKeyEvent restInputLine =
         fmap
           (putStrLn .
            show .
-           (\g -> projectGlobalToParty g (ERole "b1")) . -- TODO unhardcode ERole
+           (\g ->
+              projectPartyToEndpoint
+                (projectGlobalToParty g (ERole "b1"))
+                (EChannel "1")) . -- TODO unhardcode ERole
            maybe
              EGlobalProtocolEmp
              (fix

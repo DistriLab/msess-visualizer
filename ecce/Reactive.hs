@@ -15,7 +15,7 @@ module Reactive where
  -}
 import Backend
   ( Expr(EGlobalProtocolChoice, EGlobalProtocolConcurrency,
-     EGlobalProtocolSequencing)
+     EGlobalProtocolEmp, EGlobalProtocolSequencing, ERole)
   , Expr
   , GlobalProtocol
   , extractFile
@@ -29,6 +29,7 @@ import Data.Either (rights)
 import Data.Functor ((<$), (<$>))
 import Data.Maybe (fromJust)
 import Interpreter (Output, mainHaskeline)
+import Projector (projectGlobalToParty)
 import Reactive.Banana
   ( Behavior
   , Event
@@ -181,8 +182,25 @@ networkDescription addKeyEvent restInputLine =
              otherwise -> putStrLn x) <$>
         eOutput
       reactimate $ putStrLn "Done!" <$ eDone
-      reactimate $ putStrLn . (++ " eChooseMay") . show <$> eChooseMay
-      reactimate $ putStrLn . (++ " eChooserChoice") . show <$> eChooserChoice
+      -- TODO reactimate $ putStrLn . (++ " eChooseMay") . show <$> eChooseMay
+      -- TODO reactimate $ putStrLn . (++ " eChooserChoice") . show <$> eChooserChoice
+      eProc <- changes bProc
+      reactimate' $
+        fmap
+          (putStrLn .
+           show .
+           (\g -> projectGlobalToParty g (ERole "b1")) . -- TODO unhardcode ERole
+           maybe
+             EGlobalProtocolEmp
+             (fix
+                (\r p ->
+                   case p of
+                     NodeS [] -> EGlobalProtocolEmp -- TODO figure out how to skip NodeS []
+                     NodeC [] -> EGlobalProtocolEmp -- TODO figure out how to skip NodeC []
+                     NodeS (p:ps) -> r p
+                     NodeC (p:ps) -> r p
+                     Leaf g -> g))) <$>
+        eProc
 
 parseContents :: Either [String] [String] -> Maybe [Process]
 parseContents xs =

@@ -118,17 +118,20 @@ networkDescription addKeyEvent restInputLine =
       -- eChooseMay:
       --    only fires if user may choose
       -- eChooserChoice: choice selected by user
-      let bProcChoice :: Behavior Bool
-          bProcChoice =
+      let bProcChoiceMay :: Behavior (Maybe [Process])
+          bProcChoiceMay =
             ((\x ->
                 case x of
-                  Just (NodeS (Leaf (EGlobalProtocolChoice _ _):_)) -> True -- TODO assumed NodeS, not NodeC
-                  otherwise -> False) <$>
+                  Just (NodeS (Leaf (EGlobalProtocolChoice g1 g2):_)) ->
+                    Just [Leaf g1, Leaf g2] -- TODO assumed NodeS, not NodeC
+                  otherwise -> Nothing) <$>
              bProc)
+          bProcIsChoice :: Behavior Bool
+          bProcIsChoice = maybe False (const True) <$> bProcChoiceMay
           eChooseMay :: Event Char
-          eChooseMay = whenE bProcChoice eKey
+          eChooseMay = whenE bProcIsChoice eKey
           eChooseMayNot :: Event Char
-          eChooseMayNot = whenE (not <$> bProcChoice) eKey
+          eChooseMayNot = whenE (not <$> bProcIsChoice) eKey
           eStepper :: Event Char
           eStepper = filterE (== 's') eChooseMayNot
           eDigit :: Event Char
@@ -145,7 +148,7 @@ networkDescription addKeyEvent restInputLine =
       --        Take in the new bProc
       xs <- liftIO $ extractFile restInputLine
       (eOutput :: Event String, bProc :: Behavior (Maybe Process)) <-
-        mapAccum (fmap head (parseContents xs)) $
+        mapAccum (fmap head (parseContents xs)) $ -- TODO Unmanual extract first parsed content
         unionWith
           const
           (const <$> (processStep <$> bProc <@ eChooserChoice))

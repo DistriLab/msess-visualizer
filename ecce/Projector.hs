@@ -40,6 +40,18 @@ import Parser
  - SECTION Formal Definitions 4.2.1
  -}
 {-
+ - SUBSECTION TRANSMISSION
+ -}
+tr :: Expr GlobalProtocol -> [Expr GlobalProtocol]
+tr t@(EGlobalProtocolTransmission _ _ _ _ _ _) = [t]
+tr (EGlobalProtocolConcurrency g1 g2) = tr g1 ++ tr g2
+tr (EGlobalProtocolChoice g1 g2) = tr g1 ++ tr g2
+tr (EGlobalProtocolSequencing g1 g2) = tr g1 ++ tr g2
+tr (EGlobalProtocolAssumption _) = []
+tr (EGlobalProtocolGuard _) = []
+tr EGlobalProtocolEmp = []
+
+{-
  - SUBSECTION EVENT
  - Note:
  -  Defined in terms of List, instead of Set in the thesis.

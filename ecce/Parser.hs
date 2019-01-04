@@ -8,7 +8,7 @@
 {-
  - SECTION MODULE
  -}
-module Backend where
+module Parser where
 
 {-
  - SECTION IMPORTS

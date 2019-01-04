@@ -11,7 +11,7 @@ module Projector where
 {-
  - SECTION IMPORTS
  -}
-import Backend
+import Parser
   ( Expr(EGlobalProtocolChoice, EGlobalProtocolConcurrency,
      EGlobalProtocolEmp, EGlobalProtocolSequencing,
      EGlobalProtocolSequencing, EGlobalProtocolTransmission,

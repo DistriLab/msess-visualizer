@@ -3,6 +3,7 @@
  -}
 {-# LANGUAGE GADTs #-} -- Allows patterm match on GADT
 {-# LANGUAGE RecursiveDo #-} -- Allows mdo
+{-# LANGUAGE ScopedTypeVariables #-} -- Allows type signatures in patterns
 
 {-
  - SECTION MODULE
@@ -117,7 +118,8 @@ networkDescription addKeyEvent restInputLine =
       -- eChooseMay:
       --    only fires if user may choose
       -- eChooserChoice: choice selected by user
-      let bProcChoice =
+      let bProcChoice :: Behavior Bool
+          bProcChoice =
             ((\x ->
                 case x of
                   Just (NodeS (Leaf (EGlobalProtocolChoice _ _):_)) -> True -- TODO assumed NodeS, not NodeC
@@ -125,11 +127,13 @@ networkDescription addKeyEvent restInputLine =
              bProc)
           eChooseMay :: Event Char
           eChooseMay = whenE bProcChoice eKey
+          eChooseMayNot :: Event Char
           eChooseMayNot = whenE (not <$> bProcChoice) eKey
           eStepper :: Event Char
           eStepper = filterE (== 's') eChooseMayNot
           eDigit :: Event Char
           eDigit = filterE isDigit eChooseMay
+          eChooserChoice :: Event Char
           eChooserChoice = filterE (`elem` "12") eDigit
       -- SUBSECTION STEPPER
       -- xs: contents of file
@@ -137,12 +141,13 @@ networkDescription addKeyEvent restInputLine =
       --    (1) output string
       --    (2) process that the debugger currently has
       xs <- liftIO $ extractFile restInputLine
-      (eOutput, bProc) <-
+      (eOutput :: Event String, bProc :: Behavior (Maybe Process)) <-
         mapAccum (fmap head (parseContents xs)) $
         (\_ -> processStep) <$> eStepper
       -- SUBSECTION STEPPER STATE
       -- eDone: whether the debugger is done
-      let eDone = whenE ((maybe True (const False)) <$> bProc) eStepper
+      let eDone :: Event Char
+          eDone = whenE ((maybe True (const False)) <$> bProc) eStepper
       reactimate $
         (\x ->
            case x of

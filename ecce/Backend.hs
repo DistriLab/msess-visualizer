@@ -94,9 +94,8 @@ parseFileTest filePath =
 extractFile :: FilePath -> IO (Either [String] [String])
 extractFile filePath = do
   xs <- (Control.Exception.try . fmap lines . readFile) filePath
-  case xs of
-    Left (e :: SomeException) -> return $ Left $ show e : []
-    Right xs -> return $ Right $ xs
+  return $
+    either (\(e :: SomeException) -> Left $ show e : []) (\xs -> Right xs) xs
 
 parseTest :: Test -> String
 parseTest (n, i, o) =

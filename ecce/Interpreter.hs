@@ -63,11 +63,12 @@ interpreterRegular commandOutputs incommandOutput = do
 interpreterHaskeline :: [(String, Output)] -> Output -> InputT IO ()
 interpreterHaskeline commandOutputs incommandOutput = do
   mInputLine <- getInputLine "ecce> "
-  case mInputLine of
-    Nothing -> outputStrLn "Quitting"
-    Just inputLine ->
-      (liftIO $ interpret commandOutputs incommandOutput inputLine) >>
-      interpreterHaskeline commandOutputs incommandOutput
+  maybe
+    (outputStrLn "Quitting")
+    (\inputLine ->
+       (liftIO $ interpret commandOutputs incommandOutput inputLine) >>
+       interpreterHaskeline commandOutputs incommandOutput)
+    mInputLine
 
 -- Parses inputLine for command, parsers extracted from keys of input (1)
 -- Looks up parsed command in input (1), to determine correct function to call

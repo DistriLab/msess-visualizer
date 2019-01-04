@@ -194,17 +194,21 @@ networkDescription addKeyEvent restInputLine =
               projectPartyToEndpoint
                 (projectGlobalToParty g (ERole "b1"))
                 (EChannel "1")) . -- TODO unhardcode ERole
-           maybe
-             EGlobalProtocolEmp
-             (fix
-                (\r p ->
-                   case p of
-                     NodeS [] -> EGlobalProtocolEmp -- TODO figure out how to skip NodeS []
-                     NodeC [] -> EGlobalProtocolEmp -- TODO figure out how to skip NodeC []
-                     NodeS (p:ps) -> r p
-                     NodeC (p:ps) -> r p
-                     Leaf g -> g))) <$>
+           mayProcessToGlobalProtocol) <$>
         eProc
+
+mayProcessToGlobalProtocol :: Maybe Process -> Expr GlobalProtocol
+mayProcessToGlobalProtocol =
+  maybe
+    EGlobalProtocolEmp
+    (fix
+       (\r p ->
+          case p of
+            NodeS [] -> EGlobalProtocolEmp -- TODO figure out how to skip NodeS []
+            NodeC [] -> EGlobalProtocolEmp -- TODO figure out how to skip NodeC []
+            NodeS (p:ps) -> r p
+            NodeC (p:ps) -> r p
+            Leaf g -> g))
 
 parseContents :: Either [String] [String] -> Maybe [Process]
 parseContents xs =

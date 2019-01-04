@@ -142,8 +142,7 @@ networkDescription addKeyEvent restInputLine =
       --    (2) process that the debugger currently has
       xs <- liftIO $ extractFile restInputLine
       (eOutput :: Event String, bProc :: Behavior (Maybe Process)) <-
-        mapAccum (fmap head (parseContents xs)) $
-        (\_ -> processStep) <$> eStepper
+        mapAccum (fmap head (parseContents xs)) $ processStep <$ eStepper
       -- SUBSECTION STEPPER STATE
       -- eDone: whether the debugger is done
       let eDone :: Event Char

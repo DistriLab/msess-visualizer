@@ -414,12 +414,12 @@ parseLabel = liftM ELabel integer
  -}
 parseSymbolicPredicate = do
   pr <- parsePredicate
-  vs <- parens (parseExpr `sepBy` (reservedOp ","))
+  es <- parens (parseExpr `sepBy` (reservedOp ","))
   reservedOp "="
   fd <- parseFormulaDisjunct
   reservedOp "Inv"
   pu <- parsePure
-  return $ ESymbolicPredicate pr vs fd pu
+  return $ ESymbolicPredicate pr es fd pu
 
 {-
  - SUBSECTION Φ
@@ -471,8 +471,8 @@ parseHeapMap = do
 
 parseHeapPredicate = do
   p <- parsePredicate
-  vs <- parens $ parseExpr `sepBy` (reservedOp ",")
-  return $ EHeapPredicate p vs
+  es <- parens $ parseExpr `sepBy` (reservedOp ",")
+  return $ EHeapPredicate p es
 
 {-
  - SUBSECTION π

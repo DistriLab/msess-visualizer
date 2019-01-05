@@ -20,10 +20,12 @@ import Control.Monad.IO.Class (liftIO)
 import Data.Char (isDigit)
 import Data.Either (rights)
 import Data.Functor ((<$), (<$>))
+import Data.List (intercalate)
 import Data.Maybe (fromJust, fromMaybe)
 import Interpreter (Output, mainHaskeline)
 import Parser
-  ( Expr(EChannel, EEvent, EGlobalProtocolChoice,
+  ( AnyExpr(AnyExpr)
+  , Expr(EChannel, EEvent, EGlobalProtocolChoice,
      EGlobalProtocolConcurrency, EGlobalProtocolEmp,
      EGlobalProtocolSequencing, EGlobalProtocolTransmission, ERole)
   , Expr
@@ -59,6 +61,7 @@ import Reactive.Banana.Frameworks
   , reactimate'
   )
 import System.IO (FilePath)
+import Unparser (un)
 
 {-
  - SECTION USER INTERFACE
@@ -190,7 +193,8 @@ networkDescription addKeyEvent restInputLine =
       reactimate' $
         fmap
           (putStrLn .
-           show .
+           intercalate "\n" .
+           map (un . AnyExpr) .
            (\g ->
               [ projectPartyToEndpoint (projectGlobalToParty g p) c
               | EEvent p _ <- ev g

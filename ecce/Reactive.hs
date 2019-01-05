@@ -163,14 +163,14 @@ networkDescription addKeyEvent restInputLine =
           eChooserChoice = filterE (`elem` "12") eDigit
       -- SUBSECTION STEPPER
       -- xs: contents of file
-      -- (eOutput, bProc): tuple of two elements:
+      -- (eOut, bProc): tuple of two elements:
       --    (1) output string
       --    (2) process that the debugger currently has
       --    processStep:
       --        Ignore the accumulated bProc
       --        Take in the new bProc
       xs <- liftIO $ extractFile restInputLine
-      (eOutput :: Event String, bProc :: Behavior (Maybe Process)) <-
+      (eOut :: Event String, bProc :: Behavior (Maybe Process)) <-
         mapAccum (fmap head (parseContents xs)) $ -- TODO Unmanual extract first parsed content
         unionWith
           const
@@ -185,7 +185,7 @@ networkDescription addKeyEvent restInputLine =
            case x of
              "" -> return ()
              otherwise -> putStrLn x) <$>
-        eOutput
+        eOut
       reactimate $ putStrLn "Done!" <$ eDone
       -- TODO reactimate $ putStrLn . (++ " eChooseMay") . show <$> eChooseMay
       -- TODO reactimate $ putStrLn . (++ " eChooserChoice") . show <$> eChooserChoice

@@ -43,13 +43,15 @@ import Parser
  - SUBSECTION TRANSMISSION
  -}
 tr :: Expr GlobalProtocol -> [Expr GlobalProtocol]
-tr t@(EGlobalProtocolTransmission _ _ _ _ _ _) = [t]
-tr (EGlobalProtocolConcurrency g1 g2) = tr g1 ++ tr g2
-tr (EGlobalProtocolChoice g1 g2) = tr g1 ++ tr g2
-tr (EGlobalProtocolSequencing g1 g2) = tr g1 ++ tr g2
-tr (EGlobalProtocolAssumption _) = []
-tr (EGlobalProtocolGuard _) = []
-tr EGlobalProtocolEmp = []
+tr g =
+  case g of
+    EGlobalProtocolTransmission _ _ _ _ _ _ -> [g]
+    EGlobalProtocolConcurrency g1 g2 -> tr g1 ++ tr g2
+    EGlobalProtocolChoice g1 g2 -> tr g1 ++ tr g2
+    EGlobalProtocolSequencing g1 g2 -> tr g1 ++ tr g2
+    EGlobalProtocolAssumption _ -> []
+    EGlobalProtocolGuard _ -> []
+    EGlobalProtocolEmp -> []
 
 {-
  - SUBSECTION EVENT
@@ -65,27 +67,33 @@ tr EGlobalProtocolEmp = []
  -  This is circular reasoning.
  -}
 ev :: Expr GlobalProtocol -> [Expr Event]
-ev (EGlobalProtocolTransmission s i r _ _ _) = [EEvent s i, EEvent r i]
-ev (EGlobalProtocolConcurrency g1 g2) = ev g1 ++ ev g2
-ev (EGlobalProtocolChoice g1 g2) = ev g1 ++ ev g2
-ev (EGlobalProtocolSequencing g1 g2) = ev g1 ++ ev g2
-ev (EGlobalProtocolAssumption a) = evAssertion a
-ev (EGlobalProtocolGuard a) = evAssertion a
-ev EGlobalProtocolEmp = []
+ev g =
+  case g of
+    EGlobalProtocolTransmission s i r _ _ _ -> [EEvent s i, EEvent r i]
+    EGlobalProtocolConcurrency g1 g2 -> ev g1 ++ ev g2
+    EGlobalProtocolChoice g1 g2 -> ev g1 ++ ev g2
+    EGlobalProtocolSequencing g1 g2 -> ev g1 ++ ev g2
+    EGlobalProtocolAssumption a -> evAssertion a
+    EGlobalProtocolGuard a -> evAssertion a
+    EGlobalProtocolEmp -> []
 
 -- Paper defines ev on Assumptions and Guards, so,
 -- (1) also define ev on Assertions
 -- (2) also define ev on Constraints
 evAssertion :: Expr Assertion -> [Expr Event]
-evAssertion (EAssertionEvent e) = [e]
-evAssertion (EAssertionNEvent e) = [e]
-evAssertion (EAssertionConstraint c) = evConstraint c
-evAssertion (EAssertionAnd a1 a2) = evAssertion a1 ++ evAssertion a2
-evAssertion (EAssertionImplies e a) = e : evAssertion a
+evAssertion a =
+  case a of
+    EAssertionEvent e -> [e]
+    EAssertionNEvent e -> [e]
+    EAssertionConstraint c -> evConstraint c
+    EAssertionAnd a1 a2 -> evAssertion a1 ++ evAssertion a2
+    EAssertionImplies e a -> e : evAssertion a
 
 evConstraint :: Expr Constraint -> [Expr Event]
-evConstraint (EConstraintCommunicates e1 e2) = [e1, e2]
-evConstraint (EConstraintHappens e1 e2) = [e1, e2]
+evConstraint c =
+  case c of
+    EConstraintCommunicates e1 e2 -> [e1, e2]
+    EConstraintHappens e1 e2 -> [e1, e2]
 
 {-
  - SUBSECTION GLOBAL SPEC -> PER PARTY SPEC

@@ -23,16 +23,7 @@ import System.Console.Haskeline
   , outputStrLn
   , runInputT
   )
-import Text.Parsec
-  ( Parsec
-  , (<|>)
-  , anyChar
-  , many
-  , optionMaybe
-  , space
-  , string
-  , try
-  )
+import Text.Parsec (Parsec, (<|>), anyChar, many, space, string, try)
 
 -- Every output function must have the same inputs
 -- So that the interpret function can be generalized
@@ -85,14 +76,18 @@ interpret commandOutputs incommandOutput inputLine =
     ($ (inputLine, commands, restInputLine))
     (lookup command commandOutputs)
     -- TODO fix double parsing
-    -- TODO find better way to extract parsed expression than (Right .. =)
+    -- TODO if "error" is a legitimate command, then if extractParse fails, the 
+    -- interpreter will not detect the failure
   where
     commands = (fst . unzip) commandOutputs
-    Right (Just command) = extractParse (parseCommand commands) inputLine
-    Right restInputLine = extractParse (parseRestInputLine commands) inputLine
+    command =
+      either (const "error") id $ extractParse (parseCommand commands) inputLine
+    restInputLine =
+      either (const "error") id $
+      extractParse (parseRestInputLine commands) inputLine
 
-parseCommand :: [String] -> SParsec (Maybe String)
-parseCommand commands = optionMaybe $ foldl (\p p' -> p <|> try p') (try h) t
+parseCommand :: [String] -> SParsec String
+parseCommand commands = foldl (\p p' -> p <|> try p') (try h) t
   where
     (h:t) = map string commands
 

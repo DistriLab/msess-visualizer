@@ -36,7 +36,7 @@ Here are a list of commands:
 help
 load
 test
-ecce> test backend-formula.test
+ecce> test formula
 #0:     P
 #1:     P
 ecce>
@@ -58,7 +58,7 @@ ecce> help
 Here are a list of commands:
 help
 load
-ecce> load reactive.test
+ecce> load test/reactive/example
 > s
 > s
 > s

@@ -73,16 +73,16 @@ parseFileLoad filePath =
     id
 
 -- All test files must follow a strict format:
--- Filename: backend-*.test
+-- Must be in test/parser/ directory
 -- File contents: must be even number of lines long
--- Each pairs of lines are:
+-- Each pair of lines is:
 -- (1) Input expression
 -- (2) Expected result of running (1)
 parseFileTest :: FilePath -> IO [String]
 parseFileTest filePath =
   parseFile
-    filePath
-    "Usage:\n\ttest <relativepath>\n\ttest list <relativepath>"
+    ("test/parser/" ++ filePath)
+    "Usage:\n\ttest filename\n\ttest list"
     parseTest
     (indexAndPair . splitEvenOdd)
   where

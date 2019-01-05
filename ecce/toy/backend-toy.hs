@@ -9,16 +9,15 @@
 -- Allows ambiguity check in instance declarations, to use sites
 {-# LANGUAGE AllowAmbiguousTypes #-}
 
-import Control.Monad
-import Data.List (intercalate)
-import System.IO (IOMode(ReadMode), hClose, hGetContents, openFile)
-import Text.ParserCombinators.Parsec.Expr
-import Text.ParserCombinators.Parsec.Language
-
 {-
  - SECTION IMPORTS
  -}
+import Control.Monad
+import Data.List (intercalate)
+import System.IO (IOMode(ReadMode), hClose, hGetContents, openFile)
 import Text.Parsec
+import Text.ParserCombinators.Parsec.Expr
+import Text.ParserCombinators.Parsec.Language
 import qualified Text.ParserCombinators.Parsec.Token as Token
 
 {-

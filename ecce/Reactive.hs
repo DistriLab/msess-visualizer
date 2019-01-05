@@ -164,13 +164,13 @@ networkDescription addKeyEvent restInputLine =
       -- SUBSECTION STEPPER
       -- xs: contents of file
       -- (eOut, bProc): tuple of two elements:
-      --    (1) output string
+      --    (1) global transmission that the debugger output
       --    (2) process that the debugger currently has
       --    processStep:
       --        Ignore the accumulated bProc
       --        Take in the new bProc
       xs <- liftIO $ extractFile restInputLine
-      (eOut :: Event String, bProc :: Behavior (Maybe Process)) <-
+      (eOut :: Event (Maybe (Expr GlobalProtocol)), bProc :: Behavior (Maybe Process)) <-
         mapAccum (fmap head (parseContents xs)) $ -- TODO Unmanual extract first parsed content
         unionWith
           const
@@ -181,10 +181,7 @@ networkDescription addKeyEvent restInputLine =
       let eDone :: Event Char
           eDone = whenE ((maybe True (const False)) <$> bProc) eStepper
       reactimate $
-        (\x ->
-           case x of
-             "" -> return ()
-             otherwise -> putStrLn x) <$>
+        maybe (return ()) (putStrLn . ("Transmission: " ++) . un . AnyExpr) <$>
         eOut
       reactimate $ putStrLn "Done!" <$ eDone
       -- TODO reactimate $ putStrLn . (++ " eChooseMay") . show <$> eChooseMay
@@ -227,19 +224,21 @@ parseContents xs =
              else Just $ map Leaf (rights gs))
     xs
 
-processStep :: Maybe Process -> (String, Maybe Process)
-processStep Nothing = ("", Nothing)
+processStep :: Maybe Process -> (Maybe (Expr GlobalProtocol), Maybe Process)
+processStep Nothing = (Nothing, Nothing)
 processStep (Just (Leaf g)) =
   case g of
-    EGlobalProtocolConcurrency g1 g2 -> ("", Just $ NodeC [Leaf g1, Leaf g2])
-    EGlobalProtocolSequencing g1 g2 -> ("", Just $ NodeS [Leaf g1, Leaf g2])
-    otherwise -> (show g, Nothing)
-processStep (Just (NodeS [])) = ("", Nothing)
+    EGlobalProtocolConcurrency g1 g2 ->
+      (Nothing, Just $ NodeC [Leaf g1, Leaf g2])
+    EGlobalProtocolSequencing g1 g2 ->
+      (Nothing, Just $ NodeS [Leaf g1, Leaf g2])
+    otherwise -> (Just g, Nothing)
+processStep (Just (NodeS [])) = (Nothing, Nothing)
 processStep (Just (NodeS (p:ps))) = (s', Just $ NodeS ps')
   where
     (s', p') = processStep (Just p)
     ps' = maybe ps (: ps) p'
-processStep (Just (NodeC [])) = ("", Nothing)
+processStep (Just (NodeC [])) = (Nothing, Nothing)
 processStep (Just (NodeC (p:ps))) = (s', Just $ NodeC ps')
   where
     (s', p') = processStep (Just p)

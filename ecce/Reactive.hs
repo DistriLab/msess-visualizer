@@ -80,6 +80,16 @@ commandOutputs =
             network <- compile (networkDescription addKeyEvent restInputLine)
             actuate network
             eventLoop fireKey network))
+  , ( "test"
+    , \(_, _, restInputLine) ->
+        (do (addKeyEvent, fireKey) <- newAddHandler
+            network <-
+              compile
+                (networkDescription
+                   addKeyEvent
+                   ("test/reactive/" ++ restInputLine))
+            actuate network
+            eventLoop fireKey network))
   ]
 
 incommandOutput :: Output

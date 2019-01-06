@@ -23,7 +23,7 @@ import System.Console.Haskeline
   , outputStrLn
   , runInputT
   )
-import Text.Parsec (Parsec, (<|>), anyChar, many, space, string, try)
+import Text.Parsec ((<|>), anyChar, many, space, string, try)
 
 -- Every output function must have the same inputs
 -- So that the interpret function can be generalized

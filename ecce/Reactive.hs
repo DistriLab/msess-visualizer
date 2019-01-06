@@ -21,13 +21,13 @@ import Data.Char (isDigit)
 import Data.Either (rights)
 import Data.Functor ((<$), (<$>))
 import Data.List (intercalate)
-import Data.Maybe (fromJust, fromMaybe)
+import Data.Maybe (fromJust)
 import Interpreter (Output, mainHaskeline)
 import Parser
   ( AnyExpr(AnyExpr)
-  , Expr(EChannel, EEvent, EGlobalProtocolChoice,
-     EGlobalProtocolConcurrency, EGlobalProtocolEmp,
-     EGlobalProtocolSequencing, EGlobalProtocolTransmission, ERole)
+  , Expr(EEvent, EGlobalProtocolChoice, EGlobalProtocolConcurrency,
+     EGlobalProtocolEmp, EGlobalProtocolSequencing,
+     EGlobalProtocolTransmission)
   , Expr
   , GlobalProtocol
   , extractFile
@@ -39,12 +39,9 @@ import Reactive.Banana
   , Event
   , (<@)
   , (<@>)
-  , accumB
   , compile
   , filterE
-  , filterJust
   , mapAccum
-  , stepper
   , unionWith
   , whenE
   )

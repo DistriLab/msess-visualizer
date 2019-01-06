@@ -18,12 +18,11 @@ import Control.Exception (SomeException)
 import qualified Control.Exception (try)
 import Control.Monad (liftM)
 import Interpreter (Output, mainHaskeline)
-import System.Directory (getDirectoryContents)
 import System.IO (FilePath, readFile)
 import Text.Parsec ((<|>), alphaNum, between, lower, sepBy, sepBy1, try)
 import Text.ParserCombinators.Parsec.Expr
   ( Assoc(AssocLeft)
-  , Operator(Infix, Postfix, Prefix)
+  , Operator(Infix, Prefix)
   , buildExpressionParser
   )
 import Text.ParserCombinators.Parsec.Language (emptyDef)

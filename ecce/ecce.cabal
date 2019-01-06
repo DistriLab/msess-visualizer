@@ -16,7 +16,11 @@ cabal-version:       >=1.8
 
 executable ecce
   main-is: Reactive.hs
-  -- other-modules:
+  other-modules:       Base
+                     , Interpreter
+                     , Parser
+                     , Projector
+                     , Unparser
   build-depends:       base >=4.2 && <5
                      , reactive-banana ==1.1.0.1
                      , haskeline ==0.7.4.3

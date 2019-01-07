@@ -25,11 +25,13 @@ import Data.Maybe (fromJust)
 import Interpreter (Output, mainHaskeline)
 import Parser
   ( AnyExpr(AnyExpr)
+  , Channel
   , Expr(EEvent, EGlobalProtocolChoice, EGlobalProtocolConcurrency,
      EGlobalProtocolEmp, EGlobalProtocolSequencing,
      EGlobalProtocolTransmission)
   , Expr
   , GlobalProtocol
+  , Role
   , extractFile
   , parseGlobalProtocol
   )
@@ -210,9 +212,8 @@ networkPrinter (eOut, bProc, eDone) = do
   reactimate $
     maybe (return ()) (putStrLn . ("Transmission: " ++) . un . AnyExpr) <$> eOut
   reactimate $ putStrLn "Done!" <$ eDone
-      -- TODO reactimate $ putStrLn . (++ " eChooseMay") . show <$> eChooseMay
-      -- TODO reactimate $ putStrLn . (++ " eChooserChoice") . show <$> eChooserChoice
   eProc <- changes bProc
+  -- TODO find more efficient way of getting endpoint protocols
   reactimate' $
     fmap
       (putStrLn .
@@ -221,11 +222,18 @@ networkPrinter (eOut, bProc, eDone) = do
        map (un . AnyExpr) .
        (\g ->
           [ projectPartyToEndpoint (projectGlobalToParty g p) c
-          | t@(EGlobalProtocolTransmission _ _ _ c _ _) <- tr g
-          , EEvent p _ <- ev t
+          | p <- partiesInGlobalProtocol g
+          , c <- channelsInGlobalProtocol g
           ]) .
        mayProcessToGlobalProtocol) <$>
     eProc
+
+partiesInGlobalProtocol :: Expr GlobalProtocol -> [Expr Role]
+partiesInGlobalProtocol g = [p | EEvent p _ <- ev g]
+
+channelsInGlobalProtocol :: Expr GlobalProtocol -> [Expr Channel]
+channelsInGlobalProtocol g =
+  [c | EGlobalProtocolTransmission _ _ _ c _ _ <- tr g]
 
 mayProcessToGlobalProtocol :: Maybe Process -> Expr GlobalProtocol
 mayProcessToGlobalProtocol =

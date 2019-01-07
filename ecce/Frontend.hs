@@ -95,7 +95,7 @@ networkInput glossEvent = return $ filterJust (mayKey <$> glossEvent)
 networkOutput ::
      (Event (Maybe (Expr GlobalProtocol)), Behavior (Maybe Process), Event Char)
   -> Moment (Behavior Picture)
-networkOutput (eOut, bProc, eDone) = return $ pure blank
+networkOutput (eTrans, bProc, eDone) = return $ pure blank
 
 showParties :: Expr GlobalProtocol -> [String]
 showParties = nub . map (un . AnyExpr) . partiesInGlobalProtocol

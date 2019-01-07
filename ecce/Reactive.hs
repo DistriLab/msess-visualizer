@@ -46,8 +46,7 @@ import Reactive.Banana
   , whenE
   )
 import Reactive.Banana.Frameworks
-  ( AddHandler
-  , EventNetwork
+  ( EventNetwork
   , Handler
   , MomentIO
   , actuate
@@ -74,17 +73,20 @@ commandOutputs =
   , ( "load"
     , \(_, _, restInputLine) ->
         (do (addKeyEvent, fireKey) <- newAddHandler
-            network <- compile (networkDescription addKeyEvent restInputLine)
+            network <-
+              compile $
+              fromAddHandler addKeyEvent >>=
+              (\eKey -> networkDescription eKey restInputLine)
             actuate network
             eventLoop fireKey network))
   , ( "test"
     , \(_, _, restInputLine) ->
         (do (addKeyEvent, fireKey) <- newAddHandler
             network <-
-              compile
-                (networkDescription
-                   addKeyEvent
-                   ("test/reactive/" ++ restInputLine))
+              compile $
+              fromAddHandler addKeyEvent >>=
+              (\eKey ->
+                 networkDescription eKey ("test/reactive/" ++ restInputLine))
             actuate network
             eventLoop fireKey network))
   ]
@@ -125,9 +127,8 @@ data Process
   deriving (Show)
 
 -- SECTION NETWORK
-networkDescription :: AddHandler Char -> FilePath -> MomentIO ()
-networkDescription addKeyEvent restInputLine =
-  mdo eKey <- fromAddHandler addKeyEvent
+networkDescription :: Event Char -> FilePath -> MomentIO ()
+networkDescription eKey restInputLine
       -- SUBSECTION USER INPUT
       -- bProcChoiceMay:
       --    looks at bProc to see if current process is EGlobalProtocolChoice
@@ -142,7 +143,8 @@ networkDescription addKeyEvent restInputLine =
       --    always guaranteed to have [Process], not Maybe [Process]
       --        because of how eChooseMay guarantees bProcChoiceMay will always 
       --        be (Just ...)
-      let bProcChoiceMay :: Behavior (Maybe [Process])
+ =
+  mdo let bProcChoiceMay :: Behavior (Maybe [Process])
           bProcChoiceMay =
             ((\x ->
                 case x of

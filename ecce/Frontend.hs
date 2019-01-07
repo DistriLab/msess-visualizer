@@ -1,9 +1,17 @@
-{-# LANGUAGE ScopedTypeVariables #-}
-
+{-
+ - SECTION PRAGMAS
+ -}
+{-
+ - SECTION MODULE
+ -}
 module Main where
 
+{-
+ - SECTION IMPORTS
+ -}
 import Control.Monad (join)
 import Data.IORef (newIORef, readIORef, writeIORef)
+import Data.List (nub)
 import Graphics.Gloss
   ( Display(InWindow)
   , Picture(Text)
@@ -16,7 +24,7 @@ import qualified Graphics.Gloss.Interface.IO.Game as Gloss (Event(EventKey))
 import Graphics.Gloss.Interface.IO.Game (Key(Char), KeyState(Down), playIO)
 import Parser (AnyExpr(AnyExpr), Expr, GlobalProtocol, extractFile)
 import Reactive
-  ( Process
+  ( Process(Leaf)
   , networkProcessor
   , parseContents
   , partiesInGlobalProtocol
@@ -49,11 +57,11 @@ main = do
     compile $ do
       glossEvent <- fromAddHandler eventHandler
       xs <- liftIO $ extractFile "test/reactive/example"
+      let p = fmap head (parseContents xs)
       picture <-
         liftMoment $
-        networkInput glossEvent >>=
-        (\eKey -> networkProcessor eKey (fmap head (parseContents xs))) >>=
-        networkOutput
+        networkInput glossEvent >>= (\eKey -> networkProcessor eKey p) >>=
+        networkOutput p
       changes picture >>= reactimate' . fmap (fmap (writeIORef picRef))
       valueBLater picture >>= liftIO . writeIORef picRef
   actuate network
@@ -74,15 +82,17 @@ networkInput glossEvent = do
   return $ filterJust (mayKey <$> glossEvent)
 
 networkOutput ::
-     (Event (Maybe (Expr GlobalProtocol)), Behavior (Maybe Process), Event Char)
+     Maybe Process
+  -> (Event (Maybe (Expr GlobalProtocol)), Behavior (Maybe Process), Event Char)
   -> Moment (Behavior Picture)
-networkOutput (eOut, bProc, eDone) = do
-  bOutString <- stepper "" (showParties <$> filterJust eOut)
+networkOutput (Just (Leaf g)) (eOut, bProc, eDone) -- TODO deconstruct p better
+ = do
+  bOutString <- stepper "" (showParties g <$ eOut)
   let picture = drawParties <$> bOutString
   return picture
 
 showParties :: Expr GlobalProtocol -> String
-showParties = join . map (un . AnyExpr) . partiesInGlobalProtocol
+showParties = join . nub . map (un . AnyExpr) . partiesInGlobalProtocol
 
 drawParties :: String -> Picture
 drawParties = translate (-320) (120) . scale 0.2 0.2 . Text

@@ -20,7 +20,7 @@ import Control.Monad.IO.Class (liftIO)
 import Data.Char (isDigit)
 import Data.Either (rights)
 import Data.Functor ((<$), (<$>))
-import Data.List (intercalate)
+import Data.List (intercalate, nub)
 import Data.Maybe (fromJust)
 import Interpreter (Output, mainHaskeline)
 import Parser
@@ -198,11 +198,12 @@ networkDescription addKeyEvent restInputLine =
         fmap
           (putStrLn .
            intercalate "\n" .
+           nub .
            map (un . AnyExpr) .
            (\g ->
               [ projectPartyToEndpoint (projectGlobalToParty g p) c
-              | EEvent p _ <- ev g
-              , EGlobalProtocolTransmission _ _ _ c _ _ <- tr g
+              | t@(EGlobalProtocolTransmission _ _ _ c _ _) <- tr g
+              , EEvent p _ <- ev t
               ]) .
            mayProcessToGlobalProtocol) <$>
         eProc

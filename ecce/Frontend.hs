@@ -9,7 +9,7 @@ module Main where
 {-
  - SECTION IMPORTS
  -}
-import Data.IORef (newIORef, readIORef, writeIORef)
+import Data.IORef (modifyIORef', newIORef, readIORef, writeIORef)
 import Data.List (nub)
 import Graphics.Gloss
   ( Display(InWindow)
@@ -59,17 +59,19 @@ wHeight = 240
 
 main :: IO ()
 main = do
+  xs <- extractFile "test/reactive/example"
+  let p = fmap head (parseContents xs)
+      Just (Leaf g) = p -- TODO deconstruct p better
+      picBase = drawParties (showParties g)
   picRef <- newIORef blank
   (eventHandler, fireEvent) <- newAddHandler
   network <-
     compile $ do
       glossEvent <- fromAddHandler eventHandler
-      xs <- liftIO $ extractFile "test/reactive/example"
-      let p = fmap head (parseContents xs)
       picture <-
         liftMoment $
         networkInput glossEvent >>= (\eKey -> networkProcessor eKey p) >>=
-        networkOutput p
+        networkOutput
       changes picture >>= reactimate' . fmap (fmap (writeIORef picRef))
       valueBLater picture >>= liftIO . writeIORef picRef
   actuate network
@@ -78,7 +80,9 @@ main = do
     white
     30
     ()
-    (\() -> readIORef picRef)
+    (\() -> do
+       modifyIORef' picRef (\pic -> pictures [picBase, pic])
+       readIORef picRef)
     (\e () -> fireEvent e)
     (\_ () -> pure ())
 
@@ -89,14 +93,9 @@ networkInput :: Event Gloss.Event -> Moment (Event Char)
 networkInput glossEvent = return $ filterJust (mayKey <$> glossEvent)
 
 networkOutput ::
-     Maybe Process
-  -> (Event (Maybe (Expr GlobalProtocol)), Behavior (Maybe Process), Event Char)
+     (Event (Maybe (Expr GlobalProtocol)), Behavior (Maybe Process), Event Char)
   -> Moment (Behavior Picture)
-networkOutput (Just (Leaf g)) (eOut, bProc, eDone) -- TODO deconstruct p better
- = do
-  bOutString <- stepper [] (showParties g <$ eOut)
-  let picture = drawParties <$> bOutString
-  return picture
+networkOutput (eOut, bProc, eDone) = return $ pure blank
 
 showParties :: Expr GlobalProtocol -> [String]
 showParties = nub . map (un . AnyExpr) . partiesInGlobalProtocol

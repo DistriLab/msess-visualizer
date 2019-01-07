@@ -16,6 +16,7 @@ import Graphics.Gloss
   , Picture
   , blank
   , pictures
+  , rectangleSolid
   , rectangleWire
   , scale
   , text
@@ -52,9 +53,9 @@ import Reactive.Banana.Frameworks
   )
 import Unparser (un)
 
-width = 320
+wWidth = 320
 
-height = 240
+wHeight = 240
 
 main :: IO ()
 main = do
@@ -73,7 +74,7 @@ main = do
       valueBLater picture >>= liftIO . writeIORef picRef
   actuate network
   playIO
-    (InWindow "Frontend.hs" (width, height) (0, 0))
+    (InWindow "Frontend.hs" (wWidth, wHeight) (0, 0))
     white
     30
     ()
@@ -111,13 +112,18 @@ drawParties ss = pictures $ map (uncurry $ drawParty w h) (zip extents ss)
     s = 2
 
 drawParty :: Int -> Int -> Extent -> String -> Picture
-drawParty w h ex s = bg <> fg
+drawParty w h ex s = pictures $ map (translate xf yf) shapes
   where
     (x, y) = centerCoordOfExtent ex
     (xf, yf) = (fromIntegral x, fromIntegral y)
     (wf, hf) = (fromIntegral w, fromIntegral h)
-    bg = translate xf yf (rectangleWire wf hf)
-    fg = (translate xf yf . scale 0.1 0.1 . translate (-240) (-50) . text) s
+    wHeightf = fromIntegral wHeight
+    -- Define shapes
+    drawnBox = rectangleWire wf hf
+    drawnText = (scale 0.1 0.1 . translate (-240) (-50) . text) s
+    drawLine =
+      translate 0 (-hf / 2 - wHeightf) (rectangleSolid 2 (wHeightf * 2))
+    shapes = [drawnBox, drawnText, drawLine]
 
 -- All party extents in one line at the top
 getPartiesExtents :: [String] -> Int -> Int -> Int -> [Extent]

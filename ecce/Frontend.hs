@@ -18,6 +18,7 @@ import Graphics.Gloss
   , pictures
   , rectangleSolid
   , rectangleWire
+  , rotate
   , scale
   , text
   , translate
@@ -95,8 +96,34 @@ networkInput glossEvent = return $ filterJust (mayKey <$> glossEvent)
 networkOutput ::
      (Event (Maybe (Expr GlobalProtocol)), Behavior (Maybe Process), Event Char)
   -> Moment (Behavior Picture)
-networkOutput (eTrans, bProc, eDone) = return $ pure blank
+networkOutput (eTrans, bProc, eDone) = return $ pure $ arrow 100 50 50 2
 
+mayKey :: Gloss.Event -> Maybe Char
+mayKey e =
+  case e of
+    Gloss.EventKey (Char c) Down _ p -> Just c
+    otherwise -> Nothing
+
+{-
+ - SECTION SHAPES
+ -}
+-- Draws arrow pointing East at origin
+-- arrowbody length, arrowhead height, arrowhead length, arrow thickness
+arrow :: Float -> Float -> Float -> Float -> Picture
+arrow bl hh hl t = pictures [arrowBody, leftHead arrowHead, rightHead arrowHead]
+  where
+    angleHead = atan ((hh / 2) / hl)
+    hypHead = hl / (cos angleHead)
+    arrowBody = rectangleSolid bl t
+    arrowHead = rectangleSolid hypHead t
+    leftHead = translate ((bl - hl) / 2) (hh / 4) . rotate (degrees angleHead)
+    rightHead =
+      translate ((bl - hl) / 2) (-hh / 4) . rotate (degrees (-angleHead))
+    degrees = (*) (180 / pi)
+
+{-
+ - SECTION DRAW PARTIES
+ -}
 showParties :: Expr GlobalProtocol -> [String]
 showParties = nub . map (un . AnyExpr) . partiesInGlobalProtocol
 
@@ -134,9 +161,3 @@ getPartiesExtents ss w h s =
     num = length ss
     xoffset = (-320)
     yoffset = 200
-
-mayKey :: Gloss.Event -> Maybe Char
-mayKey e =
-  case e of
-    Gloss.EventKey (Char c) Down _ p -> Just c
-    otherwise -> Nothing

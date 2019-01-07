@@ -10,7 +10,12 @@ import Graphics.Gloss
   , white
   )
 import qualified Graphics.Gloss.Interface.IO.Game as Gloss (Event(EventKey))
-import Graphics.Gloss.Interface.IO.Game (Key(Char), KeyState(Down), playIO)
+import Graphics.Gloss.Interface.IO.Game
+  ( Key(Char)
+  , KeyState(Down)
+  , playIO
+  , scale
+  )
 import Parser (Expr, GlobalProtocol, extractFile)
 import Reactive (Process, networkProcessor, parseContents)
 import Reactive.Banana
@@ -61,16 +66,16 @@ main = do
  -}
 networkInput :: Event Gloss.Event -> Moment (Event Char)
 networkInput glossEvent = do
-  return $ 's' <$ filterJust (isClicked <$> glossEvent)
+  return $ 's' <$ filterJust (isStepper <$> glossEvent)
 
 networkOutput ::
      (Event (Maybe (Expr GlobalProtocol)), Behavior (Maybe Process), Event Char)
   -> Moment (Behavior Picture)
 networkOutput (eOut, bProc, eDone) = do
-  return $ pure $ Translate (-170) (-20) $ Text "Hello World"
+  return $ (pure . Translate (-320) (120) . scale 0.2 0.2 . Text) "Hello World"
 
-isClicked :: Gloss.Event -> Maybe ()
-isClicked e =
+isStepper :: Gloss.Event -> Maybe ()
+isStepper e =
   case e of
     Gloss.EventKey (Char 's') Down _ p -> Just ()
     otherwise -> Nothing

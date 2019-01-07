@@ -1,0 +1,119 @@
+NON-SHARED (A) vs SHARED (B) CHANNELS
+- (A) one channel has two endpoints (a producer and a consumer), thus a channel is shared between exactly two parties
+- (B) one channel can have multiple endpoints (where one endpoint can be used both for reading and for writing), thus each channel may be shared between multiple parties
+
+LINEAR (C) vs NON-LINEAR (D) PROTOCOLS
+- (C) refers to the linear usage of the channels in the protocol, i.e. there is no communication race (subsumes (A))
+- (D) communication race is possible for channels with multiple endpoints (B) where transmissions are not implicitly synchronized
+
+ASYNC (E) vs SYNC (F) COMMUNICATION MODELS
+- (E) non-blocking send and blocking receive
+- (F) blocking send and blocking receive
+
+=================================================
+=================================================
+=================================================
+
+
+VISUALIZER project
+
+v1: NON_SHARED CHANNELS, ASYNC COMMUNICATION MODEL
+===============================================
+
+(v1-1) SL -> (v1-2) DSL -> (v1-3) iGUI
+
+(v1-1) Session Logic
+-----------------
+- write a global protocol in the session logic style
+G =   A->B:c<\delta>
+    | G \/ G
+    | G ; G
+    | G * G
+    | emp
+
+
+- parse and save as AST
+- normalize AST: (?)
+- check for well-formedness (?)
+- projection: per party, per channel, per endpoint (?)
+- any analysis we can run over the formal protocol (?)
+
+
+(2) DSL
+-----------------
+- having a syntax in the style of the per party projection
+would avoid the need of using fences
+
+
+% DECLARATIONS
+Role P*;
+Channel c*;
+
+%PROTOCOLS
+P: { PP }
+
+where the syntax of PP comprises:
+PP :=
+(send)   P->,c[,\delta1]
+(recv)   P<-,c[,\delta1]
+(seq)    PP ; PP
+(choice) PP or PP
+(par)    PP * PP
+(inact)  emp
+
+
+- parse and save as AST
+- normalize AST: ?
+- check for well-formedness?
+
+should make sure that the AST of (v1-1) is compatible with that of the DSL
+
+(3) iGUI
+-----------------
+INPUT : the AST generated at (v1-2)
+OUTPUT: a sequenced diagram
+
+elements of the sequenced diagram:
+- parallel vertical bars, where each bar represents a party
+- the sequence of transmissions is imposed by the top-down order of events on a particular party
+- each transmission is a horizontal arrow indicating the sender(tail) and receiver(head), as well as the channel logical name (perhaps the message description as well?)
+- choice rectangular
+- intra-party concurrency - shaped as an oval?
+
+v2: SHARED CHANNELS, LINEAR PROTOCOLS, ASYNC COMMUNICATION MODEL
+===============================================
+
+same as v1, just that the formal protocol G (v1-1) needs to be checked for the linear usage of channels. Warning if possible race is detected
+
+v3: SHARED CHANNELS, NON-LINEAR PROTOCOLS, ASYNC COMMUNICATION MODEL
+===============================================
+need to take into account the events and ordering system.
+
+(v3-1a) SL -> (v3-1b) normSL -> (v3-2) DSL -> (v3-3) iGUI
+
+(v3-1a) Session Logic
+-----------------
+- write a global protocol in the session logic style
+G =   A->B:c<\delta>
+    | G \/ G
+    | G ; G
+    | G * G
+    | emp
+
+- parse and save as AST
+- check for well-formedness (?)
+- normalize the AST: see (v3-1b)
+
+(v3-1b) Session Logic
+-----------------
+- write a global protocol in the session logic style
+G =   A->B:c<\delta>
+    | G \/ G
+    | G ; G
+    | G * G
+    | +(E1 <_HB E2)
+    | -(E1 <_HB E2)
+    | emp
+
+- projection: per party, per channel, per endpoint (?)
+- any analysis we can run over the formal protocol (?)

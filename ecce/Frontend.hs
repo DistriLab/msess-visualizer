@@ -2,22 +2,25 @@
 
 module Main where
 
+import Control.Monad (join)
 import Data.IORef (newIORef, readIORef, writeIORef)
 import Graphics.Gloss
   ( Display(InWindow)
-  , Picture(Text, Translate)
+  , Picture(Text)
   , blank
+  , scale
+  , translate
   , white
   )
 import qualified Graphics.Gloss.Interface.IO.Game as Gloss (Event(EventKey))
-import Graphics.Gloss.Interface.IO.Game
-  ( Key(Char)
-  , KeyState(Down)
-  , playIO
-  , scale
+import Graphics.Gloss.Interface.IO.Game (Key(Char), KeyState(Down), playIO)
+import Parser (AnyExpr(AnyExpr), Expr, GlobalProtocol, extractFile)
+import Reactive
+  ( Process
+  , networkProcessor
+  , parseContents
+  , partiesInGlobalProtocol
   )
-import Parser (Expr, GlobalProtocol, extractFile)
-import Reactive (Process, networkProcessor, parseContents)
 import Reactive.Banana
   ( Behavior
   , Event
@@ -25,6 +28,7 @@ import Reactive.Banana
   , compile
   , filterJust
   , liftMoment
+  , stepper
   , valueBLater
   )
 import Reactive.Banana.Frameworks
@@ -35,6 +39,7 @@ import Reactive.Banana.Frameworks
   , newAddHandler
   , reactimate'
   )
+import Unparser (un)
 
 main :: IO ()
 main = do
@@ -72,7 +77,15 @@ networkOutput ::
      (Event (Maybe (Expr GlobalProtocol)), Behavior (Maybe Process), Event Char)
   -> Moment (Behavior Picture)
 networkOutput (eOut, bProc, eDone) = do
-  return $ (pure . Translate (-320) (120) . scale 0.2 0.2 . Text) "Hello World"
+  bOutString <- stepper "" (showParties <$> filterJust eOut)
+  let picture = drawParties <$> bOutString
+  return picture
+
+showParties :: Expr GlobalProtocol -> String
+showParties = join . map (un . AnyExpr) . partiesInGlobalProtocol
+
+drawParties :: String -> Picture
+drawParties = translate (-320) (120) . scale 0.2 0.2 . Text
 
 isStepper :: Gloss.Event -> Maybe ()
 isStepper e =

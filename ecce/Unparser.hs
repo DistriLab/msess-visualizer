@@ -121,7 +121,7 @@ un (AnyExpr e)
     EPartyProtocolReceive c i v f ->
       join $
       un (AnyExpr c) :
-      "(" : un (AnyExpr i) : ")8:" : un (AnyExpr v) : "." : un (AnyExpr f) : []
+      "(" : un (AnyExpr i) : ")?:" : un (AnyExpr v) : "." : un (AnyExpr f) : []
     EPartyProtocolConcurrency p1 p2 -> unSep "*" (AnyExpr p1 : AnyExpr p2 : [])
     EPartyProtocolChoice p1 p2 -> unSep "|" (AnyExpr p1 : AnyExpr p2 : [])
     EPartyProtocolSequencing p1 p2 -> unSep ";" (AnyExpr p1 : AnyExpr p2 : [])
@@ -136,7 +136,7 @@ un (AnyExpr e)
     EEndpointProtocolReceive c i v f ->
       join $
       un (AnyExpr c) :
-      "(" : un (AnyExpr i) : ")8:" : un (AnyExpr v) : "." : un (AnyExpr f) : []
+      "(" : un (AnyExpr i) : ")?:" : un (AnyExpr v) : "." : un (AnyExpr f) : []
     EEndpointProtocolConcurrency e1 e2 ->
       unSep "*" (AnyExpr e1 : AnyExpr e2 : [])
     EEndpointProtocolChoice e1 e2 -> unSep "|" (AnyExpr e1 : AnyExpr e2 : [])

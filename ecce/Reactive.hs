@@ -249,21 +249,23 @@ parseContents xs =
     xs
 
 processStep :: Maybe Process -> (Maybe (Expr GlobalProtocol), Maybe Process)
-processStep Nothing = (Nothing, Nothing)
-processStep (Just (Leaf g)) =
-  case g of
-    EGlobalProtocolConcurrency g1 g2 ->
-      (Nothing, Just $ NodeC [Leaf g1, Leaf g2])
-    EGlobalProtocolSequencing g1 g2 ->
-      (Nothing, Just $ NodeS [Leaf g1, Leaf g2])
-    otherwise -> (Just g, Nothing)
-processStep (Just (NodeS [])) = (Nothing, Nothing)
-processStep (Just (NodeS (p:ps))) = (s', Just $ NodeS ps')
-  where
-    (s', p') = processStep (Just p)
-    ps' = maybe ps (: ps) p'
-processStep (Just (NodeC [])) = (Nothing, Nothing)
-processStep (Just (NodeC (p:ps))) = (s', Just $ NodeC ps')
-  where
-    (s', p') = processStep (Just p)
-    ps' = maybe ps (: ps) p'
+processStep p =
+  case p of
+    Nothing -> (Nothing, Nothing)
+    Just p ->
+      case p of
+        Leaf g ->
+          case g of
+            EGlobalProtocolConcurrency g1 g2 ->
+              (Nothing, Just $ NodeC [Leaf g1, Leaf g2])
+            EGlobalProtocolSequencing g1 g2 ->
+              (Nothing, Just $ NodeS [Leaf g1, Leaf g2])
+            otherwise -> (Just g, Nothing)
+        NodeS [] -> (Nothing, Nothing)
+        NodeS (p:ps) -> (s', Just $ NodeS ps')
+          where (s', p') = processStep (Just p)
+                ps' = maybe ps (: ps) p'
+        NodeC [] -> (Nothing, Nothing)
+        NodeC (p:ps) -> (s', Just $ NodeC ps')
+          where (s', p') = processStep (Just p)
+                ps' = maybe ps (: ps) p'

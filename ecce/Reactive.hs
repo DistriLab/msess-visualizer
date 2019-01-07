@@ -128,8 +128,8 @@ data Process
 
 -- SECTION NETWORK
 networkDescription :: Event Char -> FilePath -> MomentIO ()
-networkDescription eKey restInputLine =
-  networkProcessor eKey restInputLine >>= networkPrinter
+networkDescription eKey filePath =
+  networkProcessor eKey filePath >>= networkPrinter
 
 networkProcessor ::
      Event Char
@@ -137,7 +137,7 @@ networkProcessor ::
   -> MomentIO ( Event (Maybe (Expr GlobalProtocol))
               , Behavior (Maybe Process)
               , Event Char)
-networkProcessor eKey restInputLine
+networkProcessor eKey filePath
       -- SUBSECTION USER INPUT
       -- bProcChoiceMay:
       --    looks at bProc to see if current process is EGlobalProtocolChoice
@@ -187,7 +187,7 @@ networkProcessor eKey restInputLine
       --    processStep:
       --        Ignore the accumulated bProc
       --        Take in the new bProc
-      xs <- liftIO $ extractFile restInputLine
+      xs <- liftIO $ extractFile filePath
       (eOut :: Event (Maybe (Expr GlobalProtocol)), bProc :: Behavior (Maybe Process)) <-
         mapAccum (fmap head (parseContents xs)) $ -- TODO Unmanual extract first parsed content
         unionWith

@@ -71,7 +71,7 @@ main = do
  -}
 networkInput :: Event Gloss.Event -> Moment (Event Char)
 networkInput glossEvent = do
-  return $ 's' <$ filterJust (isStepper <$> glossEvent)
+  return $ filterJust (mayKey <$> glossEvent)
 
 networkOutput ::
      (Event (Maybe (Expr GlobalProtocol)), Behavior (Maybe Process), Event Char)
@@ -87,8 +87,8 @@ showParties = join . map (un . AnyExpr) . partiesInGlobalProtocol
 drawParties :: String -> Picture
 drawParties = translate (-320) (120) . scale 0.2 0.2 . Text
 
-isStepper :: Gloss.Event -> Maybe ()
-isStepper e =
+mayKey :: Gloss.Event -> Maybe Char
+mayKey e =
   case e of
-    Gloss.EventKey (Char 's') Down _ p -> Just ()
+    Gloss.EventKey (Char c) Down _ p -> Just c
     otherwise -> Nothing

@@ -160,11 +160,11 @@ un (AnyExpr e)
     EChannelProtocolEmp -> "emp"
     -- Helper constructors
     EVarFirst v -> show v
-    EDataStructure d -> show d
-    EVarType t -> show t
-    EPredicate p -> show p
-    ERole p -> show p
-    EChannel c -> show c
+    EDataStructure d -> d
+    EVarType t -> t
+    EPredicate p -> p
+    ERole p -> p
+    EChannel c -> c
     ELabel i -> show i
 
 unSep :: String -> [AnyExpr] -> String

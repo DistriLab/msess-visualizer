@@ -19,6 +19,11 @@ ecce> load reactive.test
 ...
 ```
 
+## Performance
+Running `Frontend.hs` in `ghci` often takes 100% CPU. To reduce CPU (and 
+memory) usage, compile the source code (`ghc Frontend.hs`), and then run the 
+compiled executable.
+
 ## Parser.hs
 ### Running
 ```

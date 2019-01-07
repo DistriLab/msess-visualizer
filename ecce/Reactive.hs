@@ -128,7 +128,16 @@ data Process
 
 -- SECTION NETWORK
 networkDescription :: Event Char -> FilePath -> MomentIO ()
-networkDescription eKey restInputLine
+networkDescription eKey restInputLine =
+  networkProcessor eKey restInputLine >>= networkPrinter
+
+networkProcessor ::
+     Event Char
+  -> FilePath
+  -> MomentIO ( Event (Maybe (Expr GlobalProtocol))
+              , Behavior (Maybe Process)
+              , Event Char)
+networkProcessor eKey restInputLine
       -- SUBSECTION USER INPUT
       -- bProcChoiceMay:
       --    looks at bProc to see if current process is EGlobalProtocolChoice
@@ -189,26 +198,31 @@ networkDescription eKey restInputLine
       -- eDone: whether the debugger is done
       let eDone :: Event Char
           eDone = whenE ((maybe True (const False)) <$> bProc) eStepper
-      reactimate $
-        maybe (return ()) (putStrLn . ("Transmission: " ++) . un . AnyExpr) <$>
-        eOut
-      reactimate $ putStrLn "Done!" <$ eDone
+      return (eOut, bProc, eDone)
+
+networkPrinter ::
+     (Event (Maybe (Expr GlobalProtocol)), Behavior (Maybe Process), Event Char)
+  -> MomentIO ()
+networkPrinter (eOut, bProc, eDone) = do
+  reactimate $
+    maybe (return ()) (putStrLn . ("Transmission: " ++) . un . AnyExpr) <$> eOut
+  reactimate $ putStrLn "Done!" <$ eDone
       -- TODO reactimate $ putStrLn . (++ " eChooseMay") . show <$> eChooseMay
       -- TODO reactimate $ putStrLn . (++ " eChooserChoice") . show <$> eChooserChoice
-      eProc <- changes bProc
-      reactimate' $
-        fmap
-          (putStrLn .
-           intercalate "\n" .
-           nub .
-           map (un . AnyExpr) .
-           (\g ->
-              [ projectPartyToEndpoint (projectGlobalToParty g p) c
-              | t@(EGlobalProtocolTransmission _ _ _ c _ _) <- tr g
-              , EEvent p _ <- ev t
-              ]) .
-           mayProcessToGlobalProtocol) <$>
-        eProc
+  eProc <- changes bProc
+  reactimate' $
+    fmap
+      (putStrLn .
+       intercalate "\n" .
+       nub .
+       map (un . AnyExpr) .
+       (\g ->
+          [ projectPartyToEndpoint (projectGlobalToParty g p) c
+          | t@(EGlobalProtocolTransmission _ _ _ c _ _) <- tr g
+          , EEvent p _ <- ev t
+          ]) .
+       mayProcessToGlobalProtocol) <$>
+    eProc
 
 mayProcessToGlobalProtocol :: Maybe Process -> Expr GlobalProtocol
 mayProcessToGlobalProtocol =

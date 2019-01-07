@@ -37,10 +37,12 @@ import Projector (ev, projectGlobalToParty, projectPartyToEndpoint, tr)
 import Reactive.Banana
   ( Behavior
   , Event
+  , Moment
   , (<@)
   , (<@>)
   , compile
   , filterE
+  , liftMoment
   , mapAccum
   , unionWith
   , whenE
@@ -129,15 +131,17 @@ data Process
 -- SECTION NETWORK
 networkDescription :: Event Char -> FilePath -> MomentIO ()
 networkDescription eKey filePath =
-  networkProcessor eKey filePath >>= networkPrinter
+  (liftIO $ extractFile filePath) >>=
+  (\xs -> liftMoment $ networkProcessor eKey (fmap head (parseContents xs))) >>=
+  networkPrinter -- TODO Unmanual extract first parsed content
 
 networkProcessor ::
      Event Char
-  -> FilePath
-  -> MomentIO ( Event (Maybe (Expr GlobalProtocol))
-              , Behavior (Maybe Process)
-              , Event Char)
-networkProcessor eKey filePath
+  -> Maybe Process
+  -> Moment ( Event (Maybe (Expr GlobalProtocol))
+            , Behavior (Maybe Process)
+            , Event Char)
+networkProcessor eKey p
       -- SUBSECTION USER INPUT
       -- bProcChoiceMay:
       --    looks at bProc to see if current process is EGlobalProtocolChoice
@@ -187,9 +191,8 @@ networkProcessor eKey filePath
       --    processStep:
       --        Ignore the accumulated bProc
       --        Take in the new bProc
-      xs <- liftIO $ extractFile filePath
       (eOut :: Event (Maybe (Expr GlobalProtocol)), bProc :: Behavior (Maybe Process)) <-
-        mapAccum (fmap head (parseContents xs)) $ -- TODO Unmanual extract first parsed content
+        mapAccum p $
         unionWith
           const
           (const <$> ((processStep . Just) <$> eProcChoice))

@@ -26,6 +26,7 @@ import Interpreter (Output, mainHaskeline)
 import Parser
   ( AnyExpr(AnyExpr)
   , Channel
+  , EndpointProtocol
   , Expr(EEvent, EGlobalProtocolChoice, EGlobalProtocolConcurrency,
      EGlobalProtocolEmp, EGlobalProtocolSequencing,
      EGlobalProtocolTransmission)
@@ -187,13 +188,13 @@ networkProcessor eKey p
           eChooserChoice = filterE (`elem` "12") eDigit
       -- SUBSECTION STEPPER
       -- xs: contents of file
-      -- (eOut, bProc): tuple of two elements:
+      -- (eTrans, bProc): tuple of two elements:
       --    (1) global transmission that the debugger output
       --    (2) process that the debugger currently has
       --    processStep:
       --        Ignore the accumulated bProc
       --        Take in the new bProc
-      (eOut :: Event (Maybe (Expr GlobalProtocol)), bProc :: Behavior (Maybe Process)) <-
+      (eTrans :: Event (Maybe (Expr GlobalProtocol)), bProc :: Behavior (Maybe Process)) <-
         mapAccum p $
         unionWith
           const
@@ -203,14 +204,15 @@ networkProcessor eKey p
       -- eDone: whether the debugger is done
       let eDone :: Event Char
           eDone = whenE ((maybe True (const False)) <$> bProc) eStepper
-      return (eOut, bProc, eDone)
+      return (eTrans, bProc, eDone)
 
 networkPrinter ::
      (Event (Maybe (Expr GlobalProtocol)), Behavior (Maybe Process), Event Char)
   -> MomentIO ()
-networkPrinter (eOut, bProc, eDone) = do
+networkPrinter (eTrans, bProc, eDone) = do
   reactimate $
-    maybe (return ()) (putStrLn . ("Transmission: " ++) . un . AnyExpr) <$> eOut
+    maybe (return ()) (putStrLn . ("Transmission: " ++) . un . AnyExpr) <$>
+    eTrans
   reactimate $ putStrLn "Done!" <$ eDone
   eProc <- changes bProc
   -- TODO find more efficient way of getting endpoint protocols
@@ -219,14 +221,15 @@ networkPrinter (eOut, bProc, eDone) = do
       (putStrLn .
        intercalate "\n" .
        nub .
-       map (un . AnyExpr) .
-       (\g ->
-          [ projectPartyToEndpoint (projectGlobalToParty g p) c
-          | p <- partiesInGlobalProtocol g
-          , c <- channelsInGlobalProtocol g
-          ]) .
-       mayProcessToGlobalProtocol) <$>
+       map (un . AnyExpr) . projectGlobalToEndpoint . mayProcessToGlobalProtocol) <$>
     eProc
+
+projectGlobalToEndpoint :: Expr GlobalProtocol -> [Expr EndpointProtocol]
+projectGlobalToEndpoint g =
+  [ projectPartyToEndpoint (projectGlobalToParty g p) c
+  | p <- partiesInGlobalProtocol g
+  , c <- channelsInGlobalProtocol g
+  ]
 
 partiesInGlobalProtocol :: Expr GlobalProtocol -> [Expr Role]
 partiesInGlobalProtocol g = [p | EEvent p _ <- ev g]

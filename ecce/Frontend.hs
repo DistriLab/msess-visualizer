@@ -106,7 +106,9 @@ main = do
     white
     30
     ()
-    (\() -> readIORef picRef) -- do modifyIORef' picRef (\pic -> pictures [picBase, pic])
+    (\() -> do
+       pic <- readIORef picRef
+       return $ pictures [picBase, pic])
     (\e () -> fireEvent e)
     (\_ () -> pure ())
 
@@ -127,7 +129,7 @@ networkOutput extentsMap (eTrans, bProc, eDone) = do
       srEvent = filterJust eTransEvents
       srRole = (mapTuple eventToRole . (\x -> (head x, last x))) <$> srEvent -- TODO VERY UNSAFE
       srExtents =
-        (mapTuple ((\s -> lookup s extentsMap) . un . AnyExpr)) <$> srRole
+        mapTuple ((\s -> lookup s extentsMap) . un . AnyExpr) <$> srRole -- TODO probably lookup returns Nothing
       srX = mapTuple centerOfExtent <$> srExtents
   picture <-
     accumB blank $

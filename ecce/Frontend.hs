@@ -81,7 +81,7 @@ exWidth = 8
 
 exHeight = 20
 
-exSpace = 2
+exSpace = 130
 
 exXOffset = (-320)
 
@@ -89,7 +89,7 @@ exYOffset = 200
 
 main :: IO ()
 main = do
-  xs <- extractFile "test/reactive/example"
+  xs <- extractFile "test/reactive/names"
   let p = fmap head (parseContents xs)
       Just (Leaf g) = p -- TODO deconstruct p better
       (picBase, extentsMap) = drawParties (showParties g)

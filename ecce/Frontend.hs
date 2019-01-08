@@ -150,10 +150,7 @@ centerOfExtent :: Maybe Extent -> Float
 centerOfExtent ex =
   case ex of
     Nothing -> 0
-    Just ex ->
-      (uncurry (/) .
-       (\(x, y) -> (fromIntegral x, fromIntegral y)) . centerCoordOfExtent)
-        ex
+    Just ex -> ((\(x, _) -> fromIntegral x) . centerCoordOfExtent) ex
 
 mayKey :: Gloss.Event -> Maybe Char
 mayKey e =

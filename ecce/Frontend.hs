@@ -110,9 +110,7 @@ main = do
     white
     30
     ()
-    (\() -> do
-       modifyIORef' picRef (\pic -> pictures [picBase, pic])
-       readIORef picRef)
+    (\() -> readIORef picRef) -- do modifyIORef' picRef (\pic -> pictures [picBase, pic])
     (\e () -> fireEvent e)
     (\_ () -> pure ())
 

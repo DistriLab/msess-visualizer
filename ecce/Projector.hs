@@ -97,7 +97,6 @@ evConstraint c =
 
 {-
  - SUBSECTION GLOBAL SPEC -> PER PARTY SPEC
- -}
 projectGlobalToParty :: Expr GlobalProtocol -> Expr Role -> Expr PartyProtocol
 projectGlobalToParty (EGlobalProtocolTransmission (ERole s) i (ERole r) c v f) (ERole p)
   | p == s = EPartyProtocolSend c i v f
@@ -115,6 +114,28 @@ projectGlobalToParty (EGlobalProtocolSequencing g1 g2) p =
     (projectGlobalToParty g2 p)
 projectGlobalToParty EGlobalProtocolEmp _ = EPartyProtocolEmp
 
+ -}
+projectGlobalToParty :: Expr GlobalProtocol -> Expr Role -> Expr PartyProtocol
+projectGlobalToParty g er@(ERole p) =
+  case g of
+    EGlobalProtocolTransmission (ERole s) i (ERole r) c v f
+      | p == s -> EPartyProtocolSend c i v f
+      | p == r -> EPartyProtocolReceive c i v f
+      | otherwise -> EPartyProtocolEmp
+    EGlobalProtocolConcurrency g1 g2 ->
+      EPartyProtocolConcurrency
+        (projectGlobalToParty g1 er)
+        (projectGlobalToParty g2 er)
+    EGlobalProtocolChoice g1 g2 ->
+      EPartyProtocolChoice
+        (projectGlobalToParty g1 er)
+        (projectGlobalToParty g2 er)
+    EGlobalProtocolSequencing g1 g2 ->
+      EPartyProtocolSequencing
+        (projectGlobalToParty g1 er)
+        (projectGlobalToParty g2 er)
+    EGlobalProtocolEmp -> EPartyProtocolEmp
+
 {-
  - SUBSECTION PER PARTY SPEC -> PER ENDPOINT SPEC
  -}
@@ -131,22 +152,24 @@ projectGlobalToParty EGlobalProtocolEmp _ = EPartyProtocolEmp
 --      of L. This allows concurrent usage of the same endpoint.
 projectPartyToEndpoint ::
      Expr PartyProtocol -> Expr Channel -> Expr EndpointProtocol
-projectPartyToEndpoint (EPartyProtocolSend (EChannel c1) i v f) (EChannel c)
-  | c == c1 = EEndpointProtocolSend (EChannel c) i v f
-  | otherwise = EEndpointProtocolEmp
-projectPartyToEndpoint (EPartyProtocolReceive (EChannel c1) i v f) (EChannel c)
-  | c == c1 = EEndpointProtocolReceive (EChannel c) i v f
-  | otherwise = EEndpointProtocolEmp
-projectPartyToEndpoint (EPartyProtocolConcurrency g1 g2) c =
-  EEndpointProtocolConcurrency
-    (projectPartyToEndpoint g1 c)
-    (projectPartyToEndpoint g2 c)
-projectPartyToEndpoint (EPartyProtocolChoice g1 g2) c =
-  EEndpointProtocolChoice
-    (projectPartyToEndpoint g1 c)
-    (projectPartyToEndpoint g2 c)
-projectPartyToEndpoint (EPartyProtocolSequencing g1 g2) c =
-  EEndpointProtocolSequencing
-    (projectPartyToEndpoint g1 c)
-    (projectPartyToEndpoint g2 c)
-projectPartyToEndpoint EPartyProtocolEmp _ = EEndpointProtocolEmp
+projectPartyToEndpoint p ec@(EChannel c) =
+  case p of
+    EPartyProtocolSend (EChannel c1) i v f
+      | c == c1 -> EEndpointProtocolSend ec i v f
+      | otherwise -> EEndpointProtocolEmp
+    EPartyProtocolReceive (EChannel c1) i v f
+      | c == c1 -> EEndpointProtocolReceive ec i v f
+      | otherwise -> EEndpointProtocolEmp
+    EPartyProtocolConcurrency g1 g2 ->
+      EEndpointProtocolConcurrency
+        (projectPartyToEndpoint g1 ec)
+        (projectPartyToEndpoint g2 ec)
+    EPartyProtocolChoice g1 g2 ->
+      EEndpointProtocolChoice
+        (projectPartyToEndpoint g1 ec)
+        (projectPartyToEndpoint g2 ec)
+    EPartyProtocolSequencing g1 g2 ->
+      EEndpointProtocolSequencing
+        (projectPartyToEndpoint g1 ec)
+        (projectPartyToEndpoint g2 ec)
+    EPartyProtocolEmp -> EEndpointProtocolEmp

@@ -134,7 +134,14 @@ networkOutput extentsMap (eTrans, bProc, eDone) = do
   picture <-
     accumB blank $
     (\(sX, rX) ->
-       (\pic -> pictures [pic, translate sX 0 (arrow (abs $ sX - rX) 10 10 2)])) <$>
+       (\pic ->
+          pictures
+            [ pic
+            , translate
+                (sX + (fromIntegral exSpace) / 2)
+                0
+                (arrow (abs $ sX - rX) 10 10 2)
+            ])) <$>
     srX
   return picture
   where
@@ -150,7 +157,7 @@ centerOfExtent :: Maybe Extent -> Float
 centerOfExtent ex =
   case ex of
     Nothing -> 0
-    Just ex -> ((\(x, _) -> fromIntegral x) . centerCoordOfExtent) ex
+    Just ex -> (fromIntegral . fst . centerCoordOfExtent) ex
 
 mayKey :: Gloss.Event -> Maybe Char
 mayKey e =

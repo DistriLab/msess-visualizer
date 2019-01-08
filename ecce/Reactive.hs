@@ -26,6 +26,7 @@ import Interpreter (Output, mainHaskeline)
 import Parser
   ( AnyExpr(AnyExpr)
   , Channel
+  , EndpointProtocol
   , Expr(EEvent, EGlobalProtocolChoice, EGlobalProtocolConcurrency,
      EGlobalProtocolEmp, EGlobalProtocolSequencing,
      EGlobalProtocolTransmission)
@@ -220,14 +221,15 @@ networkPrinter (eTrans, bProc, eDone) = do
       (putStrLn .
        intercalate "\n" .
        nub .
-       map (un . AnyExpr) .
-       (\g ->
-          [ projectPartyToEndpoint (projectGlobalToParty g p) c
-          | p <- partiesInGlobalProtocol g
-          , c <- channelsInGlobalProtocol g
-          ]) .
-       mayProcessToGlobalProtocol) <$>
+       map (un . AnyExpr) . projectGlobalToEndpoint . mayProcessToGlobalProtocol) <$>
     eProc
+
+projectGlobalToEndpoint :: Expr GlobalProtocol -> [Expr EndpointProtocol]
+projectGlobalToEndpoint g =
+  [ projectPartyToEndpoint (projectGlobalToParty g p) c
+  | p <- partiesInGlobalProtocol g
+  , c <- channelsInGlobalProtocol g
+  ]
 
 partiesInGlobalProtocol :: Expr GlobalProtocol -> [Expr Role]
 partiesInGlobalProtocol g = [p | EEvent p _ <- ev g]

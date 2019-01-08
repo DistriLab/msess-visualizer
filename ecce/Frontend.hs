@@ -13,7 +13,7 @@ module Main where
  -}
 import Control.Arrow ((***))
 import Control.Monad (join)
-import Data.IORef (modifyIORef', newIORef, readIORef, writeIORef)
+import Data.IORef (newIORef, readIORef, writeIORef)
 import Data.List (nub)
 import Graphics.Gloss
   ( Display(InWindow)
@@ -121,9 +121,12 @@ networkInput glossEvent = return $ filterJust (mayKey <$> glossEvent)
 -- Treat sender and receiver as tuple
 networkOutput ::
      [(String, Extent)]
-  -> (Event (Maybe (Expr GlobalProtocol)), Behavior (Maybe Process), Event Char)
+  -> ( Event (Maybe (Expr GlobalProtocol))
+     , Behavior (Maybe Process)
+     , Event Char
+     , Behavior Integer)
   -> Moment (Behavior Picture)
-networkOutput extentsMap (eTrans, bProc, eDone) = do
+networkOutput extentsMap (eTrans, bProc, eDone, bStepCount) = do
   let eTransEvents = fmap ev <$> eTrans
       -- [sender, receiver] in that order
       srEvent = filterJust eTransEvents

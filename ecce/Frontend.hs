@@ -41,7 +41,6 @@ import Reactive.Banana
   , compile
   , filterJust
   , liftMoment
-  , stepper
   , valueBLater
   )
 import Reactive.Banana.Frameworks
@@ -54,9 +53,22 @@ import Reactive.Banana.Frameworks
   )
 import Unparser (un)
 
+{-
+ - SECTION CONFIG
+ -}
 wWidth = 320
 
 wHeight = 240
+
+exWidth = 8
+
+exHeight = 20
+
+exSpace = 2
+
+exXOffset = (-320)
+
+exYOffset = 200
 
 main :: IO ()
 main = do
@@ -122,23 +134,21 @@ arrow bl hh hl t = pictures [arrowBody, leftHead arrowHead, rightHead arrowHead]
     degrees = (*) (180 / pi)
 
 {-
- - SECTION DRAW PARTIES
+ - SECTION PARTIES
  -}
 showParties :: Expr GlobalProtocol -> [String]
 showParties = nub . map (un . AnyExpr) . partiesInGlobalProtocol
 
 drawParties :: [String] -> Picture
-drawParties ss = pictures $ map (uncurry $ drawParty w h) (zip extents ss)
-  where
-    extents = getPartiesExtents ss w h s
+drawParties ss =
+  pictures $ map (uncurry $ drawParty w exHeight) (mappingPartyExtent ss)
     -- Each charater has about 8 pixels of width
     -- Make width of all extents the width of the greatest extent
-    w = 8 * ((maximum . map length) ss)
-    h = 20
-    s = 2
+  where
+    w = exWidth * ((maximum . map length) ss)
 
-drawParty :: Int -> Int -> Extent -> String -> Picture
-drawParty w h ex s = pictures $ map (translate xf yf) shapes
+drawParty :: Int -> Int -> String -> Extent -> Picture
+drawParty w h s ex = pictures $ map (translate xf yf) shapes
   where
     (x, y) = centerCoordOfExtent ex
     (xf, yf) = (fromIntegral x, fromIntegral y)
@@ -154,10 +164,11 @@ drawParty w h ex s = pictures $ map (translate xf yf) shapes
 -- All party extents in one line at the top
 getPartiesExtents :: [String] -> Int -> Int -> Int -> [Extent]
 getPartiesExtents ss w h s =
-  [ makeExtent (h + yoffset) yoffset (x + w + xoffset) (x + xoffset)
+  [ makeExtent (h + exYOffset) exYOffset (x + w + exXOffset) (x + exXOffset)
   | x <- take num [0,(w + s) ..]
   ]
   where
     num = length ss
-    xoffset = (-320)
-    yoffset = 200
+
+mappingPartyExtent :: [String] -> [(String, Extent)]
+mappingPartyExtent ss = zip ss (getPartiesExtents ss exWidth exHeight exSpace)

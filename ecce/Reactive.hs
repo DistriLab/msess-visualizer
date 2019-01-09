@@ -139,17 +139,17 @@ networkDescription eKey filePath =
   (liftIO $ extractFile filePath) >>=
   (\xs ->
      liftMoment $
-     networkProcessor (Just <$> eKey) (fmap head (parseContents xs))) >>=
+     networkProcessor (fmap head (parseContents xs)) (Just <$> eKey)) >>=
   networkPrinter -- TODO Unmanual extract first parsed content
 
 networkProcessor ::
-     Event (Maybe Char)
-  -> Maybe Process
+     Maybe Process
+  -> Event (Maybe Char)
   -> Moment ( Event (Maybe (Expr GlobalProtocol))
             , Behavior (Maybe Process)
             , Event ()
             , Behavior Int)
-networkProcessor eKey p
+networkProcessor p eKey
       -- SUBSECTION USER INPUT
       -- bProcChoiceMay:
       --    looks at bProc to see if current process is EGlobalProtocolChoice

@@ -114,7 +114,7 @@ main = do
       glossEvent <- fromAddHandler eventHandler
       picture <-
         liftMoment $
-        networkInput glossEvent >>= (\eKey -> networkProcessor eKey p) >>=
+        networkInput glossEvent >>= networkProcessor p >>=
         networkOutput extentsMap
       changes picture >>= reactimate' . fmap (fmap (writeIORef picRef))
       valueBLater picture >>= liftIO . writeIORef picRef

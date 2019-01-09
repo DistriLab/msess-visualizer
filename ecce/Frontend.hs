@@ -212,24 +212,20 @@ arrow bl hh hl t = pictures [arrowBody, leftHead arrowHead, rightHead arrowHead]
       translate ((bl - hl) / 2) (-hh / 4) . rotate (degrees (-angleHead))
     degrees = (*) (180 / pi)
 
--- Draws an arrow from sender to receiver
+-- Draws arrow from sender to receiver with description
 -- Translate arrows so that tail is at sender and head is at receiver
 -- Flips arrows if needed
-arrowSR :: Float -> Float -> Picture
-arrowSR sX rX
+arrowSRDesc :: Float -> Float -> String -> Picture
+arrowSRDesc sX rX desc
   | sX < rX =
-    translate (-(abs $ rX - distance / 2)) 0 $
-    arrow distance arrowHeadHeight arrowHeadLength arrowThickness
+    translate (-(abs $ rX - distance / 2)) 0 $ pictures [drawText desc, arrowSR]
   | sX > rX =
-    (translate (-(abs $ sX - distance / 2)) 0 . rotate 180) $
-    arrow distance arrowHeadHeight arrowHeadLength arrowThickness
+    (translate (-(abs $ sX - distance / 2)) 0) $
+    pictures [drawText desc, rotate 180 arrowSR]
   | otherwise = error "arrowsSR: sX and rX are too close"
   where
     distance = abs $ sX - rX
-
--- Draws arrow from sender to receiver with description
-arrowSRDesc :: Float -> Float -> String -> Picture
-arrowSRDesc sX rX desc = pictures [arrowSR sX rX, drawText desc]
+    arrowSR = arrow distance arrowHeadHeight arrowHeadLength arrowThickness
 
 drawText = scale 0.1 0.1 . text
 

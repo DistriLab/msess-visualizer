@@ -87,6 +87,12 @@ exYOffset = 200
 
 arrowStepCountSpace = 20
 
+arrowHeadHeight = 10
+
+arrowHeadLength = 10
+
+arrowThickness = 2
+
 main :: IO ()
 main = do
   xs <- extractFile "test/reactive/example"
@@ -146,9 +152,9 @@ networkOutput extentsMap (eTrans, bProc, eDone, bStepCount) = do
           pictures
             [ pic
             , translate
-                (sX + (fromIntegral exSpace) / 2)
+                0
                 (fromIntegral $ exYOffset + (-step * arrowStepCountSpace)) -- negative because time increases downwards
-                (arrow (abs $ sX - rX) 10 10 2)
+                (arrowSR sX rX)
             ])) <$>
     srXStep
   return picture
@@ -189,6 +195,20 @@ arrow bl hh hl t = pictures [arrowBody, leftHead arrowHead, rightHead arrowHead]
     rightHead =
       translate ((bl - hl) / 2) (-hh / 4) . rotate (degrees (-angleHead))
     degrees = (*) (180 / pi)
+
+-- Draws an arrow from sender to receiver
+-- Translate arrows so that tail is at sender and head is at receiver
+-- Flips arrows if needed
+arrowSR :: Float -> Float -> Picture
+arrowSR sX rX
+  | sX < rX =
+    translate (-(abs $ rX - distance / 2)) 0 $
+    arrow distance arrowHeadHeight arrowHeadLength arrowThickness
+  | sX >= rX =
+    (translate (-(abs $ sX - distance / 2)) 0 . rotate 180) $
+    arrow distance arrowHeadHeight arrowHeadLength arrowThickness
+  where
+    distance = abs $ sX - rX
 
 {-
  - SECTION PARTIES

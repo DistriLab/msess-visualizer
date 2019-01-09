@@ -15,7 +15,7 @@ build-type:          Simple
 cabal-version:       >=1.8
 
 executable ecce
-  main-is: Reactive.hs
+  main-is: Main.hs
   other-modules:       Base
                      , Interpreter
                      , Parser

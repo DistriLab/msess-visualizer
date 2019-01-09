@@ -6,7 +6,7 @@
 {-
  - SECTION MODULE
  -}
-module Main where
+module Frontend where
 
 {-
  - SECTION IMPORTS

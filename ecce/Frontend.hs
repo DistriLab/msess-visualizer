@@ -262,7 +262,7 @@ arrowSRDesc sX rX desc
     arrowSR = arrow distance arrowHeadHeight arrowHeadLength arrowThickness
     arrowDesc = (translate (-distance / 2) arrowDescYOffset . drawText) desc
 
-drawText = scale textScale textScale . t
+drawText = scale textScale textScale . text
 
 {-
  - SECTION PARTIES

@@ -73,3 +73,6 @@ ecce> load test/reactive/example
 Quitting
 ecce>
 ```
+
+## Frontend.hs
+Within the GUI, use the same keybindings as for `Reactive.hs`.

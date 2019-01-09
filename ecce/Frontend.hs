@@ -204,9 +204,10 @@ arrowSR sX rX
   | sX < rX =
     translate (-(abs $ rX - distance / 2)) 0 $
     arrow distance arrowHeadHeight arrowHeadLength arrowThickness
-  | sX >= rX =
+  | sX > rX =
     (translate (-(abs $ sX - distance / 2)) 0 . rotate 180) $
     arrow distance arrowHeadHeight arrowHeadLength arrowThickness
+  | otherwise = error "arrowsSR: sX and rX are too close"
   where
     distance = abs $ sX - rX
 

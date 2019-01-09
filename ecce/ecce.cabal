@@ -24,11 +24,15 @@ executable ecce
   build-depends:       base >=4.2 && <5
                      , reactive-banana ==1.1.0.1
                      , haskeline ==0.7.4.3
+                     , gloss ==1.8.1.2
+                     -- Hidden packages
+                     , parsec
+                     , transformers
                      -- reactive-banana-wx-1.1.1.0 buildExamples dependencies
                      -- Duplicated here for reference and enforcement
-                     , wx >=0.90.0.1 && <0.94
-                     , wxcore >=0.90.0.1 && <0.94
-                     , cabal-macosx >=0.1 && <0.3
-                     , executable-path ==0.0.*
-                     , filepath >=1.1 && <=1.4.2.0
-                     , reactive-banana-wx ==1.1.1.0
+                     -- , wx >=0.90.0.1 && <0.94
+                     -- , wxcore >=0.90.0.1 && <0.94
+                     -- , cabal-macosx >=0.1 && <0.3
+                     -- , executable-path ==0.0.*
+                     -- , filepath >=1.1 && <=1.4.2.0
+                     -- , reactive-banana-wx ==1.1.1.0

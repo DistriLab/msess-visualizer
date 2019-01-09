@@ -13,7 +13,7 @@ module Frontend where
  -}
 import Control.Arrow ((***))
 import Control.Monad (join)
-import Data.IORef (newIORef, readIORef, writeIORef)
+import Data.IORef (IORef, newIORef, readIORef, writeIORef)
 import Data.List (intercalate, nub)
 import Graphics.Gloss
   ( Display(InWindow)
@@ -64,7 +64,8 @@ import Reactive.Banana
   , valueBLater
   )
 import Reactive.Banana.Frameworks
-  ( actuate
+  ( MomentIO
+  , actuate
   , changes
   , fromAddHandler
   , liftIO
@@ -116,17 +117,8 @@ main = do
   picRef <- newIORef blank
   (eventHandler, fireEvent) <- newAddHandler
   network <-
-    compile $ do
-      eGloss <- fromAddHandler eventHandler
-      picture <-
-        liftMoment $
-        networkInput eGloss >>= networkProcessor p >>= networkOutput extentsMap
-      changes picture >>= reactimate' . fmap (fmap (writeIORef picRef))
-      valueBLater picture >>= liftIO . writeIORef picRef
-      pictureScroll <-
-        liftMoment $ networkInputScroll eGloss >>= networkOutputScroll
-      changes pictureScroll >>= reactimate' . fmap (fmap (writeIORef picRef))
-      valueBLater pictureScroll >>= liftIO . writeIORef picRef
+    compile $
+    fromAddHandler eventHandler >>= networkDescription p picRef extentsMap
   actuate network
   playIO
     (InWindow "Frontend.hs" (wWidth, wHeight) (0, 0))
@@ -142,12 +134,38 @@ main = do
 {-
  - SECTION NETWORK
  -}
+{-
+ - SUBSECTION NETWORK DESCRIPTION
+ -}
+networkDescription ::
+     Maybe Process
+  -> IORef Picture
+  -> [(String, Extent)]
+  -> Event Gloss.Event
+  -> MomentIO ()
+networkDescription p picRef extentsMap eGloss = do
+  picture <-
+    liftMoment $
+    networkInput eGloss >>= networkProcessor p >>= networkOutput extentsMap
+  changes picture >>= reactimate' . fmap (fmap (writeIORef picRef))
+  valueBLater picture >>= liftIO . writeIORef picRef
+  pictureScroll <-
+    liftMoment $ networkInputScroll eGloss >>= networkOutputScroll
+  changes pictureScroll >>= reactimate' . fmap (fmap (writeIORef picRef))
+  valueBLater pictureScroll >>= liftIO . writeIORef picRef
+
+{-
+ - SUBSECTION NETWORK INPUT
+ -}
 networkInput :: Event Gloss.Event -> Moment (Event (Maybe Char))
 networkInput eGloss = return $ mayKey <$> eGloss
 
 networkInputScroll :: Event Gloss.Event -> Moment (Event (Maybe MouseButton))
 networkInputScroll eGloss = return $ mayScroll <$> eGloss
 
+{-
+ - SUBSECTION NETWORK OUTPUT
+ -}
 -- Treat sender and receiver as tuple
 networkOutput ::
      [(String, Extent)]

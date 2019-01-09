@@ -82,8 +82,7 @@ commandOutputs =
         (do (addKeyEvent, fireKey) <- newAddHandler
             network <-
               compile $
-              fromAddHandler addKeyEvent >>=
-              (\eKey -> networkDescription eKey restInputLine)
+              fromAddHandler addKeyEvent >>= networkDescription restInputLine
             actuate network
             eventLoop fireKey network))
   , ( "test"
@@ -92,8 +91,7 @@ commandOutputs =
             network <-
               compile $
               fromAddHandler addKeyEvent >>=
-              (\eKey ->
-                 networkDescription eKey ("test/reactive/" ++ restInputLine))
+              networkDescription ("test/reactive/" ++ restInputLine)
             actuate network
             eventLoop fireKey network))
   ]
@@ -134,8 +132,8 @@ data Process
   deriving (Show)
 
 -- SECTION NETWORK
-networkDescription :: Event Char -> FilePath -> MomentIO ()
-networkDescription eKey filePath =
+networkDescription :: FilePath -> Event Char -> MomentIO ()
+networkDescription filePath eKey =
   (liftIO $ extractFile filePath) >>=
   (\xs ->
      liftMoment $

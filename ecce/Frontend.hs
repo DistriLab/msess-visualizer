@@ -215,7 +215,7 @@ drawParty w h s ex = pictures $ map (translate xf yf) shapes
     wHeightf = fromIntegral wHeight
     -- Define shapes
     drawBox = rectangleWire wf hf
-    drawText = (scale 0.1 0.1 . translate (-240) (-50) . text) s
+    drawText = (scale 0.1 0.1 . text) s
     drawLine =
       translate 0 (-hf / 2 - wHeightf) (rectangleSolid 2 (wHeightf * 2))
     shapes = [drawBox, drawText, drawLine]

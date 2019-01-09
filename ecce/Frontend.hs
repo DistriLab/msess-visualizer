@@ -152,6 +152,7 @@ networkDescription p picRef extentsMap eGloss = do
   picture <-
     liftMoment $
     networkInput eGloss >>= networkProcessor p >>= networkArrow extentsMap >>=
+    networkArrowAccum >>=
     networkDraw
   changes picture >>= reactimate' . fmap (fmap (writeIORef picRef))
   valueBLater picture >>= liftIO . writeIORef picRef
@@ -211,14 +212,18 @@ networkArrow extentsMap (eTrans, bProc, eDone, bStepCount) = do
   where
     mapTuple = join (***)
 
-networkDraw :: Event Arrow -> Moment (Behavior Picture)
-networkDraw srXYDesc = do
-  picture <-
-    accumB blank $
-    (\(sX, rX, y, desc) ->
-       (\pic -> pictures [pic, translate 0 y (arrowSRDesc sX rX desc)])) <$>
-    srXYDesc
-  return picture
+networkArrowAccum :: Event Arrow -> Moment (Behavior [Arrow])
+networkArrowAccum eArrow = do
+  arrows <- accumB [] ((\a -> (++) [a]) <$> eArrow)
+  return arrows
+
+networkDraw :: Behavior [Arrow] -> Moment (Behavior Picture)
+networkDraw bArrows = do
+  let drawArrows =
+        (pictures .
+         map (\(sX, rX, y, desc) -> translate 0 y (arrowSRDesc sX rX desc))) <$>
+        bArrows
+  return drawArrows
 
 networkOutputScroll :: Event (Maybe MouseButton) -> Moment (Behavior Picture)
 networkOutputScroll eMouse = do
@@ -226,6 +231,9 @@ networkOutputScroll eMouse = do
   let picture = (translate (-320) (120) . scale 0.2 0.2 . text . show) <$> bn
   return picture
 
+{-
+ - SUBSECTION NETWORK HELPERS
+ -}
 transToDesc :: Expr GlobalProtocol -> String
 transToDesc (EGlobalProtocolTransmission _ i _ c v f) =
   intercalate " " $ map un [AnyExpr i, AnyExpr c, AnyExpr v, AnyExpr f]

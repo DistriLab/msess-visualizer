@@ -147,7 +147,7 @@ networkProcessor ::
   -> Maybe Process
   -> Moment ( Event (Maybe (Expr GlobalProtocol))
             , Behavior (Maybe Process)
-            , Event Char
+            , Event ()
             , Behavior Int)
 networkProcessor eKey p
       -- SUBSECTION USER INPUT
@@ -212,14 +212,14 @@ networkProcessor eKey p
         accumB
           0
           ((+ 1) <$ whenE ((maybe False (const True)) <$> bProc) eStepper)
-      let eDone :: Event Char
-          eDone = whenE ((maybe True (const False)) <$> bProc) eStepper
+      let eDone :: Event ()
+          eDone = whenE ((maybe True (const False)) <$> bProc) (() <$ eStepper)
       return (eTrans, bProc, eDone, bStepCount)
 
 networkPrinter ::
      ( Event (Maybe (Expr GlobalProtocol))
      , Behavior (Maybe Process)
-     , Event Char
+     , Event ()
      , Behavior Int)
   -> MomentIO ()
 networkPrinter (eTrans, bProc, eDone, bStepCount) = do

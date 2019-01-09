@@ -148,7 +148,7 @@ networkOutput ::
      [(String, Extent)]
   -> ( Event (Maybe (Expr GlobalProtocol))
      , Behavior (Maybe Process)
-     , Event Char
+     , Event ()
      , Behavior Int)
   -> Moment (Behavior Picture)
 networkOutput extentsMap (eTrans, bProc, eDone, bStepCount) = do

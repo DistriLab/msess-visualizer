@@ -14,7 +14,7 @@ module Frontend where
 import Control.Arrow ((***))
 import Control.Monad (join)
 import Data.IORef (newIORef, readIORef, writeIORef)
-import Data.List (nub)
+import Data.List (intercalate, nub)
 import Graphics.Gloss
   ( Display(InWindow)
   , Picture
@@ -138,33 +138,44 @@ networkOutput ::
   -> Moment (Behavior Picture)
 networkOutput extentsMap (eTrans, bProc, eDone, bStepCount) = do
   let eTransJust = filterJust eTrans
-      eTransDesc = transToDesc <$> eTransJust
-      srEvent = ev <$> eTransJust
+      srEventDesc =
+        (\x ->
+           ( let e = ev x
+              in (head e, last e) -- TODO VERY UNSAFE
+           , transToDesc x)) <$>
+        eTransJust
       -- [sender, receiver] in that order
-      srRole = (mapTuple eventToRole . (\x -> (head x, last x))) <$> srEvent -- TODO VERY UNSAFE
-      srExtents =
-        mapTuple ((\s -> lookup s extentsMap) . un . AnyExpr) <$> srRole -- TODO probably lookup returns Nothing
-      srX = mapTuple centerOfExtent <$> srExtents
-      srXStep = ((\step -> \(sX, rX) -> (sX, rX, step)) <$> bStepCount) <@> srX
+      srRoleDesc =
+        (\x -> ((mapTuple eventToRole . fst) x, snd x)) <$> srEventDesc
+      srExtentsDesc =
+        (\x ->
+           ( (mapTuple ((\s -> lookup s extentsMap) . un . AnyExpr) . fst) x
+           , snd x)) <$>
+        srRoleDesc -- TODO probably lookup returns Nothing
+      srXDesc =
+        (\x -> ((mapTuple centerOfExtent . fst) x, snd x)) <$> srExtentsDesc
+      srXStepDesc =
+        ((\step -> \((sX, rX), desc) -> (sX, rX, step, desc)) <$> bStepCount) <@>
+        srXDesc
   picture <-
     accumB blank $
-    (\(sX, rX, step) ->
+    (\(sX, rX, step, desc) ->
        (\pic ->
           pictures
             [ pic
             , translate
                 0
                 (fromIntegral $ exYOffset + (-step * arrowStepCountSpace)) -- negative because time increases downwards
-                (arrowSR sX rX)
+                (arrowSRDesc sX rX desc)
             ])) <$>
-    srXStep
+    srXStepDesc
   return picture
   where
     mapTuple = join (***)
 
 transToDesc :: Expr GlobalProtocol -> String
 transToDesc (EGlobalProtocolTransmission _ i _ c v f) =
-  join $ intercalate " " $ map un [i, c, v, f]
+  intercalate " " $ map un [AnyExpr i, AnyExpr c, AnyExpr v, AnyExpr f]
 
 eventToRole :: Expr Parser.Event -> Expr Role
 eventToRole (EEvent p _) = p
@@ -215,6 +226,10 @@ arrowSR sX rX
   | otherwise = error "arrowsSR: sX and rX are too close"
   where
     distance = abs $ sX - rX
+
+-- Draws arrow from sender to receiver with description
+arrowSRDesc :: Float -> Float -> String -> Picture
+arrowSRDesc sX rX desc = pictures [arrowSR sX rX, drawText desc]
 
 drawText = scale 0.1 0.1 . text
 

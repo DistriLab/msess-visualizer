@@ -4,6 +4,7 @@
 {-# LANGUAGE StandaloneDeriving #-} -- Allows `deriving` on its own line
 {-# LANGUAGE GADTs #-} -- Allows constrained ASTs
 {-# LANGUAGE ScopedTypeVariables #-} -- Allows type signatures in patterns
+{-# LANGUAGE EmptyDataDecls #-} -- Allows datatypes without constructors
 
 {-
  - SECTION MODULE

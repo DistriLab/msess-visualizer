@@ -214,18 +214,20 @@ arrow bl hh hl t = pictures [arrowBody, leftHead arrowHead, rightHead arrowHead]
 
 -- Draws arrow from sender to receiver with description
 -- Translate arrows so that tail is at sender and head is at receiver
+-- Description is always on the left of arrow
 -- Flips arrows if needed
 arrowSRDesc :: Float -> Float -> String -> Picture
 arrowSRDesc sX rX desc
   | sX < rX =
-    translate (-(abs $ rX - distance / 2)) 0 $ pictures [drawText desc, arrowSR]
+    translate (-(abs $ rX - distance / 2)) 0 $ pictures [arrowDesc, arrowSR]
   | sX > rX =
     (translate (-(abs $ sX - distance / 2)) 0) $
-    pictures [drawText desc, rotate 180 arrowSR]
+    pictures [arrowDesc, rotate 180 arrowSR]
   | otherwise = error "arrowsSR: sX and rX are too close"
   where
     distance = abs $ sX - rX
     arrowSR = arrow distance arrowHeadHeight arrowHeadLength arrowThickness
+    arrowDesc = (translate (-distance / 2) 5 . drawText) desc
 
 drawText = scale 0.1 0.1 . text
 
@@ -256,7 +258,7 @@ drawParty w h s ex = pictures $ map (translate xf yf) shapes
     drawBox = rectangleWire wf hf
     drawLine =
       translate 0 (-hf / 2 - wHeightf) (rectangleSolid 2 (wHeightf * 2))
-    shapes = [drawBox, drawText s, drawLine]
+    shapes = [drawBox, (translate (-wf / 3) (-hf / 4) . drawText) s, drawLine]
 
 -- All party extents in one line at the top
 getPartiesExtents :: [String] -> Int -> Int -> Int -> [Extent]

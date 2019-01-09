@@ -33,7 +33,7 @@ import qualified Graphics.Gloss.Interface.IO.Game as Gloss (Event(EventKey))
 import Graphics.Gloss.Interface.IO.Game (Key(Char), KeyState(Down), playIO)
 import Parser
   ( AnyExpr(AnyExpr)
-  , Expr(EEvent)
+  , Expr(EEvent, EGlobalProtocolTransmission)
   , GlobalProtocol
   , Role
   , extractFile
@@ -137,7 +137,9 @@ networkOutput ::
      , Behavior Int)
   -> Moment (Behavior Picture)
 networkOutput extentsMap (eTrans, bProc, eDone, bStepCount) = do
-  let srEvent = ev <$> filterJust eTrans
+  let eTransJust = filterJust eTrans
+      eTransDesc = transToDesc <$> eTransJust
+      srEvent = ev <$> eTransJust
       -- [sender, receiver] in that order
       srRole = (mapTuple eventToRole . (\x -> (head x, last x))) <$> srEvent -- TODO VERY UNSAFE
       srExtents =
@@ -159,6 +161,10 @@ networkOutput extentsMap (eTrans, bProc, eDone, bStepCount) = do
   return picture
   where
     mapTuple = join (***)
+
+transToDesc :: Expr GlobalProtocol -> String
+transToDesc (EGlobalProtocolTransmission _ i _ c v f) =
+  join $ intercalate " " $ map un [i, c, v, f]
 
 eventToRole :: Expr Parser.Event -> Expr Role
 eventToRole (EEvent p _) = p

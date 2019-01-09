@@ -13,7 +13,7 @@ module Frontend where
  -}
 import Control.Arrow ((***))
 import Control.Monad (join)
-import Data.IORef (modifyIORef', newIORef, readIORef, writeIORef)
+import Data.IORef (newIORef, readIORef, writeIORef)
 import Data.List (nub)
 import Graphics.Gloss
   ( Display(InWindow)
@@ -78,11 +78,13 @@ exWidth = 8
 
 exHeight = 20
 
-exSpace = 2
+exSpace = 130
 
 exXOffset = (-320)
 
 exYOffset = 200
+
+arrowStepCountSpace = 20
 
 main :: IO ()
 main = do
@@ -108,8 +110,8 @@ main = do
     30
     ()
     (\() -> do
-       modifyIORef' picRef (\pic -> pictures [picBase, pic])
-       readIORef picRef)
+       pic <- readIORef picRef
+       return $ pictures [picBase, pic])
     (\e () -> fireEvent e)
     (\_ () -> return ())
 
@@ -122,21 +124,32 @@ networkInput glossEvent = return $ filterJust (mayKey <$> glossEvent)
 -- Treat sender and receiver as tuple
 networkOutput ::
      [(String, Extent)]
-  -> (Event (Maybe (Expr GlobalProtocol)), Behavior (Maybe Process), Event Char)
+  -> ( Event (Maybe (Expr GlobalProtocol))
+     , Behavior (Maybe Process)
+     , Event Char
+     , Behavior Int)
   -> Moment (Behavior Picture)
-networkOutput extentsMap (eTrans, bProc, eDone) = do
+networkOutput extentsMap (eTrans, bProc, eDone, bStepCount) = do
   let eTransEvents = fmap ev <$> eTrans
       -- [sender, receiver] in that order
       srEvent = filterJust eTransEvents
       srRole = (mapTuple eventToRole . (\x -> (head x, last x))) <$> srEvent -- TODO VERY UNSAFE
       srExtents =
-        (mapTuple ((\s -> lookup s extentsMap) . un . AnyExpr)) <$> srRole
+        mapTuple ((\s -> lookup s extentsMap) . un . AnyExpr) <$> srRole -- TODO probably lookup returns Nothing
       srX = mapTuple centerOfExtent <$> srExtents
+      srXStep = ((\step -> \(sX, rX) -> (sX, rX, step)) <$> bStepCount) <@> srX
   picture <-
     accumB blank $
-    (\(sX, rX) ->
-       (\pic -> pictures [pic, translate sX 0 (arrow (abs $ sX - rX) 10 10 2)])) <$>
-    srX
+    (\(sX, rX, step) ->
+       (\pic ->
+          pictures
+            [ pic
+            , translate
+                (sX + (fromIntegral exSpace) / 2)
+                (fromIntegral $ exYOffset + (-step * arrowStepCountSpace)) -- negative because time increases downwards
+                (arrow (abs $ sX - rX) 10 10 2)
+            ])) <$>
+    srXStep
   return picture
   where
     mapTuple = join (***)
@@ -151,10 +164,7 @@ centerOfExtent :: Maybe Extent -> Float
 centerOfExtent ex =
   case ex of
     Nothing -> 0
-    Just ex ->
-      (uncurry (/) .
-       (\(x, y) -> (fromIntegral x, fromIntegral y)) . centerCoordOfExtent)
-        ex
+    Just ex -> (fromIntegral . fst . centerCoordOfExtent) ex
 
 mayKey :: Gloss.Event -> Maybe Char
 mayKey e =

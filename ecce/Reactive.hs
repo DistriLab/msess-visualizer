@@ -43,6 +43,7 @@ import Reactive.Banana
   , Moment
   , (<@)
   , (<@>)
+  , accumB
   , compile
   , filterE
   , liftMoment
@@ -143,7 +144,8 @@ networkProcessor ::
   -> Maybe Process
   -> Moment ( Event (Maybe (Expr GlobalProtocol))
             , Behavior (Maybe Process)
-            , Event Char)
+            , Event Char
+            , Behavior Int)
 networkProcessor eKey p
       -- SUBSECTION USER INPUT
       -- bProcChoiceMay:
@@ -201,19 +203,26 @@ networkProcessor eKey p
           (const <$> ((processStep . Just) <$> eProcChoice))
           (const <$> (processStep <$> bProc <@ eStepper))
       -- SUBSECTION STEPPER STATE
+      -- bStepCount: number of eSteppers fired
       -- eDone: whether the debugger is done
+      (bStepCount :: Behavior Int) <-
+        accumB
+          0
+          ((+ 1) <$ whenE ((maybe False (const True)) <$> bProc) eStepper)
       let eDone :: Event Char
           eDone = whenE ((maybe True (const False)) <$> bProc) eStepper
-      return (eTrans, bProc, eDone)
+      return (eTrans, bProc, eDone, bStepCount)
 
 networkPrinter ::
-     (Event (Maybe (Expr GlobalProtocol)), Behavior (Maybe Process), Event Char)
+     ( Event (Maybe (Expr GlobalProtocol))
+     , Behavior (Maybe Process)
+     , Event Char
+     , Behavior Int)
   -> MomentIO ()
-networkPrinter (eTrans, bProc, eDone) = do
+networkPrinter (eTrans, bProc, eDone, bStepCount) = do
   reactimate $
     maybe (return ()) (putStrLn . ("Transmission: " ++) . un . AnyExpr) <$>
     eTrans
-  reactimate $ putStrLn "Done!" <$ eDone
   eProc <- changes bProc
   -- TODO find more efficient way of getting endpoint protocols
   reactimate' $
@@ -223,6 +232,9 @@ networkPrinter (eTrans, bProc, eDone) = do
        nub .
        map (un . AnyExpr) . projectGlobalToEndpoint . mayProcessToGlobalProtocol) <$>
     eProc
+  eStepCount <- changes bStepCount
+  reactimate' $ fmap (putStrLn . show) <$> eStepCount
+  reactimate $ putStrLn "Done!" <$ eDone
 
 projectGlobalToEndpoint :: Expr GlobalProtocol -> [Expr EndpointProtocol]
 projectGlobalToEndpoint g =

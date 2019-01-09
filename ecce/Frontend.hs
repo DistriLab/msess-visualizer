@@ -51,6 +51,7 @@ import Reactive.Banana
   , Event
   , Moment
   , (<$>)
+  , (<@>)
   , accumB
   , compile
   , filterJust

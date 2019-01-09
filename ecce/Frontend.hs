@@ -93,6 +93,9 @@ arrowHeadLength = 10
 
 arrowThickness = 2
 
+{-
+ - SECTION MAIN
+ -}
 main :: IO ()
 main = do
   xs <- extractFile "test/reactive/example"
@@ -125,8 +128,8 @@ main = do
 {-
  - SECTION NETWORK
  -}
-networkInput :: Event Gloss.Event -> Moment (Event Char)
-networkInput glossEvent = return $ filterJust (mayKey <$> glossEvent)
+networkInput :: Event Gloss.Event -> Moment (Event (Maybe Char))
+networkInput glossEvent = return $ mayKey <$> glossEvent
 
 -- Treat sender and receiver as tuple
 networkOutput ::

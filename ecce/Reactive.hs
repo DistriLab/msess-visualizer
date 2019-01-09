@@ -46,6 +46,7 @@ import Reactive.Banana
   , accumB
   , compile
   , filterE
+  , filterJust
   , liftMoment
   , mapAccum
   , unionWith
@@ -136,11 +137,13 @@ data Process
 networkDescription :: Event Char -> FilePath -> MomentIO ()
 networkDescription eKey filePath =
   (liftIO $ extractFile filePath) >>=
-  (\xs -> liftMoment $ networkProcessor eKey (fmap head (parseContents xs))) >>=
+  (\xs ->
+     liftMoment $
+     networkProcessor (Just <$> eKey) (fmap head (parseContents xs))) >>=
   networkPrinter -- TODO Unmanual extract first parsed content
 
 networkProcessor ::
-     Event Char
+     Event (Maybe Char)
   -> Maybe Process
   -> Moment ( Event (Maybe (Expr GlobalProtocol))
             , Behavior (Maybe Process)
@@ -179,9 +182,9 @@ networkProcessor eKey p
           bProcIsChoice :: Behavior Bool
           bProcIsChoice = maybe False (const True) <$> bProcChoiceMay
           eChooseMay :: Event Char
-          eChooseMay = whenE bProcIsChoice eKey
+          eChooseMay = whenE bProcIsChoice (filterJust eKey)
           eChooseMayNot :: Event Char
-          eChooseMayNot = whenE (not <$> bProcIsChoice) eKey
+          eChooseMayNot = whenE (not <$> bProcIsChoice) (filterJust eKey)
           eStepper :: Event Char
           eStepper = filterE (== 's') eChooseMayNot
           eDigit :: Event Char

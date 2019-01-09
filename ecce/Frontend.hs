@@ -30,7 +30,12 @@ import Graphics.Gloss
   )
 import Graphics.Gloss.Data.Extent (Extent, centerCoordOfExtent, makeExtent)
 import qualified Graphics.Gloss.Interface.IO.Game as Gloss (Event(EventKey))
-import Graphics.Gloss.Interface.IO.Game (Key(Char), KeyState(Down), playIO)
+import Graphics.Gloss.Interface.IO.Game
+  ( Key(Char, MouseButton)
+  , KeyState(Down)
+  , MouseButton(WheelDown, WheelUp)
+  , playIO
+  )
 import Parser
   ( AnyExpr(AnyExpr)
   , Expr(EEvent, EGlobalProtocolTransmission)
@@ -113,6 +118,10 @@ main = do
         networkOutput extentsMap
       changes picture >>= reactimate' . fmap (fmap (writeIORef picRef))
       valueBLater picture >>= liftIO . writeIORef picRef
+      pictureScroll <-
+        liftMoment $ networkInputScroll glossEvent >>= networkOutputScroll
+      changes pictureScroll >>= reactimate' . fmap (fmap (writeIORef picRef))
+      valueBLater pictureScroll >>= liftIO . writeIORef picRef
   actuate network
   playIO
     (InWindow "Frontend.hs" (wWidth, wHeight) (0, 0))
@@ -130,6 +139,9 @@ main = do
  -}
 networkInput :: Event Gloss.Event -> Moment (Event (Maybe Char))
 networkInput glossEvent = return $ mayKey <$> glossEvent
+
+networkInputScroll :: Event Gloss.Event -> Moment (Event (Maybe MouseButton))
+networkInputScroll glossEvent = return $ mayScroll <$> glossEvent
 
 -- Treat sender and receiver as tuple
 networkOutput ::
@@ -176,6 +188,12 @@ networkOutput extentsMap (eTrans, bProc, eDone, bStepCount) = do
   where
     mapTuple = join (***)
 
+networkOutputScroll :: Event (Maybe MouseButton) -> Moment (Behavior Picture)
+networkOutputScroll glossEvent = do
+  bn <- accumB 0 ((+ 1) <$ filterJust glossEvent)
+  let picture = (translate (-320) (120) . scale 0.2 0.2 . text . show) <$> bn
+  return picture
+
 transToDesc :: Expr GlobalProtocol -> String
 transToDesc (EGlobalProtocolTransmission _ i _ c v f) =
   intercalate " " $ map un [AnyExpr i, AnyExpr c, AnyExpr v, AnyExpr f]
@@ -196,6 +214,13 @@ mayKey :: Gloss.Event -> Maybe Char
 mayKey e =
   case e of
     Gloss.EventKey (Char c) Down _ p -> Just c
+    otherwise -> Nothing
+
+mayScroll :: Gloss.Event -> Maybe MouseButton
+mayScroll e =
+  case e of
+    Gloss.EventKey (MouseButton WheelDown) Down _ p -> Just WheelDown
+    Gloss.EventKey (MouseButton WheelUp) Down _ p -> Just WheelUp
     otherwise -> Nothing
 
 {-

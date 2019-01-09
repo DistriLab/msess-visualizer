@@ -76,6 +76,8 @@ import Unparser (un)
 {-
  - SECTION CONFIG
  -}
+fps = 30
+
 wWidth = 320
 
 wHeight = 240
@@ -97,6 +99,10 @@ arrowHeadHeight = 10
 arrowHeadLength = 10
 
 arrowThickness = 2
+
+arrowDescYOffset = 5
+
+textScale = 0.1
 
 {-
  - SECTION MAIN
@@ -125,7 +131,7 @@ main = do
   playIO
     (InWindow "Frontend.hs" (wWidth, wHeight) (0, 0))
     white
-    30
+    fps
     ()
     (\() -> do
        pic <- readIORef picRef
@@ -254,9 +260,9 @@ arrowSRDesc sX rX desc
   where
     distance = abs $ sX - rX
     arrowSR = arrow distance arrowHeadHeight arrowHeadLength arrowThickness
-    arrowDesc = (translate (-distance / 2) 5 . drawText) desc
+    arrowDesc = (translate (-distance / 2) arrowDescYOffset . drawText) desc
 
-drawText = scale 0.1 0.1 . text
+drawText = scale textScale textScale . t
 
 {-
  - SECTION PARTIES

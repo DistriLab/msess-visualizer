@@ -145,7 +145,7 @@ networkProcessor ::
   -> Moment ( Event (Maybe (Expr GlobalProtocol))
             , Behavior (Maybe Process)
             , Event Char
-            , Behavior Integer)
+            , Behavior Int)
 networkProcessor eKey p
       -- SUBSECTION USER INPUT
       -- bProcChoiceMay:
@@ -205,7 +205,7 @@ networkProcessor eKey p
       -- SUBSECTION STEPPER STATE
       -- bStepCount: number of eSteppers fired
       -- eDone: whether the debugger is done
-      (bStepCount :: Behavior Integer) <-
+      (bStepCount :: Behavior Int) <-
         accumB
           0
           ((+ 1) <$ whenE ((maybe False (const True)) <$> bProc) eStepper)
@@ -217,7 +217,7 @@ networkPrinter ::
      ( Event (Maybe (Expr GlobalProtocol))
      , Behavior (Maybe Process)
      , Event Char
-     , Behavior Integer)
+     , Behavior Int)
   -> MomentIO ()
 networkPrinter (eTrans, bProc, eDone, bStepCount) = do
   reactimate $

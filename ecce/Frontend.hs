@@ -50,6 +50,7 @@ import Reactive.Banana
   ( Behavior
   , Event
   , Moment
+  , (<@>)
   , accumB
   , compile
   , filterJust
@@ -83,9 +84,11 @@ exXOffset = (-320)
 
 exYOffset = 200
 
+arrowStepCountSpace = 20
+
 main :: IO ()
 main = do
-  xs <- extractFile "test/reactive/names"
+  xs <- extractFile "test/reactive/example"
   let p = fmap head (parseContents xs)
       Just (Leaf g) = p -- TODO deconstruct p better
       (picBase, extentsMap) = drawParties (showParties g)
@@ -124,7 +127,7 @@ networkOutput ::
   -> ( Event (Maybe (Expr GlobalProtocol))
      , Behavior (Maybe Process)
      , Event Char
-     , Behavior Integer)
+     , Behavior Int)
   -> Moment (Behavior Picture)
 networkOutput extentsMap (eTrans, bProc, eDone, bStepCount) = do
   let eTransEvents = fmap ev <$> eTrans
@@ -134,18 +137,19 @@ networkOutput extentsMap (eTrans, bProc, eDone, bStepCount) = do
       srExtents =
         mapTuple ((\s -> lookup s extentsMap) . un . AnyExpr) <$> srRole -- TODO probably lookup returns Nothing
       srX = mapTuple centerOfExtent <$> srExtents
+      srXStep = ((\step -> \(sX, rX) -> (sX, rX, step)) <$> bStepCount) <@> srX
   picture <-
     accumB blank $
-    (\(sX, rX) ->
+    (\(sX, rX, step) ->
        (\pic ->
           pictures
             [ pic
             , translate
                 (sX + (fromIntegral exSpace) / 2)
-                0
+                (fromIntegral $ exYOffset + (-step * arrowStepCountSpace)) -- negative because time increases downwards
                 (arrow (abs $ sX - rX) 10 10 2)
             ])) <$>
-    srX
+    srXStep
   return picture
   where
     mapTuple = join (***)

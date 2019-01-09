@@ -33,7 +33,7 @@ import qualified Graphics.Gloss.Interface.IO.Game as Gloss (Event(EventKey))
 import Graphics.Gloss.Interface.IO.Game (Key(Char), KeyState(Down), playIO)
 import Parser
   ( AnyExpr(AnyExpr)
-  , Expr(EEvent, EGlobalProtocolTransmission, ERole)
+  , Expr(EEvent)
   , GlobalProtocol
   , Role
   , extractFile
@@ -45,19 +45,16 @@ import Reactive
   , networkProcessor
   , parseContents
   , partiesInGlobalProtocol
-  , projectGlobalToEndpoint
   )
 import Reactive.Banana
   ( Behavior
   , Event
   , Moment
-  , (<@>)
+  , (<$>)
   , accumB
   , compile
   , filterJust
   , liftMoment
-  , stepper
-  , valueB
   , valueBLater
   )
 import Reactive.Banana.Frameworks

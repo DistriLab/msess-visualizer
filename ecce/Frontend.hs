@@ -216,6 +216,8 @@ arrowSR sX rX
   where
     distance = abs $ sX - rX
 
+drawText = scale 0.1 0.1 . text
+
 {-
  - SECTION PARTIES
  -}
@@ -241,10 +243,9 @@ drawParty w h s ex = pictures $ map (translate xf yf) shapes
     wHeightf = fromIntegral wHeight
     -- Define shapes
     drawBox = rectangleWire wf hf
-    drawText = (scale 0.1 0.1 . text) s
     drawLine =
       translate 0 (-hf / 2 - wHeightf) (rectangleSolid 2 (wHeightf * 2))
-    shapes = [drawBox, drawText, drawLine]
+    shapes = [drawBox, drawText s, drawLine]
 
 -- All party extents in one line at the top
 getPartiesExtents :: [String] -> Int -> Int -> Int -> [Extent]

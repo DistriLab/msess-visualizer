@@ -111,7 +111,7 @@ main = do
        modifyIORef' picRef (\pic -> pictures [picBase, pic])
        readIORef picRef)
     (\e () -> fireEvent e)
-    (\_ () -> pure ())
+    (\_ () -> return ())
 
 {-
  - SECTION NETWORK

@@ -132,6 +132,11 @@ main = do
     (\_ () -> return ())
 
 {-
+ - SECTION TYPES
+ -}
+type Arrow = (Float, Float, Float, String)
+
+{-
  - SECTION NETWORK
  -}
 {-
@@ -146,7 +151,8 @@ networkDescription ::
 networkDescription p picRef extentsMap eGloss = do
   picture <-
     liftMoment $
-    networkInput eGloss >>= networkProcessor p >>= networkOutput extentsMap
+    networkInput eGloss >>= networkProcessor p >>= networkArrow extentsMap >>=
+    networkDraw
   changes picture >>= reactimate' . fmap (fmap (writeIORef picRef))
   valueBLater picture >>= liftIO . writeIORef picRef
   pictureScroll <-
@@ -167,14 +173,14 @@ networkInputScroll eGloss = return $ mayScroll <$> eGloss
  - SUBSECTION NETWORK OUTPUT
  -}
 -- Treat sender and receiver as tuple
-networkOutput ::
+networkArrow ::
      [(String, Extent)]
   -> ( Event (Maybe (Expr GlobalProtocol))
      , Behavior (Maybe Process)
      , Event ()
      , Behavior Int)
-  -> Moment (Behavior Picture)
-networkOutput extentsMap (eTrans, bProc, eDone, bStepCount) = do
+  -> Moment (Event Arrow)
+networkArrow extentsMap (eTrans, bProc, eDone, bStepCount) = do
   let eTransJust = filterJust eTrans
       srEventDesc =
         (\x ->
@@ -192,24 +198,27 @@ networkOutput extentsMap (eTrans, bProc, eDone, bStepCount) = do
         srRoleDesc -- TODO probably lookup returns Nothing
       srXDesc =
         (\x -> ((mapTuple centerOfExtent . fst) x, snd x)) <$> srExtentsDesc
-      srXStepDesc =
-        ((\step -> \((sX, rX), desc) -> (sX, rX, step, desc)) <$> bStepCount) <@>
+      srXYDesc =
+        ((\step ->
+            \((sX, rX), desc) ->
+              ( sX
+              , rX
+              , fromIntegral $ exYOffset + (-step * arrowStepCountSpace) -- negative because time increases downwards
+              , desc)) <$>
+         bStepCount) <@>
         srXDesc
-  picture <-
-    accumB blank $
-    (\(sX, rX, step, desc) ->
-       (\pic ->
-          pictures
-            [ pic
-            , translate
-                0
-                (fromIntegral $ exYOffset + (-step * arrowStepCountSpace)) -- negative because time increases downwards
-                (arrowSRDesc sX rX desc)
-            ])) <$>
-    srXStepDesc
-  return picture
+  return srXYDesc
   where
     mapTuple = join (***)
+
+networkDraw :: Event Arrow -> Moment (Behavior Picture)
+networkDraw srXYDesc = do
+  picture <-
+    accumB blank $
+    (\(sX, rX, y, desc) ->
+       (\pic -> pictures [pic, translate 0 y (arrowSRDesc sX rX desc)])) <$>
+    srXYDesc
+  return picture
 
 networkOutputScroll :: Event (Maybe MouseButton) -> Moment (Behavior Picture)
 networkOutputScroll eMouse = do

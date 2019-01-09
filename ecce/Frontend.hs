@@ -137,9 +137,8 @@ networkOutput ::
      , Behavior Int)
   -> Moment (Behavior Picture)
 networkOutput extentsMap (eTrans, bProc, eDone, bStepCount) = do
-  let eTransEvents = fmap ev <$> eTrans
+  let srEvent = ev <$> filterJust eTrans
       -- [sender, receiver] in that order
-      srEvent = filterJust eTransEvents
       srRole = (mapTuple eventToRole . (\x -> (head x, last x))) <$> srEvent -- TODO VERY UNSAFE
       srExtents =
         mapTuple ((\s -> lookup s extentsMap) . un . AnyExpr) <$> srRole -- TODO probably lookup returns Nothing

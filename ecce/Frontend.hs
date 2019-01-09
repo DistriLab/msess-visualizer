@@ -111,15 +111,14 @@ main = do
   (eventHandler, fireEvent) <- newAddHandler
   network <-
     compile $ do
-      glossEvent <- fromAddHandler eventHandler
+      eGloss <- fromAddHandler eventHandler
       picture <-
         liftMoment $
-        networkInput glossEvent >>= networkProcessor p >>=
-        networkOutput extentsMap
+        networkInput eGloss >>= networkProcessor p >>= networkOutput extentsMap
       changes picture >>= reactimate' . fmap (fmap (writeIORef picRef))
       valueBLater picture >>= liftIO . writeIORef picRef
       pictureScroll <-
-        liftMoment $ networkInputScroll glossEvent >>= networkOutputScroll
+        liftMoment $ networkInputScroll eGloss >>= networkOutputScroll
       changes pictureScroll >>= reactimate' . fmap (fmap (writeIORef picRef))
       valueBLater pictureScroll >>= liftIO . writeIORef picRef
   actuate network
@@ -138,10 +137,10 @@ main = do
  - SECTION NETWORK
  -}
 networkInput :: Event Gloss.Event -> Moment (Event (Maybe Char))
-networkInput glossEvent = return $ mayKey <$> glossEvent
+networkInput eGloss = return $ mayKey <$> eGloss
 
 networkInputScroll :: Event Gloss.Event -> Moment (Event (Maybe MouseButton))
-networkInputScroll glossEvent = return $ mayScroll <$> glossEvent
+networkInputScroll eGloss = return $ mayScroll <$> eGloss
 
 -- Treat sender and receiver as tuple
 networkOutput ::
@@ -189,8 +188,8 @@ networkOutput extentsMap (eTrans, bProc, eDone, bStepCount) = do
     mapTuple = join (***)
 
 networkOutputScroll :: Event (Maybe MouseButton) -> Moment (Behavior Picture)
-networkOutputScroll glossEvent = do
-  bn <- accumB 0 ((+ 1) <$ filterJust glossEvent)
+networkOutputScroll eMouse = do
+  bn <- accumB 0 ((+ 1) <$ filterJust eMouse)
   let picture = (translate (-320) (120) . scale 0.2 0.2 . text . show) <$> bn
   return picture
 

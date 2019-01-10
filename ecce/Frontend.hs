@@ -134,7 +134,7 @@ main = do
 {-
  - SECTION TYPES
  -}
-type Arrow = (Float, Float, Float, String)
+type Transmit = (Float, Float, Float, String)
 
 {-
  - SECTION NETWORK
@@ -151,8 +151,8 @@ networkDescription ::
 networkDescription p picRef extentsMap eGloss = do
   picture <-
     liftMoment $
-    networkInput eGloss >>= networkProcessor p >>= networkArrow extentsMap >>=
-    networkArrowAccum >>=
+    networkInput eGloss >>= networkProcessor p >>= networkTransmit extentsMap >>=
+    networkTransmitAccum >>=
     networkDraw
   changes picture >>= reactimate' . fmap (fmap (writeIORef picRef))
   valueBLater picture >>= liftIO . writeIORef picRef
@@ -174,14 +174,14 @@ networkInputScroll eGloss = return $ mayScroll <$> eGloss
  - SUBSECTION NETWORK OUTPUT
  -}
 -- Treat sender and receiver as tuple
-networkArrow ::
+networkTransmit ::
      [(String, Extent)]
   -> ( Event (Maybe (Expr GlobalProtocol))
      , Behavior (Maybe Process)
      , Event ()
      , Behavior Int)
-  -> Moment (Event Arrow)
-networkArrow extentsMap (eTrans, bProc, eDone, bStepCount) = do
+  -> Moment (Event Transmit)
+networkTransmit extentsMap (eTrans, bProc, eDone, bStepCount) = do
   let eTransJust = filterJust eTrans
       srEventDesc =
         (\x ->
@@ -212,18 +212,18 @@ networkArrow extentsMap (eTrans, bProc, eDone, bStepCount) = do
   where
     mapTuple = join (***)
 
-networkArrowAccum :: Event Arrow -> Moment (Behavior [Arrow])
-networkArrowAccum eArrow = do
-  arrows <- accumB [] ((\a -> (++) [a]) <$> eArrow)
+networkTransmitAccum :: Event Transmit -> Moment (Behavior [Transmit])
+networkTransmitAccum eTransmit = do
+  arrows <- accumB [] ((\a -> (++) [a]) <$> eTransmit)
   return arrows
 
-networkDraw :: Behavior [Arrow] -> Moment (Behavior Picture)
-networkDraw bArrows = do
-  let drawArrows =
+networkDraw :: Behavior [Transmit] -> Moment (Behavior Picture)
+networkDraw bTransmits = do
+  let drawTransmits =
         (pictures .
          map (\(sX, rX, y, desc) -> translate 0 y (arrowSRDesc sX rX desc))) <$>
-        bArrows
-  return drawArrows
+        bTransmits
+  return drawTransmits
 
 networkOutputScroll :: Event (Maybe MouseButton) -> Moment (Behavior Picture)
 networkOutputScroll eMouse = do

@@ -1,0 +1,36 @@
+@startuml
+
+hide empty description
+
+title Frontend Network\n<size:15>Composed of smaller networks</size>
+
+[*] --> Gloss
+Processor --> Printer: Processed
+
+Gloss --> Input: Char
+Input --> Processor: Maybe Char
+Processor --> Arrow: Processed
+Arrow --> ArrowAccum: Arrow
+ArrowAccum --> Draw: [Arrow]
+
+Gloss --> InputScroll: MouseButton
+InputScroll --> OutputScroll: Maybe MouseButton
+
+Draw --> [*]: Picture
+OutputScroll --> [*]: Picture
+Printer --> [*]: stdout
+
+legend right
+    Processed:
+        (Event (Maybe (Expr GlobalProtocol))
+        , Behavior (Maybe Process)
+        , Event()
+        , Behavior Int)
+    Arrow:
+        (Float
+        , Float
+        , Float
+        , String)
+endlegend
+
+@enduml

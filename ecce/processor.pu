@@ -1,0 +1,39 @@
+@startuml
+
+hide empty description
+
+title Internals of networkProcessor\n<size:15>Events and Behaviors</size>\n<size:15>Descriptions on arrows show when Event or Behavior is triggered</size>
+
+[*] --> eKey
+
+' Events
+eKey --> eChooseMay: whenE bProcIsChoice
+eKey --> eChooseMayNot: whenE (not <$> bProcIsChoice)
+eChooseMayNot --> eStepper: filterE (== 's')
+eChooseMay --> eDigit: filterE isDigit
+eDigit --> eChooserChoice: filterE (`elem` "12")
+eChooserChoice --> eProcChoice: bProcChoiceFunc <@>
+eProcChoice --> Stepper
+eProcChoice --> Stepper
+eStepper --> eDone: when bProc is Nothing
+
+state Stepper {
+    bProc --> eTrans: <@ eStepper with processStep
+    bProc --> bProc: <@ eStepper with processStep
+}
+
+' Behaviors
+bProcIsChoice --> eChooseMay: eKey
+bProcIsChoice --> eChooseMayNot: eKey
+bProc --> bProcChoiceMay: when bProc is Leaf (EGlobalProtocolChoice ...)
+bProcChoiceMay --> bProcIsChoice: maybe False (const True) <$>
+bProcChoiceMay --> bProcChoiceFunc: index into list of choices
+bProcChoiceFunc --> eProcChoice: <@> eChooserChoice
+
+' Outputs
+eTrans --> [*]
+bProc --> [*]
+eDone --> [*]
+bStepCount --> [*]
+
+@enduml

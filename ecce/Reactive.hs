@@ -258,8 +258,8 @@ mayProcessToGlobalProtocol =
     (fix
        (\r p ->
           case p of
-            NodeS [] -> EGlobalProtocolEmp -- TODO figure out how to skip NodeS []
-            NodeC [] -> EGlobalProtocolEmp -- TODO figure out how to skip NodeC []
+            NodeS [] -> EGlobalProtocolEmp -- TODO how to skip NodeS []; maybe normalize emp;G to G
+            NodeC [] -> EGlobalProtocolEmp -- TODO how to skip NodeC []; maybe normalize emp*G to G
             NodeS (p:ps) -> r p
             NodeC (p:ps) -> r p
             Leaf g -> g))

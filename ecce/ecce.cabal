@@ -29,11 +29,3 @@ executable ecce
                      , gloss
                      , parsec
                      , transformers
-                     -- reactive-banana-wx-1.1.1.0 buildExamples dependencies
-                     -- Duplicated here for reference and enforcement
-                     -- , wx >=0.90.0.1 && <0.94
-                     -- , wxcore >=0.90.0.1 && <0.94
-                     -- , cabal-macosx >=0.1 && <0.3
-                     -- , executable-path ==0.0.*
-                     -- , filepath >=1.1 && <=1.4.2.0
-                     -- , reactive-banana-wx ==1.1.1.0

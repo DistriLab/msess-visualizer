@@ -4,14 +4,6 @@ Run this command in the same folder as this README file:
 cabal install
 ```
 
-Note: currently produces this error, without any explanation (could be linker 
-error):
-```
-cabal: Error: some packages failed to install:
-ecce-0.1.0.0 failed during the building phase. The exception was:
-ExitFailure 1
-```
-
 # Usage
 ## General
 1. When entering filenames, make sure not to use tab completion. If you do, the

@@ -182,9 +182,11 @@ networkInputScroll eGloss = return $ mayScroll <$> eGloss
 networkDraw :: (Behavior [Transmit], Behavior Int) -> Moment (Behavior Picture)
 networkDraw (bTransmits, bScrollPos) = do
   return $
-    (pictures .
-     map (\(sX, rX, y, desc) -> translate 0 y (transmitSRDesc sX rX desc))) <$>
-    ((\ts pos -> drop (length ts - pos) ts) <$> bTransmits <*> bScrollPos)
+    (\p1 p2 -> pictures [p1, p2]) <$>
+    ((translate (-320) (120) . scale 0.2 0.2 . text . show) <$> bScrollPos) <*>
+    ((pictures .
+      map (\(sX, rX, y, desc) -> translate 0 y (transmitSRDesc sX rX desc))) <$>
+     ((\ts pos -> drop (length ts - pos) ts) <$> bTransmits <*> bScrollPos))
 
 {-
  - SUBSECTION NETWORK PIPES
@@ -232,7 +234,7 @@ networkTransmitAccum :: Event Transmit -> Moment (Behavior [Transmit])
 networkTransmitAccum eTransmit = accumB [] ((\a -> (++) [a]) <$> eTransmit)
 
 networkOutputScroll :: Event (Maybe MouseButton) -> Moment (Behavior Int)
-networkOutputScroll eMouse = accumB 0 ((+ 1) <$ filterJust eMouse)
+networkOutputScroll eMouse = accumB 0 (maybe (+ 1) (const (+ 2)) <$> eMouse)
 
 {-
  - SUBSECTION NETWORK HELPERS

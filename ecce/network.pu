@@ -15,9 +15,9 @@ TransmitAccum --> Draw: [Transmit]
 
 Gloss --> InputScroll: MouseButton
 InputScroll --> OutputScroll: Maybe MouseButton
+OutputScroll --> Draw: Int
 
 Draw --> [*]: Picture
-OutputScroll --> [*]: Int
 Printer --> [*]: stdout
 
 legend right

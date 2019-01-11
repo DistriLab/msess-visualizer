@@ -241,7 +241,16 @@ networkTransmitAccum :: Event Transmit -> Moment (Behavior [Transmit])
 networkTransmitAccum eTransmit = accumB [] ((\a -> (++) [a]) <$> eTransmit)
 
 networkOutputScroll :: Event (Maybe MouseButton) -> Moment (Behavior Int)
-networkOutputScroll eMouse = accumB 0 (maybe id (const (+ 1)) <$> eMouse)
+networkOutputScroll eMouse =
+  accumB
+    0
+    (maybe
+       id
+       (\x ->
+          case x of
+            WheelUp -> (+ 1)
+            WheelDown -> subtract 1) <$>
+     eMouse)
 
 {-
  - SUBSECTION NETWORK HELPERS

@@ -5,8 +5,7 @@ name:                ecce
 version:             0.1.0.0
 -- synopsis:            
 -- description:         
--- license:             
-license-file:        LICENSE
+license:             GPL
 author:              Zhengqun Koo
 maintainer:          zhengqun.koo@gmail.com
 -- copyright:           

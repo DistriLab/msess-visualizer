@@ -12,8 +12,8 @@ module Frontend where
 {-
  - SECTION IMPORTS
  -}
-import Control.Arrow (Kleisli(Kleisli), (***), (>>>), returnA, runKleisli)
-import Control.Monad (join)
+import Control.Arrow (Kleisli(Kleisli), (***), returnA, runKleisli)
+import Control.Monad ((>=>), join)
 import Data.IORef (IORef, newIORef, readIORef, writeIORef)
 import Data.List (intercalate, nub)
 import Graphics.Gloss
@@ -159,12 +159,11 @@ networkDescription p picRef extentsMap eGloss = do
 aPicture p extentsMap =
   proc eGloss ->
   do eCharMay <- Kleisli networkInput -< eGloss
-     bTransmits <- Kleisli (networkProcessor p) >>>
-                     Kleisli (networkTransmit extentsMap) >>>
-                       Kleisli networkTransmitAccum
+     bTransmits <- Kleisli
+                     (networkProcessor p >=>
+                        networkTransmit extentsMap >=> networkTransmitAccum)
                      -< eCharMay
-     bScrollPos <- Kleisli networkInputScroll >>>
-                     Kleisli networkOutputScroll
+     bScrollPos <- Kleisli (networkInputScroll >=> networkOutputScroll)
                      -< eGloss
      picture <- Kleisli networkDraw -<
                   (bTransmits, bScrollPos, eCharMay)

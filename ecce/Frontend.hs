@@ -94,15 +94,15 @@ exXOffset = (-320)
 
 exYOffset = 200
 
-arrowStepCountSpace = 20
+transmitStepCountSpace = 20
 
-arrowHeadHeight = 10
+transmitHeadHeight = 10
 
-arrowHeadLength = 10
+transmitHeadLength = 10
 
-arrowThickness = 2
+transmitThickness = 2
 
-arrowDescYOffset = 5
+transmitDescYOffset = 5
 
 textScale = 0.1
 
@@ -210,7 +210,7 @@ networkTransmit extentsMap (eTrans, bProc, eDone, bStepCount) = do
             \((sX, rX), desc) ->
               ( sX
               , rX
-              , fromIntegral $ exYOffset + (-step * arrowStepCountSpace) -- negative because time increases downwards
+              , fromIntegral $ exYOffset + (-step * transmitStepCountSpace) -- negative because time increases downwards
               , desc)) <$>
          bStepCount) <@>
         srXDesc
@@ -220,14 +220,14 @@ networkTransmit extentsMap (eTrans, bProc, eDone, bStepCount) = do
 
 networkTransmitAccum :: Event Transmit -> Moment (Behavior [Transmit])
 networkTransmitAccum eTransmit = do
-  arrows <- accumB [] ((\a -> (++) [a]) <$> eTransmit)
-  return arrows
+  bTransmits <- accumB [] ((\a -> (++) [a]) <$> eTransmit)
+  return bTransmits
 
 networkDraw :: (Behavior [Transmit], Behavior Int) -> Moment (Behavior Picture)
 networkDraw (bTransmits, bScrollPos) = do
   return $
     (pictures .
-     map (\(sX, rX, y, desc) -> translate 0 y (arrowSRDesc sX rX desc))) <$>
+     map (\(sX, rX, y, desc) -> translate 0 y (transmitSRDesc sX rX desc))) <$>
     ((\ts pos -> drop (length ts - pos) ts) <$> bTransmits <*> bScrollPos)
 
 networkOutputScroll :: Event (Maybe MouseButton) -> Moment (Behavior Int)
@@ -268,36 +268,40 @@ mayScroll e =
 {-
  - SECTION SHAPES
  -}
--- Draws arrow pointing East at origin
--- arrowbody length, arrowhead height, arrowhead length, arrow thickness
-arrow :: Float -> Float -> Float -> Float -> Picture
-arrow bl hh hl t = pictures [arrowBody, leftHead arrowHead, rightHead arrowHead]
+-- Draws transmit pointing East at origin
+-- transmitbody length, transmithead height, transmithead length, transmit thickness
+transmit :: Float -> Float -> Float -> Float -> Picture
+transmit bl hh hl t =
+  pictures [transmitBody, leftHead transmitHead, rightHead transmitHead]
   where
     angleHead = atan ((hh / 2) / hl)
     hypHead = hl / (cos angleHead)
-    arrowBody = rectangleSolid bl t
-    arrowHead = rectangleSolid hypHead t
+    transmitBody = rectangleSolid bl t
+    transmitHead = rectangleSolid hypHead t
     leftHead = translate ((bl - hl) / 2) (hh / 4) . rotate (degrees angleHead)
     rightHead =
       translate ((bl - hl) / 2) (-hh / 4) . rotate (degrees (-angleHead))
     degrees = (*) (180 / pi)
 
--- Draws arrow from sender to receiver with description
--- Translate arrows so that tail is at sender and head is at receiver
--- Description is always on the left of arrow
--- Flips arrows if needed
-arrowSRDesc :: Float -> Float -> String -> Picture
-arrowSRDesc sX rX desc
+-- Draws transmit from sender to receiver with description
+-- Translate transmits so that tail is at sender and head is at receiver
+-- Description is always on the left of transmit
+-- Flips transmits if needed
+transmitSRDesc :: Float -> Float -> String -> Picture
+transmitSRDesc sX rX desc
   | sX < rX =
-    translate (-(abs $ rX - distance / 2)) 0 $ pictures [arrowDesc, arrowSR]
+    translate (-(abs $ rX - distance / 2)) 0 $
+    pictures [transmitDesc, transmitSR]
   | sX > rX =
     (translate (-(abs $ sX - distance / 2)) 0) $
-    pictures [arrowDesc, rotate 180 arrowSR]
-  | otherwise = error "arrowsSR: sX and rX are too close"
+    pictures [transmitDesc, rotate 180 transmitSR]
+  | otherwise = error "transmitsSR: sX and rX are too close"
   where
     distance = abs $ sX - rX
-    arrowSR = arrow distance arrowHeadHeight arrowHeadLength arrowThickness
-    arrowDesc = (translate (-distance / 2) arrowDescYOffset . drawText) desc
+    transmitSR =
+      transmit distance transmitHeadHeight transmitHeadLength transmitThickness
+    transmitDesc =
+      (translate (-distance / 2) transmitDescYOffset . drawText) desc
 
 drawText = scale textScale textScale . text
 

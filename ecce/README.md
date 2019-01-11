@@ -56,11 +56,11 @@ ecce> test formula
 ecce>
 ```
 
-## Reactive.hs
+## Processor.hs
 ### Running
 ```
-ghci Reactive.hs
-*Reactive> main
+ghci Processor.hs
+*Processor> main
 ```
 
 ### Example Execution
@@ -84,7 +84,7 @@ ecce>
 ```
 
 ## Main.hs
-Within the GUI, use the same keybindings as for `Reactive.hs`.
+Within the GUI, use the same keybindings as for `Processor.hs`.
 
 ### Performance
 Running either `Frontend.hs` or `Main.hs` in `ghci` often takes 100% CPU. To 

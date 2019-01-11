@@ -20,7 +20,7 @@ executable ecce
                      , Parser
                      , Projector
                      , Unparser
-                     , Reactive
+                     , Processor
                      , Frontend
   build-depends:       base >=4.2 && <5
                      , reactive-banana

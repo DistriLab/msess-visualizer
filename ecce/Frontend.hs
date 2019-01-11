@@ -45,13 +45,13 @@ import Parser
   , extractFile
   )
 import qualified Parser (Event)
-import Projector (ev)
-import Reactive
+import Processor
   ( Process(Leaf)
   , networkProcessor
   , parseContents
   , partiesInGlobalProtocol
   )
+import Projector (ev)
 import Reactive.Banana
   ( Behavior
   , Event

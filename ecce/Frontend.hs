@@ -113,7 +113,7 @@ textScale = 0.1
  -}
 main :: IO ()
 main = do
-  xs <- extractFile "test/reactive/example"
+  xs <- extractFile "test/processor/example"
   let p = fmap head (parseContents xs)
       Just (Leaf g) = p -- TODO deconstruct p better
       (picBase, extentsMap) = drawParties (showParties g)

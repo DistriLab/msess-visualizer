@@ -91,7 +91,7 @@ commandOutputs =
             network <-
               compile $
               fromAddHandler addKeyEvent >>=
-              networkDescription ("test/reactive/" ++ restInputLine)
+              networkDescription ("test/processor/" ++ restInputLine)
             actuate network
             eventLoop fireKey network))
   ]

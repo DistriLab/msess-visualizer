@@ -20,15 +20,15 @@ ExitFailure 1
 Welcome!
 Type "help" for more information.
 
-ecce> load reactive.test
+ecce> load processor.test
 > s
-*** Exception: Parse error: ["reactive.test : openFile: does not exist
+*** Exception: Parse error: ["processor.test : openFile: does not exist
 (No such file or directory)"]
 λ> main
 Welcome!
 Type "help" for more information.
 
-ecce> load reactive.test
+ecce> load processor.test
 > s
 ...
 ```
@@ -72,7 +72,7 @@ ecce> help
 Here are a list of commands:
 help
 load
-ecce> load test/reactive/example
+ecce> load test/processor/example
 > s
 > s
 > s

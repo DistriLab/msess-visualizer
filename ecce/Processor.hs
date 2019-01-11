@@ -8,7 +8,7 @@
 {-
  - SECTION MODULE
  -}
-module Reactive where
+module Processor where
 
 {-
  - SECTION IMPORTS

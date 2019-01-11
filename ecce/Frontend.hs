@@ -161,14 +161,14 @@ aPicture p extentsMap =
                        Kleisli (networkTransmit extentsMap) >>>
                          Kleisli networkTransmitAccum
                      -< eGloss
-     bStepCount <- Kleisli networkInputScroll >>>
+     bScrollPos <- Kleisli networkInputScroll >>>
                      Kleisli networkOutputScroll
                      -< eGloss
-     picture <- Kleisli networkDraw -< (bTransmits, bStepCount)
+     picture <- Kleisli networkDraw -< (bTransmits, bScrollPos)
      returnA -< picture
 
 {-
- - SUBSECTION NETWORK INPUT
+ - SUBSECTION NETWORK INPUTS
  -}
 networkInput :: Event Gloss.Event -> Moment (Event (Maybe Char))
 networkInput eGloss = return $ mayKey <$> eGloss
@@ -177,7 +177,17 @@ networkInputScroll :: Event Gloss.Event -> Moment (Event (Maybe MouseButton))
 networkInputScroll eGloss = return $ mayScroll <$> eGloss
 
 {-
- - SUBSECTION NETWORK OUTPUT
+ - SUBSECTION NETWORK OUTPUTS
+ -}
+networkDraw :: (Behavior [Transmit], Behavior Int) -> Moment (Behavior Picture)
+networkDraw (bTransmits, bScrollPos) = do
+  return $
+    (pictures .
+     map (\(sX, rX, y, desc) -> translate 0 y (transmitSRDesc sX rX desc))) <$>
+    ((\ts pos -> drop (length ts - pos) ts) <$> bTransmits <*> bScrollPos)
+
+{-
+ - SUBSECTION NETWORK PIPES
  -}
 -- Treat sender and receiver as tuple
 networkTransmit ::
@@ -220,13 +230,6 @@ networkTransmit extentsMap (eTrans, bProc, eDone, bStepCount) = do
 
 networkTransmitAccum :: Event Transmit -> Moment (Behavior [Transmit])
 networkTransmitAccum eTransmit = accumB [] ((\a -> (++) [a]) <$> eTransmit)
-
-networkDraw :: (Behavior [Transmit], Behavior Int) -> Moment (Behavior Picture)
-networkDraw (bTransmits, bScrollPos) = do
-  return $
-    (pictures .
-     map (\(sX, rX, y, desc) -> translate 0 y (transmitSRDesc sX rX desc))) <$>
-    ((\ts pos -> drop (length ts - pos) ts) <$> bTransmits <*> bScrollPos)
 
 networkOutputScroll :: Event (Maybe MouseButton) -> Moment (Behavior Int)
 networkOutputScroll eMouse = accumB 0 ((+ 1) <$ filterJust eMouse)

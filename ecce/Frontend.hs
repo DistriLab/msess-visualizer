@@ -156,15 +156,16 @@ networkDescription p picRef extentsMap eGloss = do
 
 aPicture p extentsMap =
   proc eGloss ->
-  do bTransmits <- Kleisli networkInput >>>
-                     Kleisli (networkProcessor p) >>>
-                       Kleisli (networkTransmit extentsMap) >>>
-                         Kleisli networkTransmitAccum
-                     -< eGloss
+  do eCharMay <- Kleisli networkInput -< eGloss
+     bTransmits <- Kleisli (networkProcessor p) >>>
+                     Kleisli (networkTransmit extentsMap) >>>
+                       Kleisli networkTransmitAccum
+                     -< eCharMay
      bScrollPos <- Kleisli networkInputScroll >>>
                      Kleisli networkOutputScroll
                      -< eGloss
-     picture <- Kleisli networkDraw -< (bTransmits, bScrollPos)
+     picture <- Kleisli networkDraw -<
+                  (bTransmits, bScrollPos, eCharMay)
      returnA -< picture
 
 {-
@@ -179,14 +180,20 @@ networkInputScroll eGloss = return $ mayScroll <$> eGloss
 {-
  - SUBSECTION NETWORK OUTPUTS
  -}
-networkDraw :: (Behavior [Transmit], Behavior Int) -> Moment (Behavior Picture)
-networkDraw (bTransmits, bScrollPos) = do
+networkDraw ::
+     (Behavior [Transmit], Behavior Int, Event (Maybe Char))
+  -> Moment (Behavior Picture)
+networkDraw (bTransmits, bScrollPos, eKey) = do
+  bScrollPosAuto <- accumB 0 ((+ 1) <$ filterJust eKey)
+  let bScrollPosCombined = (+) <$> bScrollPosAuto <*> bScrollPos
   return $
     (\p1 p2 -> pictures [p1, p2]) <$>
-    ((translate (-320) (120) . scale 0.2 0.2 . text . show) <$> bScrollPos) <*>
+    ((translate (-320) (120) . scale 0.2 0.2 . text . show) <$>
+     bScrollPosCombined) <*>
     ((pictures .
       map (\(sX, rX, y, desc) -> translate 0 y (transmitSRDesc sX rX desc))) <$>
-     ((\ts pos -> drop (length ts - pos) ts) <$> bTransmits <*> bScrollPos))
+     ((\ts pos -> drop (length ts - pos) ts) <$> bTransmits <*>
+      bScrollPosCombined))
 
 {-
  - SUBSECTION NETWORK PIPES
@@ -234,7 +241,7 @@ networkTransmitAccum :: Event Transmit -> Moment (Behavior [Transmit])
 networkTransmitAccum eTransmit = accumB [] ((\a -> (++) [a]) <$> eTransmit)
 
 networkOutputScroll :: Event (Maybe MouseButton) -> Moment (Behavior Int)
-networkOutputScroll eMouse = accumB 0 (maybe (+ 1) (const (+ 2)) <$> eMouse)
+networkOutputScroll eMouse = accumB 0 (maybe id (const (+ 1)) <$> eMouse)
 
 {-
  - SUBSECTION NETWORK HELPERS

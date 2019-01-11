@@ -1,3 +1,25 @@
+false
+EPureBool (EBool False)
+true
+EPureBool (EBool True)
+~false
+EPureNot (EPureBool (EBool False))
+~true
+EPureNot (EPureBool (EBool True))
+false|true
+EPureOr (EPureBool (EBool False)) (EPureBool (EBool True))
+true|true
+EPureOr (EPureBool (EBool True)) (EPureBool (EBool True))
+false^false
+EPureAnd (EPureBool (EBool False)) (EPureBool (EBool False))
+true^false
+EPureAnd (EPureBool (EBool True)) (EPureBool (EBool False))
+~true|false^true
+EPureAnd (EPureOr (EPureNot (EPureBool (EBool True))) (EPureBool (EBool False))) (EPureBool (EBool True))
+true|(~false)^true
+EPureAnd (EPureOr (EPureBool (EBool True)) (EPureNot (EPureBool (EBool False)))) (EPureBool (EBool True))
+true|false^(~true)
+EPureAnd (EPureOr (EPureBool (EBool True)) (EPureBool (EBool False))) (EPureNot (EPureBool (EBool True)))
 ~(1=null)
 EPureNot (EPurePointer (EPointerNull (EVarFirst 1)))
 1:n^2:n

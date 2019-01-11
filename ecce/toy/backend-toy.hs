@@ -8,6 +8,8 @@
 {-# LANGUAGE UndecidableInstances #-}
 -- Allows ambiguity check in instance declarations, to use sites
 {-# LANGUAGE AllowAmbiguousTypes #-}
+-- Allows datatypes without constructors
+{-# LANGUAGE EmptyDataDecls #-}
 
 {-
  - SECTION IMPORTS
@@ -52,15 +54,18 @@ interpreter = do
  -}
 type SParsec = Parsec String ()
 
+data Pure
+
 data Expr a where
   EBool :: Bool -> Expr Bool
-  ENot :: Expr Bool -> Expr Bool
-  EAnd :: Expr Bool -> Expr Bool -> Expr Bool
-  EOr :: Expr Bool -> Expr Bool -> Expr Bool
+  EPureBool :: Expr Bool -> Expr Pure
+  EPureAnd :: Expr Pure -> Expr Pure -> Expr Pure
+  EPureOr :: Expr Pure -> Expr Pure -> Expr Pure
+  EPureNot :: Expr Pure -> Expr Pure
   EInteger :: Integer -> Expr Integer
-  ENeg :: Expr Integer -> Expr Integer
-  EMul :: Expr Integer -> Expr Integer -> Expr Integer
-  EAdd :: Expr Integer -> Expr Integer -> Expr Integer
+  EIntegerNeg :: Expr Integer -> Expr Integer
+  EIntegerMul :: Expr Integer -> Expr Integer -> Expr Integer
+  EIntegerAdd :: Expr Integer -> Expr Integer -> Expr Integer
 
 -- Existentially quantify Expr
 -- Contains a well-formed Expr, but precise type of Expr is secret
@@ -118,32 +123,39 @@ extractParse p s =
     Right x -> x
 
 {-
- - SUBSECTION BOOL
+ - SUBSECTION PURE
  -}
-parseBool :: SParsec (Expr Bool)
-parseBool = buildExpressionParser opBool termBool
+parsePure = buildExpressionParser opPure termPure
 
-opBool =
-  [ [Prefix (reservedOp "~" >> return (ENot))]
-  , [ Infix (reservedOp "&" >> return (EAnd)) AssocLeft
-    , Infix (reservedOp "|" >> return (EOr)) AssocLeft
+opPure =
+  [ [Prefix (reservedOp "~" >> return EPureNot)]
+  , [ Infix (reservedOp "^" >> return EPureAnd) AssocLeft
+    , Infix (reservedOp "|" >> return EPureOr) AssocLeft
     ]
   ]
 
-termBool =
-  parens parseBool <|> (reserved "true" >> return (EBool True)) <|>
+termPure = parens parsePure <|> try parsePureBool
+
+parsePureBool = do
+  b <- parseBool
+  return $ EPureBool b
+
+{-
+ - SUBSECTION BOOL
+ -}
+parseBool =
+  (reserved "true" >> return (EBool True)) <|>
   (reserved "false" >> return (EBool False))
 
 {-
  - SUBSECTION INT
  -}
-parseInteger :: SParsec (Expr Integer)
 parseInteger = buildExpressionParser opInteger termInteger
 
 opInteger =
-  [ [Prefix (reservedOp "-" >> return (ENeg))]
-  , [Infix (reservedOp "x" >> return (EMul)) AssocLeft]
-  , [Infix (reservedOp "+" >> return (EAdd)) AssocLeft]
+  [ [Prefix (reservedOp "-" >> return EIntegerNeg)]
+  , [Infix (reservedOp "x" >> return EIntegerMul) AssocLeft]
+  , [Infix (reservedOp "+" >> return EIntegerAdd) AssocLeft]
   ]
 
 termInteger = parens parseInteger <|> liftM EInteger integer
@@ -153,5 +165,5 @@ termInteger = parens parseInteger <|> liftM EInteger integer
  -}
 parseExpr :: SParsec AnyExpr
 parseExpr = do
-  e <- try (anyExpr parseBool) <|> try (anyExpr parseInteger)
+  e <- try (anyExpr parsePure) <|> try (anyExpr parseInteger)
   return e

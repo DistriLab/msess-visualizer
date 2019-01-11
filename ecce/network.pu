@@ -2,7 +2,7 @@
 
 hide empty description
 
-title Frontend Network\n<size:15>Composed of smaller networks</size>
+title Frontend.hs: Network\n<size:15>Composed of smaller networks</size>
 
 [*] --> Gloss
 Processor --> Printer: Processed
@@ -17,7 +17,7 @@ Gloss --> InputScroll: MouseButton
 InputScroll --> OutputScroll: Maybe MouseButton
 
 Draw --> [*]: Picture
-OutputScroll --> [*]: Picture
+OutputScroll --> [*]: Int
 Printer --> [*]: stdout
 
 legend right

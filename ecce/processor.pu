@@ -2,7 +2,7 @@
 
 hide empty description
 
-title Internals of networkProcessor\n<size:15>Events and Behaviors</size>\n<size:15>Descriptions on arrows show when Event or Behavior is triggered</size>
+title Processor.hs: Internals of networkProcessor\n<size:15>Events and Behaviors</size>\n<size:15>Descriptions on arrows show when Event or Behavior is triggered</size>
 
 [*] --> eKey
 

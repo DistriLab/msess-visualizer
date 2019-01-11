@@ -187,13 +187,10 @@ networkDraw (bTransmits, bScrollPos, eKey) = do
   bScrollPosAuto <- accumB 0 ((+ 1) <$ filterJust eKey)
   let bScrollPosCombined = (+) <$> bScrollPosAuto <*> bScrollPos
   return $
-    (\p1 p2 -> pictures [p1, p2]) <$>
-    ((translate (-320) (120) . scale 0.2 0.2 . text . show) <$>
-     bScrollPosCombined) <*>
-    ((pictures .
-      map (\(sX, rX, y, desc) -> translate 0 y (transmitSRDesc sX rX desc))) <$>
-     ((\ts pos -> drop (length ts - pos) ts) <$> bTransmits <*>
-      bScrollPosCombined))
+    (pictures .
+     map (\(sX, rX, y, desc) -> translate 0 y (transmitSRDesc sX rX desc))) <$>
+    ((\ts pos -> drop (length ts - pos) ts) <$> bTransmits <*>
+     bScrollPosCombined)
 
 {-
  - SUBSECTION NETWORK PIPES

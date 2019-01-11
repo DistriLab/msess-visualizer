@@ -46,6 +46,7 @@ import Reactive.Banana
   , accumB
   , compile
   , filterE
+  , filterJust
   , liftMoment
   , mapAccum
   , unionWith
@@ -81,8 +82,7 @@ commandOutputs =
         (do (addKeyEvent, fireKey) <- newAddHandler
             network <-
               compile $
-              fromAddHandler addKeyEvent >>=
-              (\eKey -> networkDescription eKey restInputLine)
+              fromAddHandler addKeyEvent >>= networkDescription restInputLine
             actuate network
             eventLoop fireKey network))
   , ( "test"
@@ -91,8 +91,7 @@ commandOutputs =
             network <-
               compile $
               fromAddHandler addKeyEvent >>=
-              (\eKey ->
-                 networkDescription eKey ("test/reactive/" ++ restInputLine))
+              networkDescription ("test/reactive/" ++ restInputLine)
             actuate network
             eventLoop fireKey network))
   ]
@@ -133,20 +132,22 @@ data Process
   deriving (Show)
 
 -- SECTION NETWORK
-networkDescription :: Event Char -> FilePath -> MomentIO ()
-networkDescription eKey filePath =
+networkDescription :: FilePath -> Event Char -> MomentIO ()
+networkDescription filePath eKey =
   (liftIO $ extractFile filePath) >>=
-  (\xs -> liftMoment $ networkProcessor eKey (fmap head (parseContents xs))) >>=
+  (\xs ->
+     liftMoment $
+     networkProcessor (fmap head (parseContents xs)) (Just <$> eKey)) >>=
   networkPrinter -- TODO Unmanual extract first parsed content
 
 networkProcessor ::
-     Event Char
-  -> Maybe Process
+     Maybe Process
+  -> Event (Maybe Char)
   -> Moment ( Event (Maybe (Expr GlobalProtocol))
             , Behavior (Maybe Process)
-            , Event Char
+            , Event ()
             , Behavior Int)
-networkProcessor eKey p
+networkProcessor p eKey
       -- SUBSECTION USER INPUT
       -- bProcChoiceMay:
       --    looks at bProc to see if current process is EGlobalProtocolChoice
@@ -179,9 +180,9 @@ networkProcessor eKey p
           bProcIsChoice :: Behavior Bool
           bProcIsChoice = maybe False (const True) <$> bProcChoiceMay
           eChooseMay :: Event Char
-          eChooseMay = whenE bProcIsChoice eKey
+          eChooseMay = whenE bProcIsChoice (filterJust eKey)
           eChooseMayNot :: Event Char
-          eChooseMayNot = whenE (not <$> bProcIsChoice) eKey
+          eChooseMayNot = whenE (not <$> bProcIsChoice) (filterJust eKey)
           eStepper :: Event Char
           eStepper = filterE (== 's') eChooseMayNot
           eDigit :: Event Char
@@ -209,14 +210,14 @@ networkProcessor eKey p
         accumB
           0
           ((+ 1) <$ whenE ((maybe False (const True)) <$> bProc) eStepper)
-      let eDone :: Event Char
-          eDone = whenE ((maybe True (const False)) <$> bProc) eStepper
+      let eDone :: Event ()
+          eDone = whenE ((maybe True (const False)) <$> bProc) (() <$ eStepper)
       return (eTrans, bProc, eDone, bStepCount)
 
 networkPrinter ::
      ( Event (Maybe (Expr GlobalProtocol))
      , Behavior (Maybe Process)
-     , Event Char
+     , Event ()
      , Behavior Int)
   -> MomentIO ()
 networkPrinter (eTrans, bProc, eDone, bStepCount) = do
@@ -257,8 +258,8 @@ mayProcessToGlobalProtocol =
     (fix
        (\r p ->
           case p of
-            NodeS [] -> EGlobalProtocolEmp -- TODO figure out how to skip NodeS []
-            NodeC [] -> EGlobalProtocolEmp -- TODO figure out how to skip NodeC []
+            NodeS [] -> EGlobalProtocolEmp -- TODO how to skip NodeS []; maybe normalize emp;G to G
+            NodeC [] -> EGlobalProtocolEmp -- TODO how to skip NodeC []; maybe normalize emp*G to G
             NodeS (p:ps) -> r p
             NodeC (p:ps) -> r p
             Leaf g -> g))

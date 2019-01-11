@@ -2,6 +2,7 @@
  - SECTION PRAGMAS
  -}
 {-# LANGUAGE GADTs #-} -- Allows patterm match on GADT
+{-# LANGUAGE Arrows #-} -- Allows arrow notation
 
 {-
  - SECTION MODULE
@@ -11,10 +12,10 @@ module Frontend where
 {-
  - SECTION IMPORTS
  -}
-import Control.Arrow ((***))
+import Control.Arrow (Kleisli(Kleisli), (***), (>>>), returnA, runKleisli)
 import Control.Monad (join)
-import Data.IORef (newIORef, readIORef, writeIORef)
-import Data.List (nub)
+import Data.IORef (IORef, newIORef, readIORef, writeIORef)
+import Data.List (intercalate, nub)
 import Graphics.Gloss
   ( Display(InWindow)
   , Picture
@@ -30,10 +31,15 @@ import Graphics.Gloss
   )
 import Graphics.Gloss.Data.Extent (Extent, centerCoordOfExtent, makeExtent)
 import qualified Graphics.Gloss.Interface.IO.Game as Gloss (Event(EventKey))
-import Graphics.Gloss.Interface.IO.Game (Key(Char), KeyState(Down), playIO)
+import Graphics.Gloss.Interface.IO.Game
+  ( Key(Char, MouseButton)
+  , KeyState(Down)
+  , MouseButton(WheelDown, WheelUp)
+  , playIO
+  )
 import Parser
   ( AnyExpr(AnyExpr)
-  , Expr(EEvent)
+  , Expr(EEvent, EGlobalProtocolTransmission)
   , GlobalProtocol
   , Role
   , extractFile
@@ -59,7 +65,8 @@ import Reactive.Banana
   , valueBLater
   )
 import Reactive.Banana.Frameworks
-  ( actuate
+  ( MomentIO
+  , actuate
   , changes
   , fromAddHandler
   , liftIO
@@ -71,6 +78,8 @@ import Unparser (un)
 {-
  - SECTION CONFIG
  -}
+fps = 30
+
 wWidth = 320
 
 wHeight = 240
@@ -85,8 +94,21 @@ exXOffset = (-320)
 
 exYOffset = 200
 
-arrowStepCountSpace = 20
+transmitStepCountSpace = 20
 
+transmitHeadHeight = 10
+
+transmitHeadLength = 10
+
+transmitThickness = 2
+
+transmitDescYOffset = 5
+
+textScale = 0.1
+
+{-
+ - SECTION MAIN
+ -}
 main :: IO ()
 main = do
   xs <- extractFile "test/reactive/example"
@@ -96,19 +118,13 @@ main = do
   picRef <- newIORef blank
   (eventHandler, fireEvent) <- newAddHandler
   network <-
-    compile $ do
-      glossEvent <- fromAddHandler eventHandler
-      picture <-
-        liftMoment $
-        networkInput glossEvent >>= (\eKey -> networkProcessor eKey p) >>=
-        networkOutput extentsMap
-      changes picture >>= reactimate' . fmap (fmap (writeIORef picRef))
-      valueBLater picture >>= liftIO . writeIORef picRef
+    compile $
+    fromAddHandler eventHandler >>= networkDescription p picRef extentsMap
   actuate network
   playIO
     (InWindow "Frontend.hs" (wWidth, wHeight) (0, 0))
     white
-    30
+    fps
     ()
     (\() -> do
        pic <- readIORef picRef
@@ -117,43 +133,128 @@ main = do
     (\_ () -> return ())
 
 {-
+ - SECTION TYPES
+ -}
+type Transmit = (Float, Float, Float, String)
+
+{-
  - SECTION NETWORK
  -}
-networkInput :: Event Gloss.Event -> Moment (Event Char)
-networkInput glossEvent = return $ filterJust (mayKey <$> glossEvent)
+{-
+ - SUBSECTION NETWORK DESCRIPTION
+ -}
+networkDescription ::
+     Maybe Process
+  -> IORef Picture
+  -> [(String, Extent)]
+  -> Event Gloss.Event
+  -> MomentIO ()
+networkDescription p picRef extentsMap eGloss = do
+  picture <- liftMoment $ runKleisli (aPicture p extentsMap) eGloss
+  changes picture >>= reactimate' . fmap (fmap (writeIORef picRef))
+  valueBLater picture >>= liftIO . writeIORef picRef
 
+aPicture p extentsMap =
+  proc eGloss ->
+  do eCharMay <- Kleisli networkInput -< eGloss
+     bTransmits <- Kleisli (networkProcessor p) >>>
+                     Kleisli (networkTransmit extentsMap) >>>
+                       Kleisli networkTransmitAccum
+                     -< eCharMay
+     bScrollPos <- Kleisli networkInputScroll >>>
+                     Kleisli networkOutputScroll
+                     -< eGloss
+     picture <- Kleisli networkDraw -<
+                  (bTransmits, bScrollPos, eCharMay)
+     returnA -< picture
+
+{-
+ - SUBSECTION NETWORK INPUTS
+ -}
+networkInput :: Event Gloss.Event -> Moment (Event (Maybe Char))
+networkInput eGloss = return $ mayKey <$> eGloss
+
+networkInputScroll :: Event Gloss.Event -> Moment (Event (Maybe MouseButton))
+networkInputScroll eGloss = return $ mayScroll <$> eGloss
+
+{-
+ - SUBSECTION NETWORK OUTPUTS
+ -}
+networkDraw ::
+     (Behavior [Transmit], Behavior Int, Event (Maybe Char))
+  -> Moment (Behavior Picture)
+networkDraw (bTransmits, bScrollPos, eKey) = do
+  bScrollPosAuto <- accumB 0 ((+ 1) <$ filterJust eKey)
+  let bScrollPosCombined = (+) <$> bScrollPosAuto <*> bScrollPos
+  return $
+    (pictures .
+     map (\(sX, rX, y, desc) -> translate 0 y (transmitSRDesc sX rX desc))) <$>
+    ((\ts pos -> drop (length ts - pos) ts) <$> bTransmits <*>
+     bScrollPosCombined)
+
+{-
+ - SUBSECTION NETWORK PIPES
+ -}
 -- Treat sender and receiver as tuple
-networkOutput ::
+networkTransmit ::
      [(String, Extent)]
   -> ( Event (Maybe (Expr GlobalProtocol))
      , Behavior (Maybe Process)
-     , Event Char
+     , Event ()
      , Behavior Int)
-  -> Moment (Behavior Picture)
-networkOutput extentsMap (eTrans, bProc, eDone, bStepCount) = do
-  let eTransEvents = fmap ev <$> eTrans
+  -> Moment (Event Transmit)
+networkTransmit extentsMap (eTrans, bProc, eDone, bStepCount) = do
+  let eTransJust = filterJust eTrans
+      srEventDesc =
+        (\x ->
+           ( let e = ev x
+              in (head e, last e) -- TODO VERY UNSAFE
+           , transToDesc x)) <$>
+        eTransJust
       -- [sender, receiver] in that order
-      srEvent = filterJust eTransEvents
-      srRole = (mapTuple eventToRole . (\x -> (head x, last x))) <$> srEvent -- TODO VERY UNSAFE
-      srExtents =
-        mapTuple ((\s -> lookup s extentsMap) . un . AnyExpr) <$> srRole -- TODO probably lookup returns Nothing
-      srX = mapTuple centerOfExtent <$> srExtents
-      srXStep = ((\step -> \(sX, rX) -> (sX, rX, step)) <$> bStepCount) <@> srX
-  picture <-
-    accumB blank $
-    (\(sX, rX, step) ->
-       (\pic ->
-          pictures
-            [ pic
-            , translate
-                (sX + (fromIntegral exSpace) / 2)
-                (fromIntegral $ exYOffset + (-step * arrowStepCountSpace)) -- negative because time increases downwards
-                (arrow (abs $ sX - rX) 10 10 2)
-            ])) <$>
-    srXStep
-  return picture
+      srRoleDesc =
+        (\x -> ((mapTuple eventToRole . fst) x, snd x)) <$> srEventDesc
+      srExtentsDesc =
+        (\x ->
+           ( (mapTuple ((\s -> lookup s extentsMap) . un . AnyExpr) . fst) x
+           , snd x)) <$>
+        srRoleDesc -- TODO probably lookup returns Nothing
+      srXDesc =
+        (\x -> ((mapTuple centerOfExtent . fst) x, snd x)) <$> srExtentsDesc
+      srXYDesc =
+        ((\step ->
+            \((sX, rX), desc) ->
+              ( sX
+              , rX
+              , fromIntegral $ exYOffset + (-step * transmitStepCountSpace) -- negative because time increases downwards
+              , desc)) <$>
+         bStepCount) <@>
+        srXDesc
+  return srXYDesc
   where
     mapTuple = join (***)
+
+networkTransmitAccum :: Event Transmit -> Moment (Behavior [Transmit])
+networkTransmitAccum eTransmit = accumB [] ((\a -> (++) [a]) <$> eTransmit)
+
+networkOutputScroll :: Event (Maybe MouseButton) -> Moment (Behavior Int)
+networkOutputScroll eMouse =
+  accumB
+    0
+    (maybe
+       id
+       (\x ->
+          case x of
+            WheelUp -> (+ 1)
+            WheelDown -> subtract 1) <$>
+     eMouse)
+
+{-
+ - SUBSECTION NETWORK HELPERS
+ -}
+transToDesc :: Expr GlobalProtocol -> String
+transToDesc (EGlobalProtocolTransmission _ i _ c v f) =
+  intercalate " " $ map un [AnyExpr i, AnyExpr c, AnyExpr v, AnyExpr f]
 
 eventToRole :: Expr Parser.Event -> Expr Role
 eventToRole (EEvent p _) = p
@@ -173,22 +274,52 @@ mayKey e =
     Gloss.EventKey (Char c) Down _ p -> Just c
     otherwise -> Nothing
 
+mayScroll :: Gloss.Event -> Maybe MouseButton
+mayScroll e =
+  case e of
+    Gloss.EventKey (MouseButton WheelDown) Down _ p -> Just WheelDown
+    Gloss.EventKey (MouseButton WheelUp) Down _ p -> Just WheelUp
+    otherwise -> Nothing
+
 {-
  - SECTION SHAPES
  -}
--- Draws arrow pointing East at origin
--- arrowbody length, arrowhead height, arrowhead length, arrow thickness
-arrow :: Float -> Float -> Float -> Float -> Picture
-arrow bl hh hl t = pictures [arrowBody, leftHead arrowHead, rightHead arrowHead]
+-- Draws transmit pointing East at origin
+-- transmitbody length, transmithead height, transmithead length, transmit thickness
+transmit :: Float -> Float -> Float -> Float -> Picture
+transmit bl hh hl t =
+  pictures [transmitBody, leftHead transmitHead, rightHead transmitHead]
   where
     angleHead = atan ((hh / 2) / hl)
     hypHead = hl / (cos angleHead)
-    arrowBody = rectangleSolid bl t
-    arrowHead = rectangleSolid hypHead t
+    transmitBody = rectangleSolid bl t
+    transmitHead = rectangleSolid hypHead t
     leftHead = translate ((bl - hl) / 2) (hh / 4) . rotate (degrees angleHead)
     rightHead =
       translate ((bl - hl) / 2) (-hh / 4) . rotate (degrees (-angleHead))
     degrees = (*) (180 / pi)
+
+-- Draws transmit from sender to receiver with description
+-- Translate transmits so that tail is at sender and head is at receiver
+-- Description is always on the left of transmit
+-- Flips transmits if needed
+transmitSRDesc :: Float -> Float -> String -> Picture
+transmitSRDesc sX rX desc
+  | sX < rX =
+    translate (-(abs $ rX - distance / 2)) 0 $
+    pictures [transmitDesc, transmitSR]
+  | sX > rX =
+    (translate (-(abs $ sX - distance / 2)) 0) $
+    pictures [transmitDesc, rotate 180 transmitSR]
+  | otherwise = error "transmitsSR: sX and rX are too close"
+  where
+    distance = abs $ sX - rX
+    transmitSR =
+      transmit distance transmitHeadHeight transmitHeadLength transmitThickness
+    transmitDesc =
+      (translate (-distance / 2) transmitDescYOffset . drawText) desc
+
+drawText = scale textScale textScale . text
 
 {-
  - SECTION PARTIES
@@ -215,10 +346,9 @@ drawParty w h s ex = pictures $ map (translate xf yf) shapes
     wHeightf = fromIntegral wHeight
     -- Define shapes
     drawBox = rectangleWire wf hf
-    drawText = (scale 0.1 0.1 . translate (-240) (-50) . text) s
     drawLine =
       translate 0 (-hf / 2 - wHeightf) (rectangleSolid 2 (wHeightf * 2))
-    shapes = [drawBox, drawText, drawLine]
+    shapes = [drawBox, (translate (-wf / 3) (-hf / 4) . drawText) s, drawLine]
 
 -- All party extents in one line at the top
 getPartiesExtents :: [String] -> Int -> Int -> Int -> [Extent]

@@ -159,7 +159,7 @@ aPicture p extentsMap =
   do bTransmits <- Kleisli networkInput >>>
                      Kleisli (networkProcessor p) >>>
                        Kleisli (networkTransmit extentsMap) >>>
-                         Kleisli (networkTransmitAccum)
+                         Kleisli networkTransmitAccum
                      -< eGloss
      bStepCount <- Kleisli networkInputScroll >>>
                      Kleisli networkOutputScroll
@@ -219,9 +219,7 @@ networkTransmit extentsMap (eTrans, bProc, eDone, bStepCount) = do
     mapTuple = join (***)
 
 networkTransmitAccum :: Event Transmit -> Moment (Behavior [Transmit])
-networkTransmitAccum eTransmit = do
-  bTransmits <- accumB [] ((\a -> (++) [a]) <$> eTransmit)
-  return bTransmits
+networkTransmitAccum eTransmit = accumB [] ((\a -> (++) [a]) <$> eTransmit)
 
 networkDraw :: (Behavior [Transmit], Behavior Int) -> Moment (Behavior Picture)
 networkDraw (bTransmits, bScrollPos) = do

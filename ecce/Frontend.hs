@@ -2,6 +2,7 @@
  - SECTION PRAGMAS
  -}
 {-# LANGUAGE GADTs #-} -- Allows patterm match on GADT
+{-# LANGUAGE Arrows #-} -- Allows arrow notation
 
 {-
  - SECTION MODULE
@@ -11,7 +12,7 @@ module Frontend where
 {-
  - SECTION IMPORTS
  -}
-import Control.Arrow ((***))
+import Control.Arrow (Kleisli(Kleisli), (***), (>>>), returnA, runKleisli)
 import Control.Monad (join)
 import Data.IORef (IORef, newIORef, readIORef, writeIORef)
 import Data.List (intercalate, nub)
@@ -149,17 +150,22 @@ networkDescription ::
   -> Event Gloss.Event
   -> MomentIO ()
 networkDescription p picRef extentsMap eGloss = do
-  picture <-
-    liftMoment $
-    networkInput eGloss >>= networkProcessor p >>= networkTransmit extentsMap >>=
-    networkTransmitAccum >>=
-    networkDraw
+  picture <- liftMoment $ runKleisli (aPicture p extentsMap) eGloss
   changes picture >>= reactimate' . fmap (fmap (writeIORef picRef))
   valueBLater picture >>= liftIO . writeIORef picRef
-  pictureScroll <-
-    liftMoment $ networkInputScroll eGloss >>= networkOutputScroll
-  changes pictureScroll >>= reactimate' . fmap (fmap (writeIORef picRef))
-  valueBLater pictureScroll >>= liftIO . writeIORef picRef
+
+aPicture p extentsMap =
+  proc eGloss ->
+  do bTransmits <- Kleisli networkInput >>>
+                     Kleisli (networkProcessor p) >>>
+                       Kleisli (networkTransmit extentsMap) >>>
+                         Kleisli (networkTransmitAccum)
+                     -< eGloss
+     bStepCount <- Kleisli networkInputScroll >>>
+                     Kleisli networkOutputScroll
+                     -< eGloss
+     picture <- Kleisli networkDraw -< (bTransmits, bStepCount)
+     returnA -< picture
 
 {-
  - SUBSECTION NETWORK INPUT
@@ -217,19 +223,15 @@ networkTransmitAccum eTransmit = do
   arrows <- accumB [] ((\a -> (++) [a]) <$> eTransmit)
   return arrows
 
-networkDraw :: Behavior [Transmit] -> Moment (Behavior Picture)
-networkDraw bTransmits = do
-  let drawTransmits =
-        (pictures .
-         map (\(sX, rX, y, desc) -> translate 0 y (arrowSRDesc sX rX desc))) <$>
-        bTransmits
-  return drawTransmits
+networkDraw :: (Behavior [Transmit], Behavior Int) -> Moment (Behavior Picture)
+networkDraw (bTransmits, bScrollPos) = do
+  return $
+    (pictures .
+     map (\(sX, rX, y, desc) -> translate 0 y (arrowSRDesc sX rX desc))) <$>
+    ((\ts pos -> drop (length ts - pos) ts) <$> bTransmits <*> bScrollPos)
 
-networkOutputScroll :: Event (Maybe MouseButton) -> Moment (Behavior Picture)
-networkOutputScroll eMouse = do
-  bn <- accumB 0 ((+ 1) <$ filterJust eMouse)
-  let picture = (translate (-320) (120) . scale 0.2 0.2 . text . show) <$> bn
-  return picture
+networkOutputScroll :: Event (Maybe MouseButton) -> Moment (Behavior Int)
+networkOutputScroll eMouse = accumB 0 ((+ 1) <$ filterJust eMouse)
 
 {-
  - SUBSECTION NETWORK HELPERS

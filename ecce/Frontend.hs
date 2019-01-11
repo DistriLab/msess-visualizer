@@ -56,7 +56,9 @@ import Reactive.Banana
   ( Behavior
   , Event
   , Moment
+  , (<$)
   , (<$>)
+  , (<*>)
   , (<@>)
   , accumB
   , compile

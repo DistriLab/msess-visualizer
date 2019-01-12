@@ -92,9 +92,9 @@ exHeight = 20
 
 exSpace = 130
 
-exXOffset = (-320)
+exXOffset = -(div wWidth 2)
 
-exYOffset = 200
+exYOffset = (div wHeight 2) - exHeight
 
 transmitStepCountSpace = 20
 
@@ -113,7 +113,7 @@ textScale = 0.1
  -}
 main :: IO ()
 main = do
-  xs <- extractFile "test/processor/example"
+  xs <- extractFile "test/processor/names"
   let p = fmap head (parseContents xs)
       Just (Leaf g) = p -- TODO deconstruct p better
       (picBase, extentsMap) = drawParties (showParties g)
@@ -339,7 +339,7 @@ drawParties ss =
     extentsMap = mappingPartyExtent ss
 
 drawParty :: Int -> Int -> String -> Extent -> Picture
-drawParty w h s ex = pictures $ map (translate xf yf) shapes
+drawParty w h s ex = pictures $ map (translate (xf + wf / 2) yf) shapes
   where
     (x, y) = centerCoordOfExtent ex
     (xf, yf) = (fromIntegral x, fromIntegral y)

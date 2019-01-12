@@ -56,7 +56,6 @@ import Reactive.Banana
   ( Behavior
   , Event
   , Moment
-  , (<$)
   , (<$>)
   , (<*>)
   , (<@>)

@@ -182,9 +182,11 @@ networkInputScroll eGloss = return $ mayScroll <$> eGloss
 networkDraw :: (Behavior [Transmit], Behavior Int) -> Moment (Behavior Picture)
 networkDraw (bTransmits, bScrollPos) = do
   return $
-    (pictures .
-     map (\(sX, rX, y, desc) -> translate 0 y (transmitSRDesc sX rX desc))) <$>
-    ((\ts pos -> drop pos ts) <$> bTransmits <*> bScrollPos)
+    pictures .
+    map (\(sX, rX, y, desc) -> translate 0 y (transmitSRDesc sX rX desc)) <$>
+    transmitsOnScreen
+  where
+    transmitsOnScreen = (\ts pos -> drop pos ts) <$> bTransmits <*> bScrollPos
 
 {-
  - SUBSECTION NETWORK PIPES

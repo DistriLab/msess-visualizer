@@ -7,14 +7,14 @@ Each party is either:
 
 ## Overview
 - Project global protocol onto each party, obtaining the mapping from each 
-  party to their projected party protocol, `mPartyProtocol`.
+  party to their projected party protocol, `mappingPartyProtocol`.
 - Draw the state of all parties in the GUI, depending on their current protocol 
   heads.
   - If sending, draw upward triangle.
   - If receiving, draw downward triangle.
 - Write a function that looks for matches in the heads of all values in 
-  `mPartyProtocol`. There is a match between two parties if one is sending and 
-  one is receiving.
+  `mappingPartyProtocol`. There is a match between two parties if one is 
+  sending and one is receiving.
   - If there is a match, draw a transmission between the matching parties.
   - If there is no match, the protocol processing ends.
 - Cannot use neither `networkProcessor` nor `processStep` anymore. This is 

@@ -20,7 +20,7 @@ import Control.Monad.IO.Class (liftIO)
 import Data.Char (isDigit)
 import Data.Either (rights)
 import Data.Functor ((<$), (<$>))
-import Data.List (intercalate, nub)
+import Data.List (intercalate, nub, nubBy)
 import Data.Maybe (fromJust)
 import Interpreter (Output, mainHaskeline)
 import Parser
@@ -32,6 +32,7 @@ import Parser
      EGlobalProtocolTransmission)
   , Expr
   , GlobalProtocol
+  , PartyProtocol
   , Role
   , extractFile
   , parseGlobalProtocol
@@ -296,3 +297,13 @@ processStep p =
         NodeC (p:ps) -> (s', Just $ NodeC ps')
           where (s', p') = processStep (Just p)
                 ps' = maybe ps (: ps) p'
+
+{-
+ - SUBSECTION NETWORK PARTY
+ -}
+mapPartyProtocol :: GlobalProtocol -> [(String, Expr PartyProtocol)]
+mapPartyProtocol g = nubBy (\x y -> fst x == fst y) mappingDuplicates
+  where
+    roles = partiesInGlobalProtocol g
+    mappingDuplicates =
+      zip (map (un . AnyExpr) roles) (map (projectGlobalToParty g) roles)

@@ -1,0 +1,62 @@
+===================================
+===================================
+For DRAWING the sequenced diagrams
+===================================
+
+
+/*****************************
+  GLOBAL VIEW - user input
+ *****************************/
+G =  A --> B: c <v.\delta> | A --> B: c | A --> B
+   | G * G
+   | G ; G
+   | G \/ G
+
+/*****************************
+  GLOBAL VIEW - refined with unique id
+ *****************************/
+G =  A --i--> B: c <v.\delta> | A --i--> B: c | A --i--> B
+   | G * G
+   | G ; G
+   | G \/ G
+
+/*****************************
+  LOCAL VIEW - auto generated
+ *****************************/
+Pr = --i-->,c<v.\delta> | --i-->,c | --i-->
+   | <--i--,c<v.\delta> | <--i--,c | <--i--
+   | B(--i-->,c<v.\delta>) | B(--i-->,c) | B(--i-->)  (blocked)
+   | B(<--i--,c<v.\delta>) | B(<--i--,c) | B(<--i--)  (blocked)
+   | L(--i-->,c<v.\delta>) | L(--i-->,c) | L(--i-->)  (lazy)
+   | L(<--i--,c<v.\delta>) | L(<--i--,c) | L(<--i--)  (lazy)
+   | Pr * Pr
+   | Pr ; Pr
+   | Pr \/ Pr
+
+
+===================================
+===================================
+For SIMULATING the sequenced diagrams
+===================================
+
+/*****************************
+  REFINED GLOBAL VIEW - internal
+   -- auto derived from G --
+ *****************************/
+Gs =  A --i--> B: c <v.\delta> | A --i--> B: c | A --i--> B
+   | +(\Psi) | -(\Psi)
+   | Gs * Gs
+   | Gs ; Gs
+   | Gs \/ Gs
+
+
+/*****************************
+  REFINED PROJECTION - internal
+   -- auto derived from Gs --
+ *****************************/
+Ps = --i-->,c<v.\delta> | --i-->,c | --i-->
+   | <--i--,c<v.\delta> | <--i--,c | <--i--
+   | +(\Psi) | -(\Psi)
+   | Ps * Ps
+   | Ps ; Ps
+   | Ps \/ Ps

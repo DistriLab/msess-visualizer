@@ -117,3 +117,14 @@ G =   A->B:c<\delta>
 
 - projection: per party, per channel, per endpoint (?)
 - any analysis we can run over the formal protocol (?)
+
+(2) DSL
+-----------------
+
+PP :=
+(send)   P->,c[,\delta1]
+(recv)   P<-,c[,\delta1]
+(seq)    PP ; PP
+(choice) PP or PP
+(par)    PP * PP
+(inact)  emp

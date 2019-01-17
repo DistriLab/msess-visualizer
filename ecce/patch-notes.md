@@ -57,8 +57,8 @@ section.
     to happen at the same time. The type here is `[(Float, Float, Float, 
     String)]`.
   - The states of some parties, either `sending` or `receiving`, paired with 
-    their x-coordinates. The type here is [(Int, PartyState)].
-  So, the type of `Transmit` is `([(Float, Float, Float, String)], [(Int, 
+    their x-coordinates. The type here is [(Float, PartyState)].
+  So, the type of `Transmit` is `([(Float, Float, Float, String)], [(Float, 
   PartyState)])`.
 - `networkTransmitAccum` has an input `transmit`, which is a `Transmit` from 
   `networkTransmit`, and keeps a list of previous party states `transmits`, 
@@ -66,8 +66,8 @@ section.
   parties, whereas `transmits` is defined for all parties. 
   `networkTransmitAccum` generates the next party states by the following 
   algorithm:
-  - If the `Int` in `transmit` matches any of the existing `Int`s in 
-    `transmits`, then update the `PartyState` of that `Int` in `transmits`.
+  - If the `Float` in `transmit` matches any of the existing `Float`s in 
+    `transmits`, then update the `PartyState` of that `Float` in `transmits`.
   - Otherwise, take the `PartyState` from the last element in `transmits`.
   - Move all "transmit arrows" from `transmit` into `transmits`.
   `networkTransmitAccum` outputs `transmits`.

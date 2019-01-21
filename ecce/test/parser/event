@@ -1,2 +1,2 @@
 s(1)
-EEvent (ERole "s") (ELabel 1)
+EEvent (ERole "s") (Just (ELabel 1))

@@ -23,7 +23,8 @@ import System.Console.Haskeline
   , outputStrLn
   , runInputT
   )
-import Text.Parsec ((<|>), anyChar, many, space, string, try)
+import Text.Megaparsec ((<|>), many, try)
+import Text.Megaparsec.Char (alphaNumChar, space, string)
 
 -- Every output function must have the same inputs
 -- So that the interpret function can be generalized
@@ -93,4 +94,4 @@ parseCommand commands = foldl (\p p' -> p <|> try p') (try h) t
 
 parseRestInputLine :: [String] -> SParsec String
 parseRestInputLine commands =
-  parseCommand commands >> many space >> many anyChar
+  parseCommand commands >> many space >> many alphaNumChar

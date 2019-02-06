@@ -15,19 +15,17 @@ module Parser where
  - SECTION IMPORTS
  -}
 import Base (SParsec, extractParse)
+import Control.Applicative (empty)
 import Control.Exception (SomeException)
 import qualified Control.Exception (try)
-import Control.Monad (liftM)
+import Control.Monad (liftM, void)
+import Control.Monad.Combinators (sepBy, sepBy1)
+import Control.Monad.Combinators.Expr (Operator(InfixL, Prefix), makeExprParser)
 import Interpreter (Output, mainHaskeline)
 import System.IO (FilePath, readFile)
-import Text.Parsec ((<|>), alphaNum, between, lower, sepBy, sepBy1, try)
-import Text.ParserCombinators.Parsec.Expr
-  ( Assoc(AssocLeft)
-  , Operator(Infix, Prefix)
-  , buildExpressionParser
-  )
-import Text.ParserCombinators.Parsec.Language (emptyDef)
-import qualified Text.ParserCombinators.Parsec.Token as Token
+import Text.Megaparsec ((<|>), between, many, notFollowedBy, try)
+import Text.Megaparsec.Char (alphaNumChar, letterChar, space1, string)
+import qualified Text.Megaparsec.Char.Lexer as L
 
 {-
  - SECTION USER INTERFACE
@@ -327,63 +325,80 @@ anyExpr e = fmap AnyExpr e
 {-
  - SECTION LEXER
  -}
-languageDef =
-  emptyDef
-    { Token.commentStart = "{-"
-    , Token.commentEnd = "-}"
-    , Token.identStart = lower
-    , Token.identLetter = alphaNum
-    , Token.reservedNames = ["true", "false", "emp", "null"]
-    , Token.reservedOpNames =
-        [ "+"
-        , "-"
-        , "x"
-        , "~"
-        , "^"
-        , "|"
-        , "~"
-        , "*"
-        , "="
-        , "<="
-        , "/="
-        , "="
-        , "/="
-        , ":"
-        , ";"
-        , "."
-        , ","
-        , "E"
-        , "A"
-        , "<CB"
-        , "<HB"
-        , "==>"
-        , "Guard"
-        , "Assumption"
-        , "!"
-        , "?"
-        , "--"
-        , "->"
-        , "Inv"
-        ]
-    }
+sc :: SParsec ()
+sc = L.space space1 lineCmnt blockCmnt
+  where
+    lineCmnt = empty
+    blockCmnt = L.skipBlockComment "{-" "-}"
 
-lexer = Token.makeTokenParser languageDef
+-- Whitespace consumed after every lexeme, but not before
+lexeme :: SParsec a -> SParsec a
+lexeme = L.lexeme sc
 
-identifier = Token.identifier lexer
+-- Parse string and whitespace after
+symbol :: String -> SParsec String
+symbol = L.symbol sc
 
-reserved = Token.reserved lexer
+parens :: SParsec a -> SParsec a
+parens = between (symbol "(") (symbol ")")
 
-reservedOp = Token.reservedOp lexer
+angles :: SParsec a -> SParsec a
+angles = between (symbol "<") (symbol ">")
 
-parens = Token.parens lexer
+integer :: SParsec Integer
+integer = lexeme L.decimal
 
-angles = Token.angles lexer
+semi :: SParsec String
+semi = symbol ";"
 
-integer = Token.integer lexer
+{-
+ - Parsers for reserved words should check that the parsed reserved word is not 
+ - a prefix of an identifier.
+ - Parsers of identifiers should check that parsed identifier is not a reserved 
+ - word.
+ -}
+rword :: String -> SParsec ()
+rword w = (lexeme . try) (string w *> notFollowedBy alphaNumChar)
 
-semi = Token.semi lexer
+{-
+  [ "+"
+  , "-"
+  , "x"
+  , "~"
+  , "^"
+  , "|"
+  , "~"
+  , "*"
+  , "="
+  , "<="
+  , "/="
+  , "="
+  , "/="
+  , ":"
+  , ";"
+  , "."
+  , ","
+  , "<CB"
+  , "<HB"
+  , "==>"
+  , "!"
+  , "?"
+  , "--"
+  , "->"
+  , "E"
+  , "A"
+-}
+rws :: [String] -- list of reserved words
+rws = ["Guard", "Assumption", "Inv", "true", "false", "emp", "null"]
 
-whiteSpace = Token.whiteSpace lexer
+identifier :: SParsec String
+identifier = (lexeme . try) (p >>= check)
+  where
+    p = (:) <$> letterChar <*> many alphaNumChar
+    check x =
+      if x `elem` rws
+        then fail $ "keyword " ++ show x ++ " cannot be an identifier"
+        else return x
 
 {-
  - SECTION PARSERS
@@ -414,10 +429,10 @@ parseLabel = liftM ELabel integer
  -}
 parseSymbolicPredicate = do
   pr <- parsePredicate
-  es <- parens (parseExpr `sepBy` (reservedOp ","))
-  reservedOp "="
+  es <- parens (parseExpr `sepBy` (symbol ","))
+  void (symbol "=")
   fd <- parseFormulaDisjunct
-  reservedOp "Inv"
+  rword "Inv"
   pu <- parsePure
   return $ ESymbolicPredicate pr es fd pu
 
@@ -427,63 +442,61 @@ parseSymbolicPredicate = do
 -- Disjunct must have at least 2 formulas
 parseFormulaDisjunct = do
   f <- parseFormula
-  reservedOp "|"
-  fs <- parseFormula `sepBy1` (reservedOp "|")
+  void (symbol "|")
+  fs <- parseFormula `sepBy1` (symbol "|")
   return $ EFormulaDisjunct (f : fs)
 
 {-
  - SUBSECTION Δ
  -}
-parseFormula = buildExpressionParser opFormula termFormula
+parseFormula = makeExprParser opFormula termFormula
 
-opFormula = [[Infix (reservedOp "*" >> return EFormulaSeparate) AssocLeft]]
+opFormula = [[InfixL (EFormulaSeparate <$ symbol "*")]]
 
 termFormula = parens parseFormula <|> try parseFormulaExists
 
 parseFormulaExists = do
-  reservedOp "E"
-  vs <- parseVarFirst `sepBy` (reservedOp ",")
-  reservedOp "."
+  rword "E"
+  vs <- parseVarFirst `sepBy` (symbol ",")
+  void (symbol ".")
   h <- parseHeap
-  reservedOp "^"
+  void (symbol "^")
   p <- parsePure
   return $ EFormulaExists vs h p
 
 {-
  - SUBSECTION κ
  -}
-parseHeap = buildExpressionParser opHeap termHeap
+parseHeap = makeExprParser opHeap termHeap
 
-opHeap = [[Infix (reservedOp "*" >> return EHeapSeparate) AssocLeft]]
+opHeap = [[InfixL (EHeapSeparate <$ symbol "*")]]
 
 termHeap =
   parens parseHeap <|> try parseHeapEmp <|> try parseHeapMap <|>
   try parseHeapPredicate
 
-parseHeapEmp = reserved "emp" >> return EHeapEmp
+parseHeapEmp = EHeapEmp <$ rword "emp"
 
 parseHeapMap = do
   v1 <- parseVarFirst
-  reservedOp "->"
+  void (symbol "->")
   d <- parseDataStructure
-  vs <- angles $ parseVarFirst `sepBy` (reservedOp ",")
+  vs <- angles $ parseVarFirst `sepBy` (symbol ",")
   return $ EHeapMap v1 d vs
 
 parseHeapPredicate = do
   p <- parsePredicate
-  es <- parens $ parseExpr `sepBy` (reservedOp ",")
+  es <- parens $ parseExpr `sepBy` (symbol ",")
   return $ EHeapPredicate p es
 
 {-
  - SUBSECTION π
  -}
-parsePure = buildExpressionParser opPure termPure
+parsePure = makeExprParser opPure termPure
 
 opPure =
-  [ [Prefix (reservedOp "~" >> return EPureNot)]
-  , [ Infix (reservedOp "^" >> return EPureAnd) AssocLeft
-    , Infix (reservedOp "|" >> return EPureOr) AssocLeft
-    ]
+  [ [Prefix (EPureNot <$ symbol "~")]
+  , [InfixL (EPureAnd <$ symbol "^"), InfixL (EPureOr <$ symbol "|")]
   ]
 
 termPure =
@@ -495,7 +508,7 @@ termPure =
 
 parsePureVarType = do
   v <- parseVarFirst
-  reservedOp ":"
+  void (symbol ":")
   t <- parseVarType
   return $ EPureVarType v t
 
@@ -508,16 +521,16 @@ parsePureBoolInteger = do
   return $ EPureBoolInteger bi
 
 parsePureExists = do
-  reservedOp "E"
+  rword "E"
   v <- parseVarFirst
-  reservedOp "."
+  void (symbol ".")
   p <- parsePure
   return $ EPureExists v p
 
 parsePureForall = do
-  reservedOp "A"
+  rword "A"
   v <- parseVarFirst
-  reservedOp "."
+  void (symbol ".")
   p <- parsePure
   return $ EPureForall v p
 
@@ -534,38 +547,38 @@ parsePointer =
 
 parsePointerEq = do
   v1 <- parseVarFirst
-  reservedOp "="
+  void (symbol "=")
   v2 <- parseVarFirst
   return $ EPointerEq v1 v2
 
 parsePointerNull = do
   v <- parseVarFirst
-  reservedOp "="
-  reserved "null"
+  void (symbol "=")
+  rword "null"
   return $ EPointerNull v
 
 parsePointerNEq = do
   v1 <- parseVarFirst
-  reservedOp "/="
+  void (symbol "/=")
   v2 <- parseVarFirst
   return $ EPointerNEq v1 v2
 
 parsePointerNNull = do
   v <- parseVarFirst
-  reservedOp "/="
-  reserved "null"
+  void (symbol "/=")
+  rword "null"
   return $ EPointerNNull v
 
 {-
  - SUBSECTION b
  -}
-parseBool = buildExpressionParser opBool termBool
+parseBool = makeExprParser opBool termBool
 
-opBool = [[Infix (reservedOp "=" >> return EBoolEq) AssocLeft]]
+opBool = [[InfixL (EBoolEq <$ symbol "=")]]
 
 termBool =
-  parens parseBool <|> (reserved "true" >> return (EBool True)) <|>
-  (reserved "false" >> return (EBool False))
+  parens parseBool <|> (EBool True <$ rword "true") <|>
+  (EBool False <$ rword "false")
 
 {-
  - SUBSECTION a
@@ -574,25 +587,25 @@ parseBoolInteger = try parseBoolIntegerEq <|> try parseBoolIntegerLeq
 
 parseBoolIntegerEq = do
   s1 <- parseInteger
-  reservedOp "="
+  void (symbol "=")
   s2 <- parseInteger
   return $ EBoolIntegerEq s1 s2
 
 parseBoolIntegerLeq = do
   s1 <- parseInteger
-  reservedOp "<="
+  void (symbol "<=")
   s2 <- parseInteger
   return $ EBoolIntegerLeq s1 s2
 
 {-
  - SUBSECTION s
  -}
-parseInteger = buildExpressionParser opInteger termInteger
+parseInteger = makeExprParser opInteger termInteger
 
 opInteger =
-  [ [Prefix (reservedOp "-" >> return EIntegerNeg)]
-  , [Infix (reservedOp "x" >> return EIntegerMul) AssocLeft]
-  , [Infix (reservedOp "+" >> return EIntegerAdd) AssocLeft]
+  [ [Prefix (EIntegerNeg <$ symbol "-")]
+  , [InfixL (EIntegerMul <$ rword "x")]
+  , [InfixL (EIntegerAdd <$ symbol "+")]
   ]
 
 termInteger =
@@ -606,12 +619,12 @@ parseIntegerVarFirst = do
 {-
  - SUBSECTION G
  -}
-parseGlobalProtocol = buildExpressionParser opGlobalProtocol termGlobalProtocol
+parseGlobalProtocol = makeExprParser opGlobalProtocol termGlobalProtocol
 
 opGlobalProtocol =
-  [ [ Infix (reservedOp "*" >> return EGlobalProtocolConcurrency) AssocLeft
-    , Infix (reservedOp "|" >> return EGlobalProtocolChoice) AssocLeft
-    , Infix (reservedOp ";" >> return EGlobalProtocolSequencing) AssocLeft
+  [ [ InfixL (EGlobalProtocolConcurrency <$ symbol "*")
+    , InfixL (EGlobalProtocolChoice <$ symbol "|")
+    , InfixL (EGlobalProtocolSequencing <$ symbol ";")
     ]
   ]
 
@@ -623,29 +636,29 @@ termGlobalProtocol =
 
 parseGlobalProtocolTransmission = do
   s <- parseRole
-  i <- between (reservedOp "--") (reservedOp "->") (parens parseLabel)
+  i <- between (symbol "--") (symbol "->") (parens parseLabel)
   r <- parseRole
-  reservedOp ":"
+  void (symbol ":")
   c <- parseChannel
   (v, f) <-
     angles
       (do v <- parseVarFirst
-          reservedOp "."
+          void (symbol ".")
           f <- parseFormula
           return (v, f))
   return $ EGlobalProtocolTransmission s i r c v f
 
 parseGlobalProtocolAssumption = do
-  reservedOp "Assumption"
+  rword "Assumption"
   a <- parens parseAssertion
   return $ EGlobalProtocolAssumption a
 
 parseGlobalProtocolGuard = do
-  reservedOp "Guard"
+  rword "Guard"
   a <- parens parseAssertion
   return $ EGlobalProtocolGuard a
 
-parseGlobalProtocolEmp = reserved "emp" >> return EGlobalProtocolEmp
+parseGlobalProtocolEmp = EGlobalProtocolEmp <$ rword "emp"
 
 {- Figure 4.3 -}
 {-
@@ -663,22 +676,22 @@ parseConstraint = try parseConstraintCommunicates <|> try parseConstraintHappens
 
 parseConstraintCommunicates = do
   e1 <- parseEvent
-  reservedOp "<CB"
+  void (symbol "<CB")
   e2 <- parseEvent
   return $ EConstraintCommunicates e1 e2
 
 parseConstraintHappens = do
   e1 <- parseEvent
-  reservedOp "<HB"
+  void (symbol "<HB")
   e2 <- parseEvent
   return $ EConstraintHappens e1 e2
 
 {-
  - SUBSECTION Ψ
  -}
-parseAssertion = buildExpressionParser opAssertion termAssertion
+parseAssertion = makeExprParser opAssertion termAssertion
 
-opAssertion = [[Infix (reservedOp "^" >> return EAssertionAnd) AssocLeft]]
+opAssertion = [[InfixL (EAssertionAnd <$ symbol "^")]]
 
 termAssertion =
   parens parseAssertion <|> try parseAssertionImplies <|>
@@ -691,7 +704,7 @@ parseAssertionEvent = do
   return $ EAssertionEvent e
 
 parseAssertionNEvent = do
-  reservedOp "~"
+  void (symbol "~")
   e <- parens parseEvent
   return $ EAssertionNEvent e
 
@@ -701,7 +714,7 @@ parseAssertionConstraint = do
 
 parseAssertionImplies = do
   e <- parseEvent
-  reservedOp "==>"
+  void (symbol "==>")
   a <- parseAssertion
   return $ EAssertionImplies e a
 
@@ -709,12 +722,12 @@ parseAssertionImplies = do
 {-
  - SUBSECTION γ
  -}
-parsePartyProtocol = buildExpressionParser opPartyProtocol termPartyProtocol
+parsePartyProtocol = makeExprParser opPartyProtocol termPartyProtocol
 
 opPartyProtocol =
-  [ [ Infix (reservedOp "*" >> return EPartyProtocolConcurrency) AssocLeft
-    , Infix (reservedOp "|" >> return EPartyProtocolChoice) AssocLeft
-    , Infix (reservedOp ";" >> return EPartyProtocolSequencing) AssocLeft
+  [ [ InfixL (EPartyProtocolConcurrency <$ symbol "*")
+    , InfixL (EPartyProtocolChoice <$ symbol "|")
+    , InfixL (EPartyProtocolSequencing <$ symbol ";")
     ]
   ]
 
@@ -728,45 +741,44 @@ termPartyProtocol =
 parsePartyProtocolSend = do
   c <- parseChannel
   i <- parens parseLabel
-  reservedOp "!"
-  reservedOp ":"
+  void (symbol "!")
+  void (symbol ":")
   v <- parseVarFirst
-  reservedOp "."
+  void (symbol ".")
   f <- parseFormula
   return $ EPartyProtocolSend c i v f
 
 parsePartyProtocolReceive = do
   c <- parseChannel
   i <- parens parseLabel
-  reservedOp "?"
-  reservedOp ":"
+  void (symbol "?")
+  void (symbol ":")
   v <- parseVarFirst
-  reservedOp "."
+  void (symbol ".")
   f <- parseFormula
   return $ EPartyProtocolReceive c i v f
 
 parsePartyProtocolGuard = do
-  reservedOp "Guard"
+  rword "Guard"
   a <- parens parseAssertion
   return $ EPartyProtocolGuard a
 
 parsePartyProtocolAssumption = do
-  reservedOp "Assumption"
+  rword "Assumption"
   a <- parens parseAssertion
   return $ EPartyProtocolAssumption a
 
-parsePartyProtocolEmp = reserved "emp" >> return EPartyProtocolEmp
+parsePartyProtocolEmp = EPartyProtocolEmp <$ rword "emp"
 
 {-
  - SUBSECTION L
  -}
-parseEndpointProtocol =
-  buildExpressionParser opEndpointProtocol termEndpointProtocol
+parseEndpointProtocol = makeExprParser opEndpointProtocol termEndpointProtocol
 
 opEndpointProtocol =
-  [ [ Infix (reservedOp "*" >> return EEndpointProtocolConcurrency) AssocLeft
-    , Infix (reservedOp "|" >> return EEndpointProtocolChoice) AssocLeft
-    , Infix (reservedOp ";" >> return EEndpointProtocolSequencing) AssocLeft
+  [ [ InfixL (EEndpointProtocolConcurrency <$ symbol "*")
+    , InfixL (EEndpointProtocolChoice <$ symbol "|")
+    , InfixL (EEndpointProtocolSequencing <$ symbol ";")
     ]
   ]
 
@@ -780,44 +792,43 @@ termEndpointProtocol =
 parseEndpointProtocolSend = do
   c <- parseChannel
   i <- parens parseLabel
-  reservedOp "!"
-  reservedOp ":"
+  void (symbol "!")
+  void (symbol ":")
   v <- parseVarFirst
-  reservedOp "."
+  void (symbol ".")
   f <- parseFormula
   return $ EEndpointProtocolSend c i v f
 
 parseEndpointProtocolReceive = do
   c <- parseChannel
   i <- parens parseLabel
-  reservedOp "?"
-  reservedOp ":"
+  void (symbol "?")
+  void (symbol ":")
   v <- parseVarFirst
-  reservedOp "."
+  void (symbol ".")
   f <- parseFormula
   return $ EEndpointProtocolReceive c i v f
 
 parseEndpointProtocolGuard = do
-  reservedOp "Guard"
+  rword "Guard"
   a <- parens parseAssertion
   return $ EEndpointProtocolGuard a
 
 parseEndpointProtocolAssumption = do
-  reservedOp "Assumption"
+  rword "Assumption"
   a <- parens parseAssertion
   return $ EEndpointProtocolAssumption a
 
-parseEndpointProtocolEmp = reserved "emp" >> return EEndpointProtocolEmp
+parseEndpointProtocolEmp = EEndpointProtocolEmp <$ rword "emp"
 
 {-
  - SUBSECTION Z
  -}
-parseChannelProtocol =
-  buildExpressionParser opChannelProtocol termChannelProtocol
+parseChannelProtocol = makeExprParser opChannelProtocol termChannelProtocol
 
 opChannelProtocol =
-  [ [ Infix (reservedOp "|" >> return EChannelProtocolChoice) AssocLeft
-    , Infix (reservedOp ";" >> return EChannelProtocolSequencing) AssocLeft
+  [ [ InfixL (EChannelProtocolChoice <$ symbol "|")
+    , InfixL (EChannelProtocolSequencing <$ symbol ";")
     ]
   ]
 
@@ -829,25 +840,25 @@ termChannelProtocol =
 
 parseChannelProtocolTransmission = do
   s <- parseRole
-  i <- between (reservedOp "--") (reservedOp "->") (parens parseLabel)
+  i <- between (symbol "--") (symbol "->") (parens parseLabel)
   r <- parseRole
-  reservedOp ":"
+  void (symbol ":")
   v <- parseVarFirst
-  reservedOp "."
+  void (symbol ".")
   f <- parseFormula
   return $ EChannelProtocolTransmission s i r v f
 
 parseChannelProtocolGuard = do
-  reservedOp "Guard"
+  rword "Guard"
   a <- parens parseAssertion
   return $ EChannelProtocolGuard a
 
 parseChannelProtocolAssumption = do
-  reservedOp "Assumption"
+  rword "Assumption"
   a <- parens parseAssertion
   return $ EChannelProtocolAssumption a
 
-parseChannelProtocolEmp = reserved "emp" >> return EChannelProtocolEmp
+parseChannelProtocolEmp = EChannelProtocolEmp <$ rword "emp"
 
 {-
  - SUBSECTION EXPR

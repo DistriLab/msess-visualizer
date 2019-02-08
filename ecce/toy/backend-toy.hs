@@ -10,52 +10,17 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 -- Allows datatypes without constructors
 {-# LANGUAGE EmptyDataDecls #-}
--- Pragmas of invertible-parser
-{-# LANGUAGE TemplateHaskell, NoMonomorphismRestriction,
-  RelaxedPolyRec #-}
 
 {-
  - SECTION IMPORTS
  -}
-import Control.Category ((.))
-import Control.Isomorphism.Partial ((<$>), cons, inverse, right, subset)
-import Control.Isomorphism.Partial.TH (defineIsomorphisms)
-import Control.Isomorphism.Partial.Unsafe (Iso(..))
 import Control.Monad
-import Data.Char (isDigit, isLetter)
-import Data.List (head, intercalate)
-import Prelude
-  ( Bool
-  , Char
-  , Eq(..)
-  , IO
-  , Integer
-  , Maybe(..)
-  , Show(..)
-  , String
-  , notElem
-  , reads
-  )
+import Data.List (intercalate)
 import System.IO (IOMode(ReadMode), hClose, hGetContents, openFile)
 import Text.Parsec
+import Text.ParserCombinators.Parsec.Expr
+import Text.ParserCombinators.Parsec.Language
 import qualified Text.ParserCombinators.Parsec.Token as Token
-import Text.Syntax
-  ( Syntax
-  , (*>)
-  , (<*)
-  , (<*>)
-  , (<+>)
-  , (<|>)
-  , between
-  , chainl1
-  , many
-  , optSpace
-  , skipSpace
-  , text
-  , token
-  )
-import Text.Syntax.Parser.Naive (parse)
-import Text.Syntax.Printer.Naive (print)
 
 {-
  - SECTION USER INTERFACE
@@ -102,42 +67,51 @@ data Expr a where
   EIntegerMul :: Expr Integer -> Expr Integer -> Expr Integer
   EIntegerAdd :: Expr Integer -> Expr Integer -> Expr Integer
 
+-- Existentially quantify Expr
+-- Contains a well-formed Expr, but precise type of Expr is secret
+data AnyExpr where
+  AnyExpr :: Expr a -> AnyExpr
+
 deriving instance Show (Expr a)
 
-$(defineIsomorphisms ''Expr)
+instance Show (AnyExpr) where
+  show (AnyExpr a) = show a
+
+anyExpr :: SParsec (Expr a) -> SParsec AnyExpr
+anyExpr e = fmap AnyExpr e
 
 {-
  - SECTION LEXER
  -}
-keywords = ["true", "false", "~", "^", "v"]
+languageDef =
+  emptyDef
+    { Token.commentStart = "/*"
+    , Token.commentEnd = "*/"
+    , Token.commentLine = "//"
+    , Token.identStart = letter
+    , Token.identLetter = alphaNum
+    , Token.reservedNames = ["true", "false", "~", "^", "v"]
+    , Token.reservedOpNames = ["+", "-", "x", "^", "v", "~"]
+    }
 
-keywordOps = ["+", "-", "x", "^", "v", "~"]
+lexer = Token.makeTokenParser languageDef
 
-letter, digit :: Syntax delta => delta Char
-letter = subset isLetter <$> token
+identifier = Token.identifier lexer -- parses an identifier
 
-digit = subset isDigit <$> token
+reserved = Token.reserved lexer -- parses a reserved name
 
-identifier =
-  subset (`notElem` keywords) . cons <$> letter <*> many (letter <|> digit)
+reservedOp = Token.reservedOp lexer -- parses an operator
 
-keyword :: Syntax delta => String -> delta ()
-keyword s = inverse right <$> (identifier <+> text s)
+parens = Token.parens lexer -- parses surrounding parenthesis:
+                                    --   parens p
+                                    -- takes care of the parenthesis and
+                                    -- uses p to parse what's inside them
 
-integer :: Syntax delta => delta Integer
-integer = Iso read' show' <$> many digit
-  where
-    read' s =
-      case [x | (x, "") <- reads s] of
-        [] -> Nothing
-        (x:_) -> Just x
-    show' x = Just (show x)
+integer = Token.integer lexer -- parses an integer
 
-parens = between (text "(") (text ")")
+semi = Token.semi lexer -- parses a semicolon
 
-ops = mulOp <$> text "*" <|> addOp <$> text "+"
-
-spacedOps = between optSpace optSpace ops
+whiteSpace = Token.whiteSpace lexer -- parses whitespace
 
 {-
  - SECTION PARSERS
@@ -149,39 +123,47 @@ extractParse p s =
     Right x -> x
 
 {-
+ - SUBSECTION PURE
+ -}
+parsePure = buildExpressionParser opPure termPure
+
+opPure =
+  [ [Prefix (reservedOp "~" >> return EPureNot)]
+  , [ Infix (reservedOp "^" >> return EPureAnd) AssocLeft
+    , Infix (reservedOp "|" >> return EPureOr) AssocLeft
+    ]
+  ]
+
+termPure = parens parsePure <|> try parsePureBool
+
+parsePureBool = do
+  b <- parseBool
+  return $ EPureBool b
+
+{-
+ - SUBSECTION BOOL
+ -}
+parseBool =
+  (reserved "true" >> return (EBool True)) <|>
+  (reserved "false" >> return (EBool False))
+
+{-
+ - SUBSECTION INT
+ -}
+parseInteger = buildExpressionParser opInteger termInteger
+
+opInteger =
+  [ [Prefix (reservedOp "-" >> return EIntegerNeg)]
+  , [Infix (reservedOp "x" >> return EIntegerMul) AssocLeft]
+  , [Infix (reservedOp "+" >> return EIntegerAdd) AssocLeft]
+  ]
+
+termInteger = parens parseInteger <|> liftM EInteger integer
+
+{-
  - SUBSECTION EXPR
  -}
 parseExpr :: SParsec AnyExpr
 parseExpr = do
   e <- try (anyExpr parsePure) <|> try (anyExpr parseInteger)
   return e
-
--- TODO priority should actually be defined only on Operators, not all Exprs.
-priority :: Expr -> Integer
-priority EIntegerNeg = 1
-priority EIntegerAdd = 2
-priority EIntegerMul = 3
-
-expression =
-  let t = keyword "true"
-   in exp 2
-  where
-    exp 0 =
-      literal <$> integer <|> variable <$> identifier <|> EBool <$> t <|>
-      EBool <$> f <|>
-      parens (skipSpace *> expression <* skipSpace)
-    exp 1 = chainl1 (exp 0) spacedOps (binOpPrio 1)
-    exp 2 = chainl1 (exp 1) spacedOps (binOpPrio 2)
-                        {- TODO reference
-		ifzero =
-		  keyword "ifzero" *> optSpace *> parens (expression) <*> optSpace *>
-		  parens (expression) <*>
-		  optSpace *>
-		  keyword "else" *>
-		  optSpace *>
-		  parens (expression)
-		-}
-    binOpPrio n = binOp . subset (\(x, (op, y)) -> priority op == n)
-                -- f = keyword "false"
-
-main = print expression (head (parse expression "false")) -- |true"))

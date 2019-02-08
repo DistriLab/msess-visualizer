@@ -28,5 +28,6 @@ executable ecce
                      , gloss
                      , parsec
                      , transformers
+                     , invertible-syntax
   if impl(ghc >=7.8.1)
       build-depends: gloss-algorithms

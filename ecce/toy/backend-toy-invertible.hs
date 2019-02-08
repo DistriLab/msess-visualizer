@@ -3,10 +3,10 @@
 
 module Evaluation where
 
-import Control.Category
-import Control.Isomorphism.Partial
-import Control.Isomorphism.Partial.TH
-import Control.Isomorphism.Partial.Unsafe
+import Control.Category ((.))
+import Control.Isomorphism.Partial ((<$>), cons, inverse, right, subset)
+import Control.Isomorphism.Partial.TH (defineIsomorphisms)
+import Control.Isomorphism.Partial.Unsafe (Iso(..))
 import Data.Char (isDigit, isLetter)
 import Data.List (head)
 import Prelude
@@ -20,8 +20,22 @@ import Prelude
   , reads
   )
 import Text.Syntax
-import Text.Syntax.Parser.Naive
-import Text.Syntax.Printer.Naive
+  ( Syntax
+  , (*>)
+  , (<*)
+  , (<*>)
+  , (<+>)
+  , (<|>)
+  , between
+  , chainl1
+  , many
+  , optSpace
+  , skipSpace
+  , text
+  , token
+  )
+import Text.Syntax.Parser.Naive (parse)
+import Text.Syntax.Printer.Naive (print)
 
 data Expression
   = Variable String

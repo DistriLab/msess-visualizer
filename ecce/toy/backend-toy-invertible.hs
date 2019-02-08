@@ -43,12 +43,6 @@ $(defineIsomorphisms ''Expression)
 
 $(defineIsomorphisms ''Operator)
 
-ignore :: alpha -> Iso alpha ()
-ignore x = Iso f g
-  where
-    f _ = Just ()
-    g () = Just x
-
 keywords = ["ifzero", "else"]
 
 letter, digit :: Syntax delta => delta Char

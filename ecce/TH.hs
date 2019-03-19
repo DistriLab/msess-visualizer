@@ -26,8 +26,8 @@ conFields (NormalC _ fields) = map (\(_, t) -> t) fields
 conFields (RecC _ fields) = map (\(_, _, t) -> t) fields
 conFields (InfixC lhs _ rhs) = map (\(_, t) -> t) [lhs, rhs]
 conFields (ForallC _ _ con) = conFields con
-conFields (GadtC _ fields _) = map (\(_, t) -> t) fields
-conFields (RecGadtC _ fields _) = map (\(_, _, t) -> t) fields
+conFields (GadtC _ fields field) = map (\(_, t) -> t) fields ++ [field]
+conFields (RecGadtC _ fields field) = map (\(_, _, t) -> t) fields ++ [field]
 
 -- Data dec information
 data DecInfo =
@@ -49,13 +49,20 @@ tyVarBndrToType (PlainTV n) = VarT n
 tyVarBndrToType (KindedTV n k) = SigT (VarT n) k
 
 -- | Create Iso type for specified type and conctructor fields (Iso (a, b) (CustomType a b c))
-isoType :: Type -> [TyVarBndr] -> [Type] -> Q Type
-isoType typ tyVarBndrs fields = do
+-- Split behavior on whether `con` is a GADT constructor
+isoType :: Type -> [TyVarBndr] -> Con -> Q Type
+isoType typ tyVarBndrs con = do
   isoCon <- [t|Iso|]
+  let fields = conFields con
   return $
-    ForallT tyVarBndrs [] $
-    isoCon `AppT` (isoArgs fields) `AppT`
-    (applyAll typ $ map tyVarBndrToType tyVarBndrs)
+    case con of
+      GadtC _ _ _ -> isoCon `AppT` (isoArgs (init fields)) `AppT` (last fields)
+      RecGadtC _ _ _ ->
+        isoCon `AppT` (isoArgs (init fields)) `AppT` (last fields)
+      _ ->
+        ForallT tyVarBndrs [] $
+        isoCon `AppT` (isoArgs fields) `AppT`
+        (applyAll typ $ map tyVarBndrToType tyVarBndrs)
 
 isoArgs :: [Type] -> Type
 isoArgs [] = TupleT 0
@@ -104,16 +111,23 @@ defineIsomorphisms d = do
 defFromCon :: [MatchQ] -> Type -> [TyVarBndr] -> Con -> DecsQ
 defFromCon matches t tyVarBndrs con = do
   let funName = rename $ conName con
-  sig <- SigD funName `fmap` isoType t tyVarBndrs (conFields con)
+  sig <- SigD funName `fmap` isoType t tyVarBndrs con
   fun <- funD funName [clause [] (normalB (isoFromCon matches con)) []]
   return [sig, fun]
 
 -- | Constructs a partial isomorphism expression for a
 --   constructor, given information about the constructor.
+-- Split behavior on whether `con` is a GADT constructor
 isoFromCon :: [MatchQ] -> Con -> ExpQ
 isoFromCon matches con = do
   let c = conName con
-  let fs = conFields con
+  let fs =
+        case con of
+          GadtC _ _ _ -> init fields
+          RecGadtC _ _ _ -> init fields
+          _ -> fields
+        where
+          fields = conFields con
   let n = length fs
   (ps, vs) <- genPE n
   v <- newName "x"

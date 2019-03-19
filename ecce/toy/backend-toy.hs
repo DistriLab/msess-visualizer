@@ -56,6 +56,76 @@ type SParsec = Parsec String ()
 
 data Pure
 
+{-
+TyConI
+  (DataD
+     []
+     Main.Expr
+     [KindedTV a_6989586621679078654 StarT]
+     Nothing
+     [ GadtC
+         [Main.EBool]
+         [(Bang NoSourceUnpackedness NoSourceStrictness, ConT GHC.Types.Bool)]
+         (AppT (ConT Main.Expr) (ConT GHC.Types.Bool))
+     , GadtC
+         [Main.EPureBool]
+         [ ( Bang NoSourceUnpackedness NoSourceStrictness
+           , AppT (ConT Main.Expr) (ConT GHC.Types.Bool))
+         ]
+         (AppT (ConT Main.Expr) (ConT Main.Pure))
+     , GadtC
+         [Main.EPureAnd]
+         [ ( Bang NoSourceUnpackedness NoSourceStrictness
+           , AppT (ConT Main.Expr) (ConT Main.Pure))
+         , ( Bang NoSourceUnpackedness NoSourceStrictness
+           , AppT (ConT Main.Expr) (ConT Main.Pure))
+         ]
+         (AppT (ConT Main.Expr) (ConT Main.Pure))
+     , GadtC
+         [Main.EPureOr]
+         [ ( Bang NoSourceUnpackedness NoSourceStrictness
+           , AppT (ConT Main.Expr) (ConT Main.Pure))
+         , ( Bang NoSourceUnpackedness NoSourceStrictness
+           , AppT (ConT Main.Expr) (ConT Main.Pure))
+         ]
+         (AppT (ConT Main.Expr) (ConT Main.Pure))
+     , GadtC
+         [Main.EPureNot]
+         [ ( Bang NoSourceUnpackedness NoSourceStrictness
+           , AppT (ConT Main.Expr) (ConT Main.Pure))
+         ]
+         (AppT (ConT Main.Expr) (ConT Main.Pure))
+     , GadtC
+         [Main.EInteger]
+         [ ( Bang NoSourceUnpackedness NoSourceStrictness
+           , ConT GHC.Integer.Type.Integer)
+         ]
+         (AppT (ConT Main.Expr) (ConT GHC.Integer.Type.Integer))
+     , GadtC
+         [Main.EIntegerNeg]
+         [ ( Bang NoSourceUnpackedness NoSourceStrictness
+           , AppT (ConT Main.Expr) (ConT GHC.Integer.Type.Integer))
+         ]
+         (AppT (ConT Main.Expr) (ConT GHC.Integer.Type.Integer))
+     , GadtC
+         [Main.EIntegerMul]
+         [ ( Bang NoSourceUnpackedness NoSourceStrictness
+           , AppT (ConT Main.Expr) (ConT GHC.Integer.Type.Integer))
+         , ( Bang NoSourceUnpackedness NoSourceStrictness
+           , AppT (ConT Main.Expr) (ConT GHC.Integer.Type.Integer))
+         ]
+         (AppT (ConT Main.Expr) (ConT GHC.Integer.Type.Integer))
+     , GadtC
+         [Main.EIntegerAdd]
+         [ ( Bang NoSourceUnpackedness NoSourceStrictness
+           , AppT (ConT Main.Expr) (ConT GHC.Integer.Type.Integer))
+         , ( Bang NoSourceUnpackedness NoSourceStrictness
+           , AppT (ConT Main.Expr) (ConT GHC.Integer.Type.Integer))
+         ]
+         (AppT (ConT Main.Expr) (ConT GHC.Integer.Type.Integer))
+     ]
+     [])
+-}
 data Expr a where
   EBool :: Bool -> Expr Bool
   EPureBool :: Expr Bool -> Expr Pure

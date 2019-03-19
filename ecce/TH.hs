@@ -11,19 +11,14 @@ import Data.Char (toLower)
 import Data.List (find)
 import Language.Haskell.TH
 
-gadtError :: a
-gadtError =
-  error "Control.Isomorphism.Partial.TH: GADTs currently not supported."
-
-{-# NOINLINE gadtError #-}
 -- | Extract the name of a constructor, e.g. ":" or "Just".
 conName :: Con -> Name
 conName (NormalC name _) = name
 conName (RecC name _) = name
 conName (InfixC _ name _) = name
 conName (ForallC _ _ con) = conName con
-conName (GadtC _ _ _) = gadtError
-conName (RecGadtC _ _ _) = gadtError
+conName (GadtC names _ _) = head names
+conName (RecGadtC names _ _) = head names
 
 -- | Extract the types of the constructor's fields.
 conFields :: Con -> [Type]
@@ -31,8 +26,8 @@ conFields (NormalC _ fields) = map (\(_, t) -> t) fields
 conFields (RecC _ fields) = map (\(_, _, t) -> t) fields
 conFields (InfixC lhs _ rhs) = map (\(_, t) -> t) [lhs, rhs]
 conFields (ForallC _ _ con) = conFields con
-conFields (GadtC _ _ _) = gadtError
-conFields (RecGadtC _ _ _) = gadtError
+conFields (GadtC _ fields _) = map (\(_, t) -> t) fields
+conFields (RecGadtC _ fields _) = map (\(_, _, t) -> t) fields
 
 -- Data dec information
 data DecInfo =

@@ -14,7 +14,8 @@ import Control.Isomorphism.Partial.Unsafe (Iso(..))
 import Data.Char (isDigit, isLetter)
 import Data.List (head)
 import Prelude
-  ( Char
+  ( Bool
+  , Char
   , Eq(..)
   , Integer
   , Maybe(..)
@@ -45,7 +46,8 @@ import Text.Syntax.Printer.Naive (print)
  - SECTION USER INTERFACE
  -}
 data Expr
-  = EBool
+  = EBool Bool
+  | EPureBool Expr
   | EInteger Integer
   | EOpUnary OpUnary
              Expr
@@ -55,8 +57,7 @@ data Expr
   deriving (Show)
 
 data OpUnary
-  = EPureBool
-  | EPureNot
+  = EPureNot
   | EIntegerNeg
   deriving (Show, Eq)
 
@@ -104,23 +105,40 @@ integer = Iso read' show' <$> many digit
 
 parens = between (text "(") (text ")")
 
-ops = eIntegerMul <$> text "*" <|> eIntegerAdd <$> text "+"
+opBoolUnary = ePureNot <$> text "~"
 
-spacedOps = between optSpace optSpace ops
+opBoolBinary = ePureAnd <$> text "^" <|> ePureOr <$> text "v"
 
-priority :: OpBinary -> Integer
-priority EIntegerMul = 1
-priority EIntegerAdd = 2
+opIntegerUnary :: Syntax delta => delta OpUnary
+opIntegerUnary = eIntegerNeg <$> text "-"
+
+opIntegerBinary :: Syntax delta => delta OpBinary
+opIntegerBinary = eIntegerMul <$> text "*" <|> eIntegerAdd <$> text "+"
+
+spacedOpIntegerBinary :: Syntax delta => delta OpBinary
+spacedOpIntegerBinary = between optSpace optSpace opIntegerBinary
+
+prioBinary :: OpBinary -> Integer
+prioBinary EIntegerMul = 1
+prioBinary EIntegerAdd = 2
 
 expression = exp 2
   where
     exp 0 =
-      eInteger <$> integer <|> eBool <$> keyword "true" <|>
-      eBool <$> keyword "false" <|>
+      eOpUnary <$> (opIntegerUnary <*> (eInteger <$> integer)) <|>
+      eInteger <$> integer <|>
       parens (skipSpace *> expression <* skipSpace)
-    exp 1 = chainl1 (exp 0) spacedOps (opPrioBinary 1)
-    exp 2 = chainl1 (exp 1) spacedOps (opPrioBinary 2)
-    opPrioBinary n = eOpBinary . subset (\(x, (op, y)) -> priority op == n)
+    exp 1 = chainl1 (exp 0) spacedOpIntegerBinary (opPrioBinary 1)
+    exp 2 = chainl1 (exp 1) spacedOpIntegerBinary (opPrioBinary 2)
+    opPrioBinary n = eOpBinary . subset (\(_, (op, _)) -> prioBinary op == n)
 
-main = print expression (head (parse expression "1+2"))
--- main = print expression (EOpBinary (EInteger 1) EIntegerAdd (EInteger 2))
+main = print expression (head (parse expression "-1+-2"))
+{-
+main =
+  print
+    expression
+    (EOpBinary
+       (EOpUnary EIntegerNeg (EInteger 1))
+       EIntegerAdd
+       (EOpUnary EIntegerNeg (EInteger 2)))
+-}

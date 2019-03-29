@@ -12,9 +12,9 @@ import Control.Isomorphism.Partial ((<$>), cons, inverse, right, subset)
 import Control.Isomorphism.Partial.TH (defineIsomorphisms)
 import Control.Isomorphism.Partial.Unsafe (Iso(..))
 import Data.Char (isDigit, isLetter)
-import Data.List (head)
+import Data.List (elem, head)
 import Prelude
-  ( Bool
+  ( Bool(False, True)
   , Char
   , Eq(..)
   , Integer
@@ -77,17 +77,14 @@ $(defineIsomorphisms ''OpBinary)
 {-
  - SECTION LEXER
  -}
-{- TODO remove this -}
-keywords = ["true", "false", "~", "^", "v"]
-
-{- TODO remove this -}
-keywordOps = ["+", "-", "x", "^", "v", "~"]
+keywords = []
 
 letter, digit :: Syntax delta => delta Char
 letter = subset isLetter <$> token
 
 digit = subset isDigit <$> token
 
+identifier :: Syntax delta => delta String
 identifier =
   subset (`notElem` keywords) . cons <$> letter <*> many (letter <|> digit)
 
@@ -103,11 +100,35 @@ integer = Iso read' show' <$> many digit
         (x:_) -> Just x
     show' x = Just (show x)
 
+bool :: Syntax delta => delta Bool
+bool = caster <$> (subset (`elem` ["true", "false"]) <$> many letter)
+  where
+    caster :: Iso String Bool
+    caster =
+      Iso
+        (\s ->
+           case s of
+             "true" -> Just True
+             "false" -> Just False)
+        (\b ->
+           case b of
+             True -> Just "true"
+             False -> Just "false")
+
 parens = between (text "(") (text ")")
 
-opBoolUnary = ePureNot <$> text "~"
+opPureUnary :: Syntax delta => delta OpUnary
+opPureUnary = ePureNot <$> text "~"
 
-opBoolBinary = ePureAnd <$> text "^" <|> ePureOr <$> text "v"
+opPureBinary :: Syntax delta => delta OpBinary
+opPureBinary = ePureAnd <$> text "^" <|> ePureOr <$> text "v"
+
+spacedOpPureBinary :: Syntax delta => delta OpBinary
+spacedOpPureBinary = between optSpace optSpace opPureBinary
+
+prioPureBinary :: OpBinary -> Integer
+prioPureBinary EPureAnd = 1
+prioPureBinary EPureOr = 2
 
 opIntegerUnary :: Syntax delta => delta OpUnary
 opIntegerUnary = eIntegerNeg <$> text "-"
@@ -118,25 +139,47 @@ opIntegerBinary = eIntegerMul <$> text "*" <|> eIntegerAdd <$> text "+"
 spacedOpIntegerBinary :: Syntax delta => delta OpBinary
 spacedOpIntegerBinary = between optSpace optSpace opIntegerBinary
 
-prioBinary :: OpBinary -> Integer
-prioBinary EIntegerMul = 1
-prioBinary EIntegerAdd = 2
+prioIntegerBinary :: OpBinary -> Integer
+prioIntegerBinary EIntegerMul = 1
+prioIntegerBinary EIntegerAdd = 2
 
-expression = exp 2
+exprInteger = exp 2
   where
     exp 0 =
       eOpUnary <$> (opIntegerUnary <*> (eInteger <$> integer)) <|>
       eInteger <$> integer <|>
-      parens (skipSpace *> expression <* skipSpace)
-    exp 1 = chainl1 (exp 0) spacedOpIntegerBinary (opPrioBinary 1)
-    exp 2 = chainl1 (exp 1) spacedOpIntegerBinary (opPrioBinary 2)
-    opPrioBinary n = eOpBinary . subset (\(_, (op, _)) -> prioBinary op == n)
+      parens (skipSpace *> exprInteger <* skipSpace)
+    exp 1 = chainl1 (exp 0) spacedOpIntegerBinary (opPrioIntegerBinary 1)
+    exp 2 = chainl1 (exp 1) spacedOpIntegerBinary (opPrioIntegerBinary 2)
+    opPrioIntegerBinary n =
+      eOpBinary . subset (\(_, (op, _)) -> prioIntegerBinary op == n)
 
-main = print expression (head (parse expression "-1+-2"))
+exprPure = exp 2
+  where
+    exp 0 =
+      eOpUnary <$> (opPureUnary <*> (ePureBool <$> (eBool <$> bool))) <|>
+      ePureBool <$> (eBool <$> bool) <|>
+      parens (skipSpace *> exprPure <* skipSpace)
+    exp 1 = chainl1 (exp 0) spacedOpPureBinary (opPrioPureBinary 1)
+    exp 2 = chainl1 (exp 1) spacedOpPureBinary (opPrioPureBinary 2)
+    opPrioPureBinary n =
+      eOpBinary . subset (\(_, (op, _)) -> prioPureBinary op == n)
+
+main = print exprPure (head (parse exprPure "~true ^ false"))
 {-
 main =
   print
-    expression
+    exprPure
+    (EOpBinary
+       (EOpUnary EPureNot (EPureBool (EBool True)))
+       EPureAnd
+       (EPureBool (EBool False)))
+-}
+-- main = print exprInteger (head (parse exprInteger "-1+-2"))
+{-
+main =
+  print
+    exprInteger
     (EOpBinary
        (EOpUnary EIntegerNeg (EInteger 1))
        EIntegerAdd

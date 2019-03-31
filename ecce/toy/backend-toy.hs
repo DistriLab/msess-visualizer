@@ -12,18 +12,31 @@ import Control.Isomorphism.Partial ((<$>), cons, inverse, right, subset)
 import Control.Isomorphism.Partial.TH (defineIsomorphisms)
 import Control.Isomorphism.Partial.Unsafe (Iso(..))
 import Data.Char (isDigit, isLetter)
-import Data.List (elem, head)
+import Data.List (elem, head, intercalate)
 import Prelude
   ( Bool(False, True)
   , Char
   , Eq(..)
+  , IO
   , Integer
   , Maybe(..)
   , Show(..)
   , String
+  , ($)
+  , drop
+  , getLine
+  , length
+  , lines
+  , map
+  , mapM_
   , notElem
+  , putStrLn
   , reads
+  , return
+  , seq
+  , take
   )
+import System.IO (IOMode(ReadMode), hClose, hGetContents, openFile)
 import Text.Syntax
   ( Syntax
   , (*>)
@@ -43,7 +56,7 @@ import Text.Syntax.Parser.Naive (parse)
 import Text.Syntax.Printer.Naive (print)
 
 {-
- - SECTION USER INTERFACE
+ - SECTION TYPES
  -}
 data Expr
   = EBool Bool
@@ -74,6 +87,51 @@ $(defineIsomorphisms ''OpUnary)
 
 $(defineIsomorphisms ''OpBinary)
 
+{-
+ - SECTION USER INTERFACE
+ -}
+main = do
+  inputLines <- interpreter
+  let s = intercalate "\n" $ map (show . parse exprPure) inputLines
+   in putStrLn s
+
+interpreter :: IO [String]
+interpreter = do
+  mapM_ putStrLn $
+    "Either:" :
+    "1) Type out expression" : "2) Load file (load <file>)" : "" : []
+  inputLine <- getLine
+  inputLines <-
+    if take loadStringLength inputLine == loadString
+      then do
+        handle <- openFile (drop loadStringLength inputLine) ReadMode
+        contents <- hGetContents handle
+        seq (hClose handle) (return $ lines contents)
+      else do
+        return [inputLine]
+  return inputLines
+  where
+    loadString = "load "
+    loadStringLength = length loadString
+
+{-
+main = print exprPure (head (parse exprPure "~true ^ false"))
+main =
+  print
+    exprPure
+    (EOpBinary
+       (EOpUnary EPureNot (EPureBool (EBool True)))
+       EPureAnd
+       (EPureBool (EBool False)))
+main = print exprInteger (head (parse exprInteger "-1+-2"))
+main =
+  print
+    exprInteger
+    (EOpBinary
+       (EOpUnary EIntegerNeg (EInteger 1))
+       EIntegerAdd
+       (EOpUnary EIntegerNeg (EInteger 2)))
+-}
 {-
  - SECTION LEXER
  -}
@@ -164,24 +222,3 @@ exprPure = exp 2
     exp 2 = chainl1 (exp 1) spacedOpPureBinary (opPrioPureBinary 2)
     opPrioPureBinary n =
       eOpBinary . subset (\(_, (op, _)) -> prioPureBinary op == n)
-
-main = print exprPure (head (parse exprPure "~true ^ false"))
-{-
-main =
-  print
-    exprPure
-    (EOpBinary
-       (EOpUnary EPureNot (EPureBool (EBool True)))
-       EPureAnd
-       (EPureBool (EBool False)))
--}
--- main = print exprInteger (head (parse exprInteger "-1+-2"))
-{-
-main =
-  print
-    exprInteger
-    (EOpBinary
-       (EOpUnary EIntegerNeg (EInteger 1))
-       EIntegerAdd
-       (EOpUnary EIntegerNeg (EInteger 2)))
--}

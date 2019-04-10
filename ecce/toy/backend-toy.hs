@@ -1,6 +1,8 @@
 {- SECTION PRAGMAS -}
 -- Pragmas of invertible-parser
 {-# LANGUAGE TemplateHaskell, NoMonomorphismRestriction #-}
+{-# LANGUAGE EmptyDataDecls #-} -- Allows datatypes without constructors
+{-# LANGUAGE EmptyDataDeriving #-} -- Allows deriving for empty data types
 
 module Toy where
 
@@ -58,21 +60,19 @@ import Text.Syntax.Printer.Naive (print)
 {-
  - SECTION TYPES
  -}
+data Pure
+  deriving (Show)
+
 data Expr
   = EBool Bool
   | EPureBool Expr
+  | EPureNot Expr
   | EInteger Integer
-  | EOpUnary OpUnary
-             Expr
+  | EIntegerNeg Expr
   | EOpBinary Expr
               OpBinary
               Expr
   deriving (Show)
-
-data OpUnary
-  = EPureNot
-  | EIntegerNeg
-  deriving (Show, Eq)
 
 data OpBinary
   = EPureAnd
@@ -82,8 +82,6 @@ data OpBinary
   deriving (Show, Eq)
 
 $(defineIsomorphisms ''Expr)
-
-$(defineIsomorphisms ''OpUnary)
 
 $(defineIsomorphisms ''OpBinary)
 
@@ -175,9 +173,6 @@ bool = caster <$> (subset (`elem` ["true", "false"]) <$> many letter)
 
 parens = between (text "(") (text ")")
 
-opPureUnary :: Syntax delta => delta OpUnary
-opPureUnary = ePureNot <$> text "~"
-
 opPureBinary :: Syntax delta => delta OpBinary
 opPureBinary = ePureAnd <$> text "^" <|> ePureOr <$> text "v"
 
@@ -187,9 +182,6 @@ spacedOpPureBinary = between optSpace optSpace opPureBinary
 prioPureBinary :: OpBinary -> Integer
 prioPureBinary EPureAnd = 1
 prioPureBinary EPureOr = 2
-
-opIntegerUnary :: Syntax delta => delta OpUnary
-opIntegerUnary = eIntegerNeg <$> text "-"
 
 opIntegerBinary :: Syntax delta => delta OpBinary
 opIntegerBinary = eIntegerMul <$> text "*" <|> eIntegerAdd <$> text "+"
@@ -204,7 +196,7 @@ prioIntegerBinary EIntegerAdd = 2
 exprInteger = exp 2
   where
     exp 0 =
-      eOpUnary <$> (opIntegerUnary <*> exprInteger) <|> eInteger <$> integer <|>
+      text "-" *> (eIntegerNeg <$> exprInteger) <|> eInteger <$> integer <|>
       parens (skipSpace *> exprInteger <* skipSpace)
     exp 1 = chainl1 (exp 0) spacedOpIntegerBinary (opPrioIntegerBinary 1)
     exp 2 = chainl1 (exp 1) spacedOpIntegerBinary (opPrioIntegerBinary 2)
@@ -214,7 +206,7 @@ exprInteger = exp 2
 exprPure = exp 2
   where
     exp 0 =
-      eOpUnary <$> (opPureUnary <*> exprPure) <|> ePureBool <$> (eBool <$> bool) <|>
+      text "~" *> (ePureNot <$> exprPure) <|> ePureBool <$> (eBool <$> bool) <|>
       parens (skipSpace *> exprPure <* skipSpace)
     exp 1 = chainl1 (exp 0) spacedOpPureBinary (opPrioPureBinary 1)
     exp 2 = chainl1 (exp 1) spacedOpPureBinary (opPrioPureBinary 2)

@@ -24,7 +24,6 @@ import qualified Control.Exception (try)
 import Control.Isomorphism.Partial ((<$>), cons, inverse, right, subset)
 import Control.Isomorphism.Partial.TH (defineIsomorphisms)
 import Control.Isomorphism.Partial.Unsafe (Iso(..))
-import Control.Monad (liftM)
 import Data.Char (isDigit, isLetter)
 import Data.List (elem, head)
 import Interpreter (Output, mainHaskeline)
@@ -176,113 +175,157 @@ type Channel = String
 type Label = Integer
 
 {- Figure 2.2 -}
-data SymbolicPredicate
+{- pred ::= p(root,v*) = Φ inv π -}
+data SymbolicPredicate =
+  ESymbolicPredicate Predicate
+                     [Expr]
+                     FormulaDisjunct
+                     Pure
   deriving (Show)
 
-data FormulaDisjunct
+{- Φ ::= |Δ -}
+data FormulaDisjunct =
+  EFormulaDisjunct [Formula]
   deriving (Show)
 
+{- Δ ::= ∃v*.κ^π | Δ*Δ -}
 data Formula
-  deriving (Show)
-
-data Heap
-  deriving (Show)
-
-data Pure
-  deriving (Show)
-
-data Pointer
-  deriving (Show)
-
-data BoolInteger
-  deriving (Show)
-
-{- Figure 4.1 -}
-data GlobalProtocol
-  deriving (Show)
-
-{- Figure 4.3 -}
-data Event
-  deriving (Show)
-
-data Constraint
-  deriving (Show)
-
-data Assertion
-  deriving (Show)
-
-{- Figure 4.5 -}
-data PartyProtocol
-  deriving (Show)
-
-data EndpointProtocol
-  deriving (Show)
-
-data ChannelProtocol
-  deriving (Show)
-
-{- SUBSECTION EXPR -}
-data Expr
-  {- HELPERS -}
-  = EVarFirst VarFirst
-  | EDataStructure DataStructure
-  | EVarType VarType
-  | EPredicate Predicate
-  | ERole Role
-  | EChannel Channel
-  | ELabel Label
-  {- Figure 2.2 -}
-  {- pred ::= p(root,v*) = Φ inv π -}
-  | ESymbolicPredicate Predicate
-                       [Expr]
-                       FormulaDisjunct
-                       Pure
-  {- Φ ::= |Δ -}
-  | EFormulaDisjunct [Formula]
-  {- Δ ::= ∃v*.κ^π | Δ*Δ -}
-  | EFormulaExists [VarFirst]
+  = EFormulaExists [VarFirst]
                    Heap
                    Pure
-  {- κ ::= emp | v↦d<v*> | p(v*) | κ*κ -}
-  | EHeapEmp
+  | EFormulaSeparate Formula
+                     Formula
+  deriving (Show)
+
+{- κ ::= emp | v↦d<v*> | p(v*) | κ*κ -}
+data Heap
+  = EHeapEmp
   | EHeapMap VarFirst
              DataStructure
              [VarFirst]
   | EHeapPredicate Predicate
                    [Expr]
-  {- b ::= true | false | b=b -}
-  | EBool Bool
-  {- s ::= k | v | k x s | s + s | -s -}
-  | EInteger Integer
-  {- Figure 4.1 -}
-  {- G ::= S--(i)->R:c<v.Δ> | G*G | G|G | G;G | (+)(Ψ) | (-)(Ψ) | emp -}
-  | EGlobalProtocolTransmission Role
+  | EHeapSeparate Heap
+                  Heap
+  deriving (Show)
+
+{- π ::= v:t | b | a | π^π | π|π | ~π | ∃v.π | ∀v.π | γ -}
+data Pure
+  = EPureVarType VarFirst
+                 VarType
+  | EPureBool Boole
+  | EPureBoolInteger BoolInteger
+  | EPureNot Pure
+  | EPureExists VarFirst
+                VarType
+  | EPureForall VarFirst
+                VarType
+  | EPurePointer Pointer
+  | EOpPureBinary Pure
+                  OpPureBinary
+                  Pure
+  deriving (Show)
+
+data OpPureBinary
+  = EPureAnd
+  | EPureOr
+  deriving (Show)
+
+{- γ ::= v=v | v=null | v/=v | v/=null -}
+data Pointer
+  = EPointerEq VarFirst
+               VarFirst
+  | EPointerNull VarFirst
+  | EPointerNEq VarFirst
+                VarFirst
+  | EPointerNNull VarFirst
+  deriving (Show)
+
+{- b ::= true | false | b=b -}
+data Boole
+  = EBool Bool
+  | EOpBoolBinary Boole
+                  OpBoolBinary
+                  Boole
+  deriving (Show)
+
+data OpBoolBinary =
+  EBoolEq
+  deriving (Show)
+
+{- a ::= s=s | s<=s -}
+data BoolInteger
+  = EBoolIntegerEq Integer
+                   Integer
+  | EBoolIntegerLeq Integer
+                    Integer
+  deriving (Show)
+
+{- s ::= k | v | k x s | s + s | -s -}
+data Presburger
+  = EInteger Integer
+  | EIntegerVarFirst VarFirst
+  | EIntegerNeg Presburger
+  | EOpIntegerBinary Presburger
+                     OpIntegerBinary
+                     Presburger
+  deriving (Show)
+
+data OpIntegerBinary
+  = EIntegerMul
+  | EIntegerAdd
+  deriving (Show)
+
+{- Figure 4.1 -}
+{- G ::= S--(i)->R:c<v.Δ> | G*G | G|G | G;G | (+)(Ψ) | (-)(Ψ) | emp -}
+data GlobalProtocol
+  = EGlobalProtocolTransmission Role
                                 Label
                                 Role
                                 Channel
                                 VarFirst
                                 Formula
+  | EGlobalProtocolConcurrency GlobalProtocol
+                               GlobalProtocol
+  | EGlobalProtocolChoice GlobalProtocol
+                          GlobalProtocol
+  | EGlobalProtocolSequencing GlobalProtocol
+                              GlobalProtocol
+  | EGlobalProtocolAssumption Assertion
+  | EGlobalProtocolGuard Assertion
   | EGlobalProtocolEmp
-  {- Figure 4.3 -}
-  {- E ::= P(i) -}
-  | EEvent Role
-           Label
-  {- ν ::= E<CBE | E<HBE -}
-  | EConstraintCommunicates Event
+  deriving (Show)
+
+{- Figure 4.3 -}
+{- E ::= P(i) -}
+data Event =
+  EEvent Role
+         Label
+  deriving (Show)
+
+{- ν ::= E<CBE | E<HBE -}
+data Constraint
+  = EConstraintCommunicates Event
                             Event
   | EConstraintHappens Event
                        Event
-  {- Ψ ::= E | ~(E) | ν | Ψ^Ψ | E==>Ψ -}
-  | EAssertionEvent Event
+  deriving (Show)
+
+{- Ψ ::= E | ~(E) | ν | Ψ^Ψ | E==>Ψ -}
+data Assertion
+  = EAssertionEvent Event
   | EAssertionNEvent Event
   | EAssertionConstraint Constraint
   | EAssertionAnd Assertion
                   Assertion
   | EAssertionImplies Event
                       Assertion
-  {- Figure 4.5 -}
-  {- γ ::= c(i)!v.Δ | c(i)?v.Δ | γ*γ | γ|γ | γ;γ | (-)(Ψ) | (+)(Ψ) -}
-  | EPartyProtocolSend Channel
+  deriving (Show)
+
+{- Figure 4.5 -}
+{- γ ::= c(i)!v.Δ | c(i)?v.Δ | γ*γ | γ|γ | γ;γ | (-)(Ψ) | (+)(Ψ) -}
+data PartyProtocol
+  = EPartyProtocolSend Channel
                        Label
                        VarFirst
                        Formula
@@ -299,8 +342,11 @@ data Expr
   | EPartyProtocolAssumption Assertion
   | EPartyProtocolGuard Assertion
   | EPartyProtocolEmp
-  {- L ::= (i)!v.Δ | (i)?v.Δ | L|L | L;L | (-)(Ψ) | (+)(Ψ) -}
-  | EEndpointProtocolSend Channel
+  deriving (Show)
+
+{- L ::= (i)!v.Δ | (i)?v.Δ | L|L | L;L | (-)(Ψ) | (+)(Ψ) -}
+data EndpointProtocol
+  = EEndpointProtocolSend Channel
                           Label
                           VarFirst
                           Formula
@@ -321,8 +367,11 @@ data Expr
   | EEndpointProtocolAssumption Assertion
   | EEndpointProtocolGuard Assertion
   | EEndpointProtocolEmp
-  {- Z ::= P--(i)->P:v.Δ | Z|Z | Z;Z | (-)(Ψ) | (+)(Ψ) -}
-  | EChannelProtocolTransmission Role
+  deriving (Show)
+
+{- Z ::= P--(i)->P:v.Δ | Z|Z | Z;Z | (-)(Ψ) | (+)(Ψ) -}
+data ChannelProtocol
+  = EChannelProtocolTransmission Role
                                  Label
                                  Role
                                  VarFirst
@@ -334,60 +383,12 @@ data Expr
   | EChannelProtocolAssumption Assertion
   | EChannelProtocolGuard Assertion
   | EChannelProtocolEmp
-  | EOpUnary OpUnary
-             Expr
-  | EOpBinary Expr
-              OpBinary
-              Expr
+  deriving (Show)
 
-deriving instance Show Expr
-
-data OpUnary
-  {- π ::= v:t | b | a | π^π | π|π | ~π | ∃v.π | ∀v.π | γ -}
-  = EPureBool
-  | EPureNot
-  | EPureBoolInteger
-  | EPurePointer
-  {- γ ::= v=v | v=null | v/=v | v/=null -}
-  | EPointerNull
-  | EPointerNNull
-  {- s ::= k | v | k x s | s + s | -s -}
-  | EIntegerNeg
-  | EIntegerVarFirst
-  {- Figure 4.1 -}
-  {- G ::= S--(i)->R:c<v.Δ> | G*G | G|G | G;G | (+)(Ψ) | (-)(Ψ) | emp -}
-  | EGlobalProtocolAssumption
-  | EGlobalProtocolGuard
-  deriving (Show, Eq)
-
-data OpBinary
-  {- κ ::= emp | v↦d<v*> | p(v*) | κ*κ -}
-  = EHeapSeparate
-  {- Δ ::= ∃v*.κ^π | Δ*Δ -}
-  | EFormulaSeparate
-  | EPureAnd
-  | EPureOr
-  {- π ::= v:t | b | a | π^π | π|π | ~π | ∃v.π | ∀v.π | γ -}
-  | EPureVarType
-  | EPureExists
-  | EPureForall
-  {- γ ::= v=v | v=null | v/=v | v/=null -}
-  | EPointerEq
-  | EPointerNEq
-  {- b ::= true | false | b=b -}
-  | EBoolEq
-  {- a ::= s=s | s<=s -}
-  | EBoolIntegerEq
-  | EBoolIntegerLeq
-  {- s ::= k | v | k x s | s + s | -s -}
-  | EIntegerMul
-  | EIntegerAdd
-  {- Figure 4.1 -}
-  {- G ::= S--(i)->R:c<v.Δ> | G*G | G|G | G;G | (+)(Ψ) | (-)(Ψ) | emp -}
-  | EGlobalProtocolConcurrency
-  | EGlobalProtocolChoice
-  | EGlobalProtocolSequencing
-  deriving (Show, Eq)
+{- SUBSECTION EXPR -}
+data Expr =
+  GlobalProtocol
+  deriving (Show)
 
 {-
  - SECTION LEXER
@@ -436,647 +437,626 @@ parens = between (text "(") (text ")")
  - SECTION SPLICE
  - TODO splice templates properly
  -}
--- $(defineIsomorphisms ''Expr)
-eVarFirst :: Iso VarFirst Expr
-eVarFirst =
-  (Iso (\x_ae24 -> Just (EVarFirst x_ae24)))
-    (\x_ae25 ->
-       case x_ae25 of
-         EVarFirst x_ae24 -> Just x_ae24
-         _ -> Nothing)
-
-eDataStructure :: Iso DataStructure Expr
-eDataStructure =
-  (Iso (\x_ae26 -> Just (EDataStructure x_ae26)))
-    (\x_ae27 ->
-       case x_ae27 of
-         EDataStructure x_ae26 -> Just x_ae26
-         _ -> Nothing)
-
-eVarType :: Iso VarType Expr
-eVarType =
-  (Iso (\x_ae28 -> Just (EVarType x_ae28)))
-    (\x_ae29 ->
-       case x_ae29 of
-         EVarType x_ae28 -> Just x_ae28
-         _ -> Nothing)
-
-ePredicate :: Iso Predicate Expr
-ePredicate =
-  (Iso (\x_ae2a -> Just (EPredicate x_ae2a)))
-    (\x_ae2b ->
-       case x_ae2b of
-         EPredicate x_ae2a -> Just x_ae2a
-         _ -> Nothing)
-
-eRole :: Iso Role Expr
-eRole =
-  (Iso (\x_ae2c -> Just (ERole x_ae2c)))
-    (\x_ae2d ->
-       case x_ae2d of
-         ERole x_ae2c -> Just x_ae2c
-         _ -> Nothing)
-
-eChannel :: Iso Channel Expr
-eChannel =
-  (Iso (\x_ae2e -> Just (EChannel x_ae2e)))
-    (\x_ae2f ->
-       case x_ae2f of
-         EChannel x_ae2e -> Just x_ae2e
-         _ -> Nothing)
-
-eLabel :: Iso Label Expr
-eLabel =
-  (Iso (\x_ae2g -> Just (ELabel x_ae2g)))
-    (\x_ae2h ->
-       case x_ae2h of
-         ELabel x_ae2g -> Just x_ae2g
-         _ -> Nothing)
-
-eSymbolicPredicate :: Iso (Predicate, ([Expr], (FormulaDisjunct, Pure))) Expr
+-- $(defineIsomorphisms ''SymbolicPredicate)
+eSymbolicPredicate ::
+     Iso (Predicate, ([Expr], (FormulaDisjunct, Pure))) SymbolicPredicate
 eSymbolicPredicate =
   (Iso
-     (\(x_ae2i, (x_ae2j, (x_ae2k, x_ae2l))) ->
-        Just ((((ESymbolicPredicate x_ae2i) x_ae2j) x_ae2k) x_ae2l)))
-    (\x_ae2m ->
-       case x_ae2m of
-         ESymbolicPredicate x_ae2i x_ae2j x_ae2k x_ae2l ->
-           Just (x_ae2i, (x_ae2j, (x_ae2k, x_ae2l)))
-         _ -> Nothing)
+     (\(x_aea5, (x_aea6, (x_aea7, x_aea8))) ->
+        Just ((((ESymbolicPredicate x_aea5) x_aea6) x_aea7) x_aea8)))
+    (\x_aea9 ->
+       case x_aea9 of
+         ESymbolicPredicate x_aea5 x_aea6 x_aea7 x_aea8 ->
+           Just (x_aea5, (x_aea6, (x_aea7, x_aea8))))
 
-eFormulaDisjunct :: Iso [Formula] Expr
+-- $(defineIsomorphisms ''FormulaDisjunct)
+eFormulaDisjunct :: Iso [Formula] FormulaDisjunct
 eFormulaDisjunct =
-  (Iso (\x_ae2n -> Just (EFormulaDisjunct x_ae2n)))
-    (\x_ae2o ->
-       case x_ae2o of
-         EFormulaDisjunct x_ae2n -> Just x_ae2n
-         _ -> Nothing)
+  (Iso (\x_aeaH -> Just (EFormulaDisjunct x_aeaH)))
+    (\x_aeaI ->
+       case x_aeaI of
+         EFormulaDisjunct x_aeaH -> Just x_aeaH)
 
-eFormulaExists :: Iso ([VarFirst], (Heap, Pure)) Expr
+-- $(defineIsomorphisms ''Formula)
+eFormulaExists :: Iso ([VarFirst], (Heap, Pure)) Formula
 eFormulaExists =
   (Iso
-     (\(x_ae2p, (x_ae2q, x_ae2r)) ->
-        Just (((EFormulaExists x_ae2p) x_ae2q) x_ae2r)))
-    (\x_ae2s ->
-       case x_ae2s of
-         EFormulaExists x_ae2p x_ae2q x_ae2r -> Just (x_ae2p, (x_ae2q, x_ae2r))
+     (\(x_aeb4, (x_aeb5, x_aeb6)) ->
+        Just (((EFormulaExists x_aeb4) x_aeb5) x_aeb6)))
+    (\x_aeb7 ->
+       case x_aeb7 of
+         EFormulaExists x_aeb4 x_aeb5 x_aeb6 -> Just (x_aeb4, (x_aeb5, x_aeb6))
          _ -> Nothing)
 
-eHeapEmp :: Iso () Expr
+eFormulaSeparate :: Iso (Formula, Formula) Formula
+eFormulaSeparate =
+  (Iso (\(x_aeb8, x_aeb9) -> Just ((EFormulaSeparate x_aeb8) x_aeb9)))
+    (\x_aeba ->
+       case x_aeba of
+         EFormulaSeparate x_aeb8 x_aeb9 -> Just (x_aeb8, x_aeb9)
+         _ -> Nothing)
+
+-- $(defineIsomorphisms ''Heap)
+eHeapEmp :: Iso () Heap
 eHeapEmp =
   (Iso (\() -> Just EHeapEmp))
-    (\x_ae2t ->
-       case x_ae2t of
+    (\x_aebY ->
+       case x_aebY of
          EHeapEmp -> Just ()
          _ -> Nothing)
 
-eHeapMap :: Iso (VarFirst, (DataStructure, [VarFirst])) Expr
+eHeapMap :: Iso (VarFirst, (DataStructure, [VarFirst])) Heap
 eHeapMap =
-  (Iso (\(x_ae2u, (x_ae2v, x_ae2w)) -> Just (((EHeapMap x_ae2u) x_ae2v) x_ae2w)))
-    (\x_ae2x ->
-       case x_ae2x of
-         EHeapMap x_ae2u x_ae2v x_ae2w -> Just (x_ae2u, (x_ae2v, x_ae2w))
+  (Iso (\(x_aebZ, (x_aec0, x_aec1)) -> Just (((EHeapMap x_aebZ) x_aec0) x_aec1)))
+    (\x_aec2 ->
+       case x_aec2 of
+         EHeapMap x_aebZ x_aec0 x_aec1 -> Just (x_aebZ, (x_aec0, x_aec1))
          _ -> Nothing)
 
-eHeapPredicate :: Iso (Predicate, [Expr]) Expr
+eHeapPredicate :: Iso (Predicate, [Expr]) Heap
 eHeapPredicate =
-  (Iso (\(x_ae2y, x_ae2z) -> Just ((EHeapPredicate x_ae2y) x_ae2z)))
-    (\x_ae2A ->
-       case x_ae2A of
-         EHeapPredicate x_ae2y x_ae2z -> Just (x_ae2y, x_ae2z)
+  (Iso (\(x_aec3, x_aec4) -> Just ((EHeapPredicate x_aec3) x_aec4)))
+    (\x_aec5 ->
+       case x_aec5 of
+         EHeapPredicate x_aec3 x_aec4 -> Just (x_aec3, x_aec4)
          _ -> Nothing)
 
-eBool :: Iso Bool Expr
-eBool =
-  (Iso (\x_ae2B -> Just (EBool x_ae2B)))
-    (\x_ae2C ->
-       case x_ae2C of
-         EBool x_ae2B -> Just x_ae2B
-         _ -> Nothing)
-
-eInteger :: Iso Integer Expr
-eInteger =
-  (Iso (\x_ae3p -> Just (EInteger x_ae3p)))
-    (\x_ae3q ->
-       case x_ae3q of
-         EInteger x_ae3p -> Just x_ae3p
-         _ -> Nothing)
-
-eGlobalProtocolTransmission ::
-     Iso (Role, (Label, (Role, (Channel, (VarFirst, Formula))))) Expr
-eGlobalProtocolTransmission =
-  (Iso
-     (\(x_ae2D, (x_ae2E, (x_ae2F, (x_ae2G, (x_ae2H, x_ae2I))))) ->
-        Just
-          ((((((EGlobalProtocolTransmission x_ae2D) x_ae2E) x_ae2F) x_ae2G)
-              x_ae2H)
-             x_ae2I)))
-    (\x_ae2J ->
-       case x_ae2J of
-         EGlobalProtocolTransmission x_ae2D x_ae2E x_ae2F x_ae2G x_ae2H x_ae2I ->
-           Just (x_ae2D, (x_ae2E, (x_ae2F, (x_ae2G, (x_ae2H, x_ae2I)))))
-         _ -> Nothing)
-
-eGlobalProtocolEmp :: Iso () Expr
-eGlobalProtocolEmp =
-  (Iso (\() -> Just EGlobalProtocolEmp))
-    (\x_ae2K ->
-       case x_ae2K of
-         EGlobalProtocolEmp -> Just ()
-         _ -> Nothing)
-
-eEvent :: Iso (Role, Label) Expr
-eEvent =
-  (Iso (\(x_ae2L, x_ae2M) -> Just ((EEvent x_ae2L) x_ae2M)))
-    (\x_ae2N ->
-       case x_ae2N of
-         EEvent x_ae2L x_ae2M -> Just (x_ae2L, x_ae2M)
-         _ -> Nothing)
-
-eConstraintCommunicates :: Iso (Event, Event) Expr
-eConstraintCommunicates =
-  (Iso (\(x_ae2O, x_ae2P) -> Just ((EConstraintCommunicates x_ae2O) x_ae2P)))
-    (\x_ae2Q ->
-       case x_ae2Q of
-         EConstraintCommunicates x_ae2O x_ae2P -> Just (x_ae2O, x_ae2P)
-         _ -> Nothing)
-
-eConstraintHappens :: Iso (Event, Event) Expr
-eConstraintHappens =
-  (Iso (\(x_ae2R, x_ae2S) -> Just ((EConstraintHappens x_ae2R) x_ae2S)))
-    (\x_ae2T ->
-       case x_ae2T of
-         EConstraintHappens x_ae2R x_ae2S -> Just (x_ae2R, x_ae2S)
-         _ -> Nothing)
-
-eAssertionEvent :: Iso Event Expr
-eAssertionEvent =
-  (Iso (\x_ae2U -> Just (EAssertionEvent x_ae2U)))
-    (\x_ae2V ->
-       case x_ae2V of
-         EAssertionEvent x_ae2U -> Just x_ae2U
-         _ -> Nothing)
-
-eAssertionNEvent :: Iso Event Expr
-eAssertionNEvent =
-  (Iso (\x_ae2W -> Just (EAssertionNEvent x_ae2W)))
-    (\x_ae2X ->
-       case x_ae2X of
-         EAssertionNEvent x_ae2W -> Just x_ae2W
-         _ -> Nothing)
-
-eAssertionConstraint :: Iso Constraint Expr
-eAssertionConstraint =
-  (Iso (\x_ae2Y -> Just (EAssertionConstraint x_ae2Y)))
-    (\x_ae2Z ->
-       case x_ae2Z of
-         EAssertionConstraint x_ae2Y -> Just x_ae2Y
-         _ -> Nothing)
-
-eAssertionAnd :: Iso (Assertion, Assertion) Expr
-eAssertionAnd =
-  (Iso (\(x_ae30, x_ae31) -> Just ((EAssertionAnd x_ae30) x_ae31)))
-    (\x_ae32 ->
-       case x_ae32 of
-         EAssertionAnd x_ae30 x_ae31 -> Just (x_ae30, x_ae31)
-         _ -> Nothing)
-
-eAssertionImplies :: Iso (Event, Assertion) Expr
-eAssertionImplies =
-  (Iso (\(x_ae33, x_ae34) -> Just ((EAssertionImplies x_ae33) x_ae34)))
-    (\x_ae35 ->
-       case x_ae35 of
-         EAssertionImplies x_ae33 x_ae34 -> Just (x_ae33, x_ae34)
-         _ -> Nothing)
-
-ePartyProtocolSend :: Iso (Channel, (Label, (VarFirst, Formula))) Expr
-ePartyProtocolSend =
-  (Iso
-     (\(x_ae36, (x_ae37, (x_ae38, x_ae39))) ->
-        Just ((((EPartyProtocolSend x_ae36) x_ae37) x_ae38) x_ae39)))
-    (\x_ae3a ->
-       case x_ae3a of
-         EPartyProtocolSend x_ae36 x_ae37 x_ae38 x_ae39 ->
-           Just (x_ae36, (x_ae37, (x_ae38, x_ae39)))
-         _ -> Nothing)
-
-ePartyProtocolReceive :: Iso (Channel, (Label, (VarFirst, Formula))) Expr
-ePartyProtocolReceive =
-  (Iso
-     (\(x_ae3b, (x_ae3c, (x_ae3d, x_ae3e))) ->
-        Just ((((EPartyProtocolReceive x_ae3b) x_ae3c) x_ae3d) x_ae3e)))
-    (\x_ae3f ->
-       case x_ae3f of
-         EPartyProtocolReceive x_ae3b x_ae3c x_ae3d x_ae3e ->
-           Just (x_ae3b, (x_ae3c, (x_ae3d, x_ae3e)))
-         _ -> Nothing)
-
-ePartyProtocolConcurrency :: Iso (PartyProtocol, PartyProtocol) Expr
-ePartyProtocolConcurrency =
-  (Iso (\(x_ae3g, x_ae3h) -> Just ((EPartyProtocolConcurrency x_ae3g) x_ae3h)))
-    (\x_ae3i ->
-       case x_ae3i of
-         EPartyProtocolConcurrency x_ae3g x_ae3h -> Just (x_ae3g, x_ae3h)
-         _ -> Nothing)
-
-ePartyProtocolChoice :: Iso (PartyProtocol, PartyProtocol) Expr
-ePartyProtocolChoice =
-  (Iso (\(x_ae3j, x_ae3k) -> Just ((EPartyProtocolChoice x_ae3j) x_ae3k)))
-    (\x_ae3l ->
-       case x_ae3l of
-         EPartyProtocolChoice x_ae3j x_ae3k -> Just (x_ae3j, x_ae3k)
-         _ -> Nothing)
-
-ePartyProtocolSequencing :: Iso (PartyProtocol, PartyProtocol) Expr
-ePartyProtocolSequencing =
-  (Iso (\(x_ae3m, x_ae3n) -> Just ((EPartyProtocolSequencing x_ae3m) x_ae3n)))
-    (\x_ae3o ->
-       case x_ae3o of
-         EPartyProtocolSequencing x_ae3m x_ae3n -> Just (x_ae3m, x_ae3n)
-         _ -> Nothing)
-
-ePartyProtocolAssumption :: Iso Assertion Expr
-ePartyProtocolAssumption =
-  (Iso (\x_ae3p -> Just (EPartyProtocolAssumption x_ae3p)))
-    (\x_ae3q ->
-       case x_ae3q of
-         EPartyProtocolAssumption x_ae3p -> Just x_ae3p
-         _ -> Nothing)
-
-ePartyProtocolGuard :: Iso Assertion Expr
-ePartyProtocolGuard =
-  (Iso (\x_ae3r -> Just (EPartyProtocolGuard x_ae3r)))
-    (\x_ae3s ->
-       case x_ae3s of
-         EPartyProtocolGuard x_ae3r -> Just x_ae3r
-         _ -> Nothing)
-
-ePartyProtocolEmp :: Iso () Expr
-ePartyProtocolEmp =
-  (Iso (\() -> Just EPartyProtocolEmp))
-    (\x_ae3t ->
-       case x_ae3t of
-         EPartyProtocolEmp -> Just ()
-         _ -> Nothing)
-
-eEndpointProtocolSend :: Iso (Channel, (Label, (VarFirst, Formula))) Expr
-eEndpointProtocolSend =
-  (Iso
-     (\(x_ae3u, (x_ae3v, (x_ae3w, x_ae3x))) ->
-        Just ((((EEndpointProtocolSend x_ae3u) x_ae3v) x_ae3w) x_ae3x)))
-    (\x_ae3y ->
-       case x_ae3y of
-         EEndpointProtocolSend x_ae3u x_ae3v x_ae3w x_ae3x ->
-           Just (x_ae3u, (x_ae3v, (x_ae3w, x_ae3x)))
-         _ -> Nothing)
-
-eEndpointProtocolReceive :: Iso (Channel, (Label, (VarFirst, Formula))) Expr
-eEndpointProtocolReceive =
-  (Iso
-     (\(x_ae3z, (x_ae3A, (x_ae3B, x_ae3C))) ->
-        Just ((((EEndpointProtocolReceive x_ae3z) x_ae3A) x_ae3B) x_ae3C)))
-    (\x_ae3D ->
-       case x_ae3D of
-         EEndpointProtocolReceive x_ae3z x_ae3A x_ae3B x_ae3C ->
-           Just (x_ae3z, (x_ae3A, (x_ae3B, x_ae3C)))
-         _ -> Nothing)
-
-eEndpointProtocolConcurrency :: Iso (EndpointProtocol, EndpointProtocol) Expr
-eEndpointProtocolConcurrency =
-  (Iso
-     (\(x_ae3E, x_ae3F) -> Just ((EEndpointProtocolConcurrency x_ae3E) x_ae3F)))
-    (\x_ae3G ->
-       case x_ae3G of
-         EEndpointProtocolConcurrency x_ae3E x_ae3F -> Just (x_ae3E, x_ae3F)
-         _ -> Nothing)
-
-eEndpointProtocolChoice :: Iso (EndpointProtocol, EndpointProtocol) Expr
-eEndpointProtocolChoice =
-  (Iso (\(x_ae3H, x_ae3I) -> Just ((EEndpointProtocolChoice x_ae3H) x_ae3I)))
-    (\x_ae3J ->
-       case x_ae3J of
-         EEndpointProtocolChoice x_ae3H x_ae3I -> Just (x_ae3H, x_ae3I)
-         _ -> Nothing)
-
-eEndpointProtocolSequencing :: Iso (EndpointProtocol, EndpointProtocol) Expr
-eEndpointProtocolSequencing =
-  (Iso (\(x_ae3K, x_ae3L) -> Just ((EEndpointProtocolSequencing x_ae3K) x_ae3L)))
-    (\x_ae3M ->
-       case x_ae3M of
-         EEndpointProtocolSequencing x_ae3K x_ae3L -> Just (x_ae3K, x_ae3L)
-         _ -> Nothing)
-
-eEndpointProtocolAssumption :: Iso Assertion Expr
-eEndpointProtocolAssumption =
-  (Iso (\x_ae3N -> Just (EEndpointProtocolAssumption x_ae3N)))
-    (\x_ae3O ->
-       case x_ae3O of
-         EEndpointProtocolAssumption x_ae3N -> Just x_ae3N
-         _ -> Nothing)
-
-eEndpointProtocolGuard :: Iso Assertion Expr
-eEndpointProtocolGuard =
-  (Iso (\x_ae3P -> Just (EEndpointProtocolGuard x_ae3P)))
-    (\x_ae3Q ->
-       case x_ae3Q of
-         EEndpointProtocolGuard x_ae3P -> Just x_ae3P
-         _ -> Nothing)
-
-eEndpointProtocolEmp :: Iso () Expr
-eEndpointProtocolEmp =
-  (Iso (\() -> Just EEndpointProtocolEmp))
-    (\x_ae3R ->
-       case x_ae3R of
-         EEndpointProtocolEmp -> Just ()
-         _ -> Nothing)
-
-eChannelProtocolTransmission ::
-     Iso (Role, (Label, (Role, (VarFirst, Formula)))) Expr
-eChannelProtocolTransmission =
-  (Iso
-     (\(x_ae3S, (x_ae3T, (x_ae3U, (x_ae3V, x_ae3W)))) ->
-        Just
-          (((((EChannelProtocolTransmission x_ae3S) x_ae3T) x_ae3U) x_ae3V)
-             x_ae3W)))
-    (\x_ae3X ->
-       case x_ae3X of
-         EChannelProtocolTransmission x_ae3S x_ae3T x_ae3U x_ae3V x_ae3W ->
-           Just (x_ae3S, (x_ae3T, (x_ae3U, (x_ae3V, x_ae3W))))
-         _ -> Nothing)
-
-eChannelProtocolChoice :: Iso (ChannelProtocol, ChannelProtocol) Expr
-eChannelProtocolChoice =
-  (Iso (\(x_ae3Y, x_ae3Z) -> Just ((EChannelProtocolChoice x_ae3Y) x_ae3Z)))
-    (\x_ae40 ->
-       case x_ae40 of
-         EChannelProtocolChoice x_ae3Y x_ae3Z -> Just (x_ae3Y, x_ae3Z)
-         _ -> Nothing)
-
-eChannelProtocolSequencing :: Iso (ChannelProtocol, ChannelProtocol) Expr
-eChannelProtocolSequencing =
-  (Iso (\(x_ae41, x_ae42) -> Just ((EChannelProtocolSequencing x_ae41) x_ae42)))
-    (\x_ae43 ->
-       case x_ae43 of
-         EChannelProtocolSequencing x_ae41 x_ae42 -> Just (x_ae41, x_ae42)
-         _ -> Nothing)
-
-eChannelProtocolAssumption :: Iso Assertion Expr
-eChannelProtocolAssumption =
-  (Iso (\x_ae44 -> Just (EChannelProtocolAssumption x_ae44)))
-    (\x_ae45 ->
-       case x_ae45 of
-         EChannelProtocolAssumption x_ae44 -> Just x_ae44
-         _ -> Nothing)
-
-eChannelProtocolGuard :: Iso Assertion Expr
-eChannelProtocolGuard =
-  (Iso (\x_ae46 -> Just (EChannelProtocolGuard x_ae46)))
-    (\x_ae47 ->
-       case x_ae47 of
-         EChannelProtocolGuard x_ae46 -> Just x_ae46
-         _ -> Nothing)
-
-eChannelProtocolEmp :: Iso () Expr
-eChannelProtocolEmp =
-  (Iso (\() -> Just EChannelProtocolEmp))
-    (\x_ae48 ->
-       case x_ae48 of
-         EChannelProtocolEmp -> Just ()
-         _ -> Nothing)
-
-eOpUnary :: Iso (OpUnary, Expr) Expr
-eOpUnary =
-  (Iso (\(x_ae4C, x_ae4D) -> Just ((EOpUnary x_ae4C) x_ae4D)))
-    (\x_ae4E ->
-       case x_ae4E of
-         EOpUnary x_ae4C x_ae4D -> Just (x_ae4C, x_ae4D)
-         _ -> Nothing)
-
-eOpBinary :: Iso (Expr, (OpBinary, Expr)) Expr
-eOpBinary =
-  (Iso
-     (\(x_ae49, (x_ae4a, x_ae4b)) -> Just (((EOpBinary x_ae49) x_ae4a) x_ae4b)))
-    (\x_ae4c ->
-       case x_ae4c of
-         EOpBinary x_ae49 x_ae4a x_ae4b -> Just (x_ae49, (x_ae4a, x_ae4b))
-         _ -> Nothing)
-
--- $(defineIsomorphisms ''OpUnary)
-ePureBool :: Iso () OpUnary
-ePureBool =
-  (Iso (\() -> Just EPureBool))
-    (\x_aeix ->
-       case x_aeix of
-         EPureBool -> Just ()
-         _ -> Nothing)
-
-ePureNot :: Iso () OpUnary
-ePureNot =
-  (Iso (\() -> Just EPureNot))
-    (\x_aeiy ->
-       case x_aeiy of
-         EPureNot -> Just ()
-         _ -> Nothing)
-
-ePureBoolInteger :: Iso () OpUnary
-ePureBoolInteger =
-  (Iso (\() -> Just EPureBoolInteger))
-    (\x_aeiz ->
-       case x_aeiz of
-         EPureBoolInteger -> Just ()
-         _ -> Nothing)
-
-ePurePointer :: Iso () OpUnary
-ePurePointer =
-  (Iso (\() -> Just EPurePointer))
-    (\x_aeiA ->
-       case x_aeiA of
-         EPurePointer -> Just ()
-         _ -> Nothing)
-
-ePointerNull :: Iso () OpUnary
-ePointerNull =
-  (Iso (\() -> Just EPointerNull))
-    (\x_aeiB ->
-       case x_aeiB of
-         EPointerNull -> Just ()
-         _ -> Nothing)
-
-ePointerNNull :: Iso () OpUnary
-ePointerNNull =
-  (Iso (\() -> Just EPointerNNull))
-    (\x_aeiC ->
-       case x_aeiC of
-         EPointerNNull -> Just ()
-         _ -> Nothing)
-
-eIntegerNeg :: Iso () OpUnary
-eIntegerNeg =
-  (Iso (\() -> Just EIntegerNeg))
-    (\x_aeiD ->
-       case x_aeiD of
-         EIntegerNeg -> Just ()
-         _ -> Nothing)
-
-eIntegerVarFirst :: Iso () OpUnary
-eIntegerVarFirst =
-  (Iso (\() -> Just EIntegerVarFirst))
-    (\x_aeiE ->
-       case x_aeiE of
-         EIntegerVarFirst -> Just ()
-         _ -> Nothing)
-
-eGlobalProtocolAssumption :: Iso () OpUnary
-eGlobalProtocolAssumption =
-  (Iso (\() -> Just EGlobalProtocolAssumption))
-    (\x_aeiF ->
-       case x_aeiF of
-         EGlobalProtocolAssumption -> Just ()
-         _ -> Nothing)
-
-eGlobalProtocolGuard :: Iso () OpUnary
-eGlobalProtocolGuard =
-  (Iso (\() -> Just EGlobalProtocolGuard))
-    (\x_aeiG ->
-       case x_aeiG of
-         EGlobalProtocolGuard -> Just ()
-         _ -> Nothing)
-
--- $(defineIsomorphisms ''OpBinary)
-eHeapSeparate :: Iso () OpBinary
+eHeapSeparate :: Iso (Heap, Heap) Heap
 eHeapSeparate =
-  (Iso (\() -> Just EHeapSeparate))
-    (\x_aele ->
-       case x_aele of
-         EHeapSeparate -> Just ()
+  (Iso (\(x_aec6, x_aec7) -> Just ((EHeapSeparate x_aec6) x_aec7)))
+    (\x_aec8 ->
+       case x_aec8 of
+         EHeapSeparate x_aec6 x_aec7 -> Just (x_aec6, x_aec7)
          _ -> Nothing)
 
-eFormulaSeparate :: Iso () OpBinary
-eFormulaSeparate =
-  (Iso (\() -> Just EFormulaSeparate))
-    (\x_aelf ->
-       case x_aelf of
-         EFormulaSeparate -> Just ()
+-- $(defineIsomorphisms ''Pure)
+ePureVarType :: Iso (VarFirst, VarType) Pure
+ePureVarType =
+  (Iso (\(x_aedu, x_aedv) -> Just ((EPureVarType x_aedu) x_aedv)))
+    (\x_aedw ->
+       case x_aedw of
+         EPureVarType x_aedu x_aedv -> Just (x_aedu, x_aedv)
          _ -> Nothing)
 
-ePureAnd :: Iso () OpBinary
+ePureBool :: Iso Boole Pure
+ePureBool =
+  (Iso (\x_aedx -> Just (EPureBool x_aedx)))
+    (\x_aedy ->
+       case x_aedy of
+         EPureBool x_aedx -> Just x_aedx
+         _ -> Nothing)
+
+ePureBoolInteger :: Iso BoolInteger Pure
+ePureBoolInteger =
+  (Iso (\x_aedz -> Just (EPureBoolInteger x_aedz)))
+    (\x_aedA ->
+       case x_aedA of
+         EPureBoolInteger x_aedz -> Just x_aedz
+         _ -> Nothing)
+
+ePureNot :: Iso Pure Pure
+ePureNot =
+  (Iso (\x_aedB -> Just (EPureNot x_aedB)))
+    (\x_aedC ->
+       case x_aedC of
+         EPureNot x_aedB -> Just x_aedB
+         _ -> Nothing)
+
+ePureExists :: Iso (VarFirst, VarType) Pure
+ePureExists =
+  (Iso (\(x_aedD, x_aedE) -> Just ((EPureExists x_aedD) x_aedE)))
+    (\x_aedF ->
+       case x_aedF of
+         EPureExists x_aedD x_aedE -> Just (x_aedD, x_aedE)
+         _ -> Nothing)
+
+ePureForall :: Iso (VarFirst, VarType) Pure
+ePureForall =
+  (Iso (\(x_aedG, x_aedH) -> Just ((EPureForall x_aedG) x_aedH)))
+    (\x_aedI ->
+       case x_aedI of
+         EPureForall x_aedG x_aedH -> Just (x_aedG, x_aedH)
+         _ -> Nothing)
+
+ePurePointer :: Iso Pointer Pure
+ePurePointer =
+  (Iso (\x_aedJ -> Just (EPurePointer x_aedJ)))
+    (\x_aedK ->
+       case x_aedK of
+         EPurePointer x_aedJ -> Just x_aedJ
+         _ -> Nothing)
+
+eOpPureBinary :: Iso (Pure, (OpPureBinary, Pure)) Pure
+eOpPureBinary =
+  (Iso
+     (\(x_aedL, (x_aedM, x_aedN)) ->
+        Just (((EOpPureBinary x_aedL) x_aedM) x_aedN)))
+    (\x_aedO ->
+       case x_aedO of
+         EOpPureBinary x_aedL x_aedM x_aedN -> Just (x_aedL, (x_aedM, x_aedN))
+         _ -> Nothing)
+
+-- $(defineIsomorphisms ''OpPureBinary)
+ePureAnd :: Iso () OpPureBinary
 ePureAnd =
   (Iso (\() -> Just EPureAnd))
-    (\x_aelg ->
-       case x_aelg of
+    (\x_aege ->
+       case x_aege of
          EPureAnd -> Just ()
          _ -> Nothing)
 
-ePureOr :: Iso () OpBinary
+ePureOr :: Iso () OpPureBinary
 ePureOr =
   (Iso (\() -> Just EPureOr))
-    (\x_aelh ->
-       case x_aelh of
+    (\x_aegh ->
+       case x_aegh of
          EPureOr -> Just ()
          _ -> Nothing)
 
-ePureVarType :: Iso () OpBinary
-ePureVarType =
-  (Iso (\() -> Just EPureVarType))
-    (\x_aeli ->
-       case x_aeli of
-         EPureVarType -> Just ()
-         _ -> Nothing)
-
-ePureExists :: Iso () OpBinary
-ePureExists =
-  (Iso (\() -> Just EPureExists))
-    (\x_aelj ->
-       case x_aelj of
-         EPureExists -> Just ()
-         _ -> Nothing)
-
-ePureForall :: Iso () OpBinary
-ePureForall =
-  (Iso (\() -> Just EPureForall))
-    (\x_aelk ->
-       case x_aelk of
-         EPureForall -> Just ()
-         _ -> Nothing)
-
-ePointerEq :: Iso () OpBinary
+-- $(defineIsomorphisms ''Pointer)
+ePointerEq :: Iso (VarFirst, VarFirst) Pointer
 ePointerEq =
-  (Iso (\() -> Just EPointerEq))
-    (\x_aell ->
-       case x_aell of
-         EPointerEq -> Just ()
+  (Iso (\(x_aeh1, x_aeh2) -> Just ((EPointerEq x_aeh1) x_aeh2)))
+    (\x_aeh3 ->
+       case x_aeh3 of
+         EPointerEq x_aeh1 x_aeh2 -> Just (x_aeh1, x_aeh2)
          _ -> Nothing)
 
-ePointerNEq :: Iso () OpBinary
+ePointerNull :: Iso VarFirst Pointer
+ePointerNull =
+  (Iso (\x_aeh4 -> Just (EPointerNull x_aeh4)))
+    (\x_aeh5 ->
+       case x_aeh5 of
+         EPointerNull x_aeh4 -> Just x_aeh4
+         _ -> Nothing)
+
+ePointerNEq :: Iso (VarFirst, VarFirst) Pointer
 ePointerNEq =
-  (Iso (\() -> Just EPointerNEq))
-    (\x_aelm ->
-       case x_aelm of
-         EPointerNEq -> Just ()
+  (Iso (\(x_aeh6, x_aeh7) -> Just ((EPointerNEq x_aeh6) x_aeh7)))
+    (\x_aeh8 ->
+       case x_aeh8 of
+         EPointerNEq x_aeh6 x_aeh7 -> Just (x_aeh6, x_aeh7)
          _ -> Nothing)
 
-eBoolEq :: Iso () OpBinary
+ePointerNNull :: Iso VarFirst Pointer
+ePointerNNull =
+  (Iso (\x_aeh9 -> Just (EPointerNNull x_aeh9)))
+    (\x_aeha ->
+       case x_aeha of
+         EPointerNNull x_aeh9 -> Just x_aeh9
+         _ -> Nothing)
+
+-- $(defineIsomorphisms ''Boole)
+eBool :: Iso Bool Boole
+eBool =
+  (Iso (\x_aeio -> Just (EBool x_aeio)))
+    (\x_aeip ->
+       case x_aeip of
+         EBool x_aeio -> Just x_aeio
+         _ -> Nothing)
+
+eOpBoolBinary :: Iso (Boole, (OpBoolBinary, Boole)) Boole
+eOpBoolBinary =
+  (Iso
+     (\(x_aeiq, (x_aeir, x_aeis)) ->
+        Just (((EOpBoolBinary x_aeiq) x_aeir) x_aeis)))
+    (\x_aeit ->
+       case x_aeit of
+         EOpBoolBinary x_aeiq x_aeir x_aeis -> Just (x_aeiq, (x_aeir, x_aeis))
+         _ -> Nothing)
+
+-- $(defineIsomorphisms ''OpBoolBinary)
+eBoolEq :: Iso () OpBoolBinary
 eBoolEq =
   (Iso (\() -> Just EBoolEq))
-    (\x_aeln ->
-       case x_aeln of
-         EBoolEq -> Just ()
-         _ -> Nothing)
+    (\x_aejd ->
+       case x_aejd of
+         EBoolEq -> Just ())
 
-eBoolIntegerEq :: Iso () OpBinary
+-- $(defineIsomorphisms ''BoolInteger)
+eBoolIntegerEq :: Iso (Integer, Integer) BoolInteger
 eBoolIntegerEq =
-  (Iso (\() -> Just EBoolIntegerEq))
-    (\x_aelo ->
-       case x_aelo of
-         EBoolIntegerEq -> Just ()
+  (Iso (\(x_aejz, x_aejA) -> Just ((EBoolIntegerEq x_aejz) x_aejA)))
+    (\x_aejB ->
+       case x_aejB of
+         EBoolIntegerEq x_aejz x_aejA -> Just (x_aejz, x_aejA)
          _ -> Nothing)
 
-eBoolIntegerLeq :: Iso () OpBinary
+eBoolIntegerLeq :: Iso (Integer, Integer) BoolInteger
 eBoolIntegerLeq =
-  (Iso (\() -> Just EBoolIntegerLeq))
-    (\x_aelp ->
-       case x_aelp of
-         EBoolIntegerLeq -> Just ()
+  (Iso (\(x_aejC, x_aejD) -> Just ((EBoolIntegerLeq x_aejC) x_aejD)))
+    (\x_aejE ->
+       case x_aejE of
+         EBoolIntegerLeq x_aejC x_aejD -> Just (x_aejC, x_aejD)
          _ -> Nothing)
 
-eIntegerMul :: Iso () OpBinary
+-- $(defineIsomorphisms ''Presburger)
+eInteger :: Iso Integer Presburger
+eInteger =
+  (Iso (\x_aeko -> Just (EInteger x_aeko)))
+    (\x_aekp ->
+       case x_aekp of
+         EInteger x_aeko -> Just x_aeko
+         _ -> Nothing)
+
+eIntegerVarFirst :: Iso VarFirst Presburger
+eIntegerVarFirst =
+  (Iso (\x_aekq -> Just (EIntegerVarFirst x_aekq)))
+    (\x_aekr ->
+       case x_aekr of
+         EIntegerVarFirst x_aekq -> Just x_aekq
+         _ -> Nothing)
+
+eIntegerNeg :: Iso Presburger Presburger
+eIntegerNeg =
+  (Iso (\x_aeks -> Just (EIntegerNeg x_aeks)))
+    (\x_aekt ->
+       case x_aekt of
+         EIntegerNeg x_aeks -> Just x_aeks
+         _ -> Nothing)
+
+eOpIntegerBinary :: Iso (Presburger, (OpIntegerBinary, Presburger)) Presburger
+eOpIntegerBinary =
+  (Iso
+     (\(x_aeku, (x_aekv, x_aekw)) ->
+        Just (((EOpIntegerBinary x_aeku) x_aekv) x_aekw)))
+    (\x_aekx ->
+       case x_aekx of
+         EOpIntegerBinary x_aeku x_aekv x_aekw ->
+           Just (x_aeku, (x_aekv, x_aekw))
+         _ -> Nothing)
+
+-- $(defineIsomorphisms ''OpIntegerBinary)
+eIntegerMul :: Iso () OpIntegerBinary
 eIntegerMul =
   (Iso (\() -> Just EIntegerMul))
-    (\x_aelq ->
-       case x_aelq of
+    (\x_aelL ->
+       case x_aelL of
          EIntegerMul -> Just ()
          _ -> Nothing)
 
-eIntegerAdd :: Iso () OpBinary
+eIntegerAdd :: Iso () OpIntegerBinary
 eIntegerAdd =
   (Iso (\() -> Just EIntegerAdd))
-    (\x_aelr ->
-       case x_aelr of
+    (\x_aelM ->
+       case x_aelM of
          EIntegerAdd -> Just ()
          _ -> Nothing)
 
-eGlobalProtocolConcurrency :: Iso () OpBinary
+-- $(defineIsomorphisms ''GlobalProtocol)
+eGlobalProtocolTransmission ::
+     Iso (Role, (Label, (Role, (Channel, (VarFirst, Formula))))) GlobalProtocol
+eGlobalProtocolTransmission =
+  (Iso
+     (\(x_aemo, (x_aemp, (x_aemq, (x_aemr, (x_aems, x_aemt))))) ->
+        Just
+          ((((((EGlobalProtocolTransmission x_aemo) x_aemp) x_aemq) x_aemr)
+              x_aems)
+             x_aemt)))
+    (\x_aemu ->
+       case x_aemu of
+         EGlobalProtocolTransmission x_aemo x_aemp x_aemq x_aemr x_aems x_aemt ->
+           Just (x_aemo, (x_aemp, (x_aemq, (x_aemr, (x_aems, x_aemt)))))
+         _ -> Nothing)
+
+eGlobalProtocolConcurrency ::
+     Iso (GlobalProtocol, GlobalProtocol) GlobalProtocol
 eGlobalProtocolConcurrency =
-  (Iso (\() -> Just EGlobalProtocolConcurrency))
-    (\x_aels ->
-       case x_aels of
-         EGlobalProtocolConcurrency -> Just ()
+  (Iso (\(x_aemv, x_aemw) -> Just ((EGlobalProtocolConcurrency x_aemv) x_aemw)))
+    (\x_aemx ->
+       case x_aemx of
+         EGlobalProtocolConcurrency x_aemv x_aemw -> Just (x_aemv, x_aemw)
          _ -> Nothing)
 
-eGlobalProtocolChoice :: Iso () OpBinary
+eGlobalProtocolChoice :: Iso (GlobalProtocol, GlobalProtocol) GlobalProtocol
 eGlobalProtocolChoice =
-  (Iso (\() -> Just EGlobalProtocolChoice))
-    (\x_aelt ->
-       case x_aelt of
-         EGlobalProtocolChoice -> Just ()
+  (Iso (\(x_aemy, x_aemz) -> Just ((EGlobalProtocolChoice x_aemy) x_aemz)))
+    (\x_aemA ->
+       case x_aemA of
+         EGlobalProtocolChoice x_aemy x_aemz -> Just (x_aemy, x_aemz)
          _ -> Nothing)
 
-eGlobalProtocolSequencing :: Iso () OpBinary
+eGlobalProtocolSequencing :: Iso (GlobalProtocol, GlobalProtocol) GlobalProtocol
 eGlobalProtocolSequencing =
-  (Iso (\() -> Just EGlobalProtocolSequencing))
-    (\x_aelu ->
-       case x_aelu of
-         EGlobalProtocolSequencing -> Just ()
+  (Iso (\(x_aemB, x_aemC) -> Just ((EGlobalProtocolSequencing x_aemB) x_aemC)))
+    (\x_aemD ->
+       case x_aemD of
+         EGlobalProtocolSequencing x_aemB x_aemC -> Just (x_aemB, x_aemC)
+         _ -> Nothing)
+
+eGlobalProtocolAssumption :: Iso Assertion GlobalProtocol
+eGlobalProtocolAssumption =
+  (Iso (\x_aemE -> Just (EGlobalProtocolAssumption x_aemE)))
+    (\x_aemF ->
+       case x_aemF of
+         EGlobalProtocolAssumption x_aemE -> Just x_aemE
+         _ -> Nothing)
+
+eGlobalProtocolGuard :: Iso Assertion GlobalProtocol
+eGlobalProtocolGuard =
+  (Iso (\x_aemG -> Just (EGlobalProtocolGuard x_aemG)))
+    (\x_aemH ->
+       case x_aemH of
+         EGlobalProtocolGuard x_aemG -> Just x_aemG
+         _ -> Nothing)
+
+eGlobalProtocolEmp :: Iso () GlobalProtocol
+eGlobalProtocolEmp =
+  (Iso (\() -> Just EGlobalProtocolEmp))
+    (\x_aemI ->
+       case x_aemI of
+         EGlobalProtocolEmp -> Just ()
+         _ -> Nothing)
+
+-- $(defineIsomorphisms ''Event)
+eEvent :: Iso (Role, Label) Event
+eEvent =
+  (Iso (\(x_aep3, x_aep4) -> Just ((EEvent x_aep3) x_aep4)))
+    (\x_aep5 ->
+       case x_aep5 of
+         EEvent x_aep3 x_aep4 -> Just (x_aep3, x_aep4))
+
+-- $(defineIsomorphisms ''Constraint)
+eConstraintCommunicates :: Iso (Event, Event) Constraint
+eConstraintCommunicates =
+  (Iso (\(x_aepv, x_aepw) -> Just ((EConstraintCommunicates x_aepv) x_aepw)))
+    (\x_aepx ->
+       case x_aepx of
+         EConstraintCommunicates x_aepv x_aepw -> Just (x_aepv, x_aepw)
+         _ -> Nothing)
+
+eConstraintHappens :: Iso (Event, Event) Constraint
+eConstraintHappens =
+  (Iso (\(x_aepy, x_aepz) -> Just ((EConstraintHappens x_aepy) x_aepz)))
+    (\x_aepA ->
+       case x_aepA of
+         EConstraintHappens x_aepy x_aepz -> Just (x_aepy, x_aepz)
+         _ -> Nothing)
+
+-- $(defineIsomorphisms ''Assertion)
+eAssertionEvent :: Iso Event Assertion
+eAssertionEvent =
+  (Iso (\x_aeqk -> Just (EAssertionEvent x_aeqk)))
+    (\x_aeql ->
+       case x_aeql of
+         EAssertionEvent x_aeqk -> Just x_aeqk
+         _ -> Nothing)
+
+eAssertionNEvent :: Iso Event Assertion
+eAssertionNEvent =
+  (Iso (\x_aeqm -> Just (EAssertionNEvent x_aeqm)))
+    (\x_aeqn ->
+       case x_aeqn of
+         EAssertionNEvent x_aeqm -> Just x_aeqm
+         _ -> Nothing)
+
+eAssertionConstraint :: Iso Constraint Assertion
+eAssertionConstraint =
+  (Iso (\x_aeqo -> Just (EAssertionConstraint x_aeqo)))
+    (\x_aeqp ->
+       case x_aeqp of
+         EAssertionConstraint x_aeqo -> Just x_aeqo
+         _ -> Nothing)
+
+eAssertionAnd :: Iso (Assertion, Assertion) Assertion
+eAssertionAnd =
+  (Iso (\(x_aeqq, x_aeqr) -> Just ((EAssertionAnd x_aeqq) x_aeqr)))
+    (\x_aeqs ->
+       case x_aeqs of
+         EAssertionAnd x_aeqq x_aeqr -> Just (x_aeqq, x_aeqr)
+         _ -> Nothing)
+
+eAssertionImplies :: Iso (Event, Assertion) Assertion
+eAssertionImplies =
+  (Iso (\(x_aeqt, x_aequ) -> Just ((EAssertionImplies x_aeqt) x_aequ)))
+    (\x_aeqv ->
+       case x_aeqv of
+         EAssertionImplies x_aeqt x_aequ -> Just (x_aeqt, x_aequ)
+         _ -> Nothing)
+
+-- $(defineIsomorphisms ''PartyProtocol)
+ePartyProtocolSend :: Iso (Channel, (Label, (VarFirst, Formula))) PartyProtocol
+ePartyProtocolSend =
+  (Iso
+     (\(x_aerY, (x_aerZ, (x_aes0, x_aes1))) ->
+        Just ((((EPartyProtocolSend x_aerY) x_aerZ) x_aes0) x_aes1)))
+    (\x_aes2 ->
+       case x_aes2 of
+         EPartyProtocolSend x_aerY x_aerZ x_aes0 x_aes1 ->
+           Just (x_aerY, (x_aerZ, (x_aes0, x_aes1)))
+         _ -> Nothing)
+
+ePartyProtocolReceive ::
+     Iso (Channel, (Label, (VarFirst, Formula))) PartyProtocol
+ePartyProtocolReceive =
+  (Iso
+     (\(x_aes3, (x_aes4, (x_aes5, x_aes6))) ->
+        Just ((((EPartyProtocolReceive x_aes3) x_aes4) x_aes5) x_aes6)))
+    (\x_aes7 ->
+       case x_aes7 of
+         EPartyProtocolReceive x_aes3 x_aes4 x_aes5 x_aes6 ->
+           Just (x_aes3, (x_aes4, (x_aes5, x_aes6)))
+         _ -> Nothing)
+
+ePartyProtocolConcurrency :: Iso (PartyProtocol, PartyProtocol) PartyProtocol
+ePartyProtocolConcurrency =
+  (Iso (\(x_aes8, x_aes9) -> Just ((EPartyProtocolConcurrency x_aes8) x_aes9)))
+    (\x_aesa ->
+       case x_aesa of
+         EPartyProtocolConcurrency x_aes8 x_aes9 -> Just (x_aes8, x_aes9)
+         _ -> Nothing)
+
+ePartyProtocolChoice :: Iso (PartyProtocol, PartyProtocol) PartyProtocol
+ePartyProtocolChoice =
+  (Iso (\(x_aesb, x_aesc) -> Just ((EPartyProtocolChoice x_aesb) x_aesc)))
+    (\x_aesd ->
+       case x_aesd of
+         EPartyProtocolChoice x_aesb x_aesc -> Just (x_aesb, x_aesc)
+         _ -> Nothing)
+
+ePartyProtocolSequencing :: Iso (PartyProtocol, PartyProtocol) PartyProtocol
+ePartyProtocolSequencing =
+  (Iso (\(x_aese, x_aesf) -> Just ((EPartyProtocolSequencing x_aese) x_aesf)))
+    (\x_aesg ->
+       case x_aesg of
+         EPartyProtocolSequencing x_aese x_aesf -> Just (x_aese, x_aesf)
+         _ -> Nothing)
+
+ePartyProtocolAssumption :: Iso Assertion PartyProtocol
+ePartyProtocolAssumption =
+  (Iso (\x_aesh -> Just (EPartyProtocolAssumption x_aesh)))
+    (\x_aesi ->
+       case x_aesi of
+         EPartyProtocolAssumption x_aesh -> Just x_aesh
+         _ -> Nothing)
+
+ePartyProtocolGuard :: Iso Assertion PartyProtocol
+ePartyProtocolGuard =
+  (Iso (\x_aesj -> Just (EPartyProtocolGuard x_aesj)))
+    (\x_aesk ->
+       case x_aesk of
+         EPartyProtocolGuard x_aesj -> Just x_aesj
+         _ -> Nothing)
+
+ePartyProtocolEmp :: Iso () PartyProtocol
+ePartyProtocolEmp =
+  (Iso (\() -> Just EPartyProtocolEmp))
+    (\x_aesl ->
+       case x_aesl of
+         EPartyProtocolEmp -> Just ()
+         _ -> Nothing)
+
+-- $(defineIsomorphisms ''EndpointProtocol)
+eEndpointProtocolSend ::
+     Iso (Channel, (Label, (VarFirst, Formula))) EndpointProtocol
+eEndpointProtocolSend =
+  (Iso
+     (\(x_aeuZ, (x_aev0, (x_aev1, x_aev2))) ->
+        Just ((((EEndpointProtocolSend x_aeuZ) x_aev0) x_aev1) x_aev2)))
+    (\x_aev3 ->
+       case x_aev3 of
+         EEndpointProtocolSend x_aeuZ x_aev0 x_aev1 x_aev2 ->
+           Just (x_aeuZ, (x_aev0, (x_aev1, x_aev2)))
+         _ -> Nothing)
+
+eEndpointProtocolReceive ::
+     Iso (Channel, (Label, (VarFirst, Formula))) EndpointProtocol
+eEndpointProtocolReceive =
+  (Iso
+     (\(x_aev4, (x_aev5, (x_aev6, x_aev7))) ->
+        Just ((((EEndpointProtocolReceive x_aev4) x_aev5) x_aev6) x_aev7)))
+    (\x_aev8 ->
+       case x_aev8 of
+         EEndpointProtocolReceive x_aev4 x_aev5 x_aev6 x_aev7 ->
+           Just (x_aev4, (x_aev5, (x_aev6, x_aev7)))
+         _ -> Nothing)
+
+eEndpointProtocolConcurrency ::
+     Iso (EndpointProtocol, EndpointProtocol) EndpointProtocol
+eEndpointProtocolConcurrency =
+  (Iso
+     (\(x_aev9, x_aeva) -> Just ((EEndpointProtocolConcurrency x_aev9) x_aeva)))
+    (\x_aevb ->
+       case x_aevb of
+         EEndpointProtocolConcurrency x_aev9 x_aeva -> Just (x_aev9, x_aeva)
+         _ -> Nothing)
+
+eEndpointProtocolChoice ::
+     Iso (EndpointProtocol, EndpointProtocol) EndpointProtocol
+eEndpointProtocolChoice =
+  (Iso (\(x_aevc, x_aevd) -> Just ((EEndpointProtocolChoice x_aevc) x_aevd)))
+    (\x_aeve ->
+       case x_aeve of
+         EEndpointProtocolChoice x_aevc x_aevd -> Just (x_aevc, x_aevd)
+         _ -> Nothing)
+
+eEndpointProtocolSequencing ::
+     Iso (EndpointProtocol, EndpointProtocol) EndpointProtocol
+eEndpointProtocolSequencing =
+  (Iso (\(x_aevf, x_aevg) -> Just ((EEndpointProtocolSequencing x_aevf) x_aevg)))
+    (\x_aevh ->
+       case x_aevh of
+         EEndpointProtocolSequencing x_aevf x_aevg -> Just (x_aevf, x_aevg)
+         _ -> Nothing)
+
+eEndpointProtocolAssumption :: Iso Assertion EndpointProtocol
+eEndpointProtocolAssumption =
+  (Iso (\x_aevi -> Just (EEndpointProtocolAssumption x_aevi)))
+    (\x_aevj ->
+       case x_aevj of
+         EEndpointProtocolAssumption x_aevi -> Just x_aevi
+         _ -> Nothing)
+
+eEndpointProtocolGuard :: Iso Assertion EndpointProtocol
+eEndpointProtocolGuard =
+  (Iso (\x_aevk -> Just (EEndpointProtocolGuard x_aevk)))
+    (\x_aevl ->
+       case x_aevl of
+         EEndpointProtocolGuard x_aevk -> Just x_aevk
+         _ -> Nothing)
+
+eEndpointProtocolEmp :: Iso () EndpointProtocol
+eEndpointProtocolEmp =
+  (Iso (\() -> Just EEndpointProtocolEmp))
+    (\x_aevm ->
+       case x_aevm of
+         EEndpointProtocolEmp -> Just ()
+         _ -> Nothing)
+
+-- $(defineIsomorphisms ''ChannelProtocol)
+eChannelProtocolTransmission ::
+     Iso (Role, (Label, (Role, (VarFirst, Formula)))) ChannelProtocol
+eChannelProtocolTransmission =
+  (Iso
+     (\(x_aey0, (x_aey1, (x_aey2, (x_aey3, x_aey4)))) ->
+        Just
+          (((((EChannelProtocolTransmission x_aey0) x_aey1) x_aey2) x_aey3)
+             x_aey4)))
+    (\x_aey5 ->
+       case x_aey5 of
+         EChannelProtocolTransmission x_aey0 x_aey1 x_aey2 x_aey3 x_aey4 ->
+           Just (x_aey0, (x_aey1, (x_aey2, (x_aey3, x_aey4))))
+         _ -> Nothing)
+
+eChannelProtocolChoice :: Iso (ChannelProtocol, ChannelProtocol) ChannelProtocol
+eChannelProtocolChoice =
+  (Iso (\(x_aey6, x_aey7) -> Just ((EChannelProtocolChoice x_aey6) x_aey7)))
+    (\x_aey8 ->
+       case x_aey8 of
+         EChannelProtocolChoice x_aey6 x_aey7 -> Just (x_aey6, x_aey7)
+         _ -> Nothing)
+
+eChannelProtocolSequencing ::
+     Iso (ChannelProtocol, ChannelProtocol) ChannelProtocol
+eChannelProtocolSequencing =
+  (Iso (\(x_aey9, x_aeya) -> Just ((EChannelProtocolSequencing x_aey9) x_aeya)))
+    (\x_aeyb ->
+       case x_aeyb of
+         EChannelProtocolSequencing x_aey9 x_aeya -> Just (x_aey9, x_aeya)
+         _ -> Nothing)
+
+eChannelProtocolAssumption :: Iso Assertion ChannelProtocol
+eChannelProtocolAssumption =
+  (Iso (\x_aeyc -> Just (EChannelProtocolAssumption x_aeyc)))
+    (\x_aeyd ->
+       case x_aeyd of
+         EChannelProtocolAssumption x_aeyc -> Just x_aeyc
+         _ -> Nothing)
+
+eChannelProtocolGuard :: Iso Assertion ChannelProtocol
+eChannelProtocolGuard =
+  (Iso (\x_aeye -> Just (EChannelProtocolGuard x_aeye)))
+    (\x_aeyf ->
+       case x_aeyf of
+         EChannelProtocolGuard x_aeye -> Just x_aeye
+         _ -> Nothing)
+
+eChannelProtocolEmp :: Iso () ChannelProtocol
+eChannelProtocolEmp =
+  (Iso (\() -> Just EChannelProtocolEmp))
+    (\x_aeyg ->
+       case x_aeyg of
+         EChannelProtocolEmp -> Just ()
          _ -> Nothing)
 
 {-
@@ -1086,88 +1066,8 @@ eGlobalProtocolSequencing =
  - SUBSECTION HELPERS
  -}
 parseExpr :: Syntax delta => delta Expr
-parseExpr = parsePure
+parseExpr = parseGlobalProtocol
 
-opPureUnary :: Syntax delta => delta OpUnary
-opPureUnary = ePureNot <$> text "~"
-
-opPureBinary :: Syntax delta => delta OpBinary
-opPureBinary = ePureAnd <$> text "^" <|> ePureOr <$> text "v"
-
-spacedOpPureBinary :: Syntax delta => delta OpBinary
-spacedOpPureBinary = between optSpace optSpace opPureBinary
-
-prioPureBinary :: OpBinary -> Integer
-prioPureBinary EPureAnd = 1
-prioPureBinary EPureOr = 2
-
-opBoolBinary :: Syntax delta => delta OpBinary
-opBoolBinary = eBoolEq <$> text "="
-
-prioBoolBinary :: OpBinary -> Integer
-prioBoolBinary EBoolEq = 1
-
-spacedOpBoolBinary :: Syntax delta => delta OpBinary
-spacedOpBoolBinary = between optSpace optSpace opBoolBinary
-
-opIntegerUnary :: Syntax delta => delta OpUnary
-opIntegerUnary = eIntegerNeg <$> text "-"
-
-opIntegerBinary :: Syntax delta => delta OpBinary
-opIntegerBinary = eIntegerMul <$> text "*" <|> eIntegerAdd <$> text "+"
-
-spacedOpIntegerBinary :: Syntax delta => delta OpBinary
-spacedOpIntegerBinary = between optSpace optSpace opIntegerBinary
-
-prioIntegerBinary :: OpBinary -> Integer
-prioIntegerBinary EIntegerMul = 1
-prioIntegerBinary EIntegerAdd = 2
-
-parseVarFirst = liftM EVarFirst integer
-
-parseDataStructure = liftM EDataStructure identifier
-
-parseVarType = liftM EVarType identifier
-
-parsePredicate = liftM EPredicate identifier
-
-parseRole = liftM ERole identifier
-
-parseChannel = liftM EChannel identifier
-
-parseLabel = liftM ELabel integer
-
-parsePure :: Syntax delta => delta Expr
-parsePure = exp 2
-  where
-    exp 0 =
-      eOpUnary <$> (opPureUnary <*> parsePure) <|>
-      eOpUnary <$> ((ePureBool <$> text "") <*> parseBool) <|>
-      parens (skipSpace *> parsePure <* skipSpace)
-    exp 1 = chainl1 (exp 0) spacedOpPureBinary (opPrioPureBinary 1)
-    exp 2 = chainl1 (exp 1) spacedOpPureBinary (opPrioPureBinary 2)
-    opPrioPureBinary n =
-      eOpBinary . subset (\(_, (op, _)) -> prioPureBinary op == n)
-
-parseBool :: Syntax delta => delta Expr
-parseBool = exp 1
-  where
-    exp 0 = eBool <$> bool
-    exp 1 = chainl1 (exp 0) spacedOpBoolBinary (opPrioBoolBinary 1)
-    opPrioBoolBinary n =
-      eOpBinary . subset (\(_, (op, _)) -> prioBoolBinary op == n)
-
-parseInteger :: Syntax delta => delta Expr
-parseInteger = exp 2
-  where
-    exp 0 =
-      eOpUnary <$> (opIntegerUnary <*> (eInteger <$> integer)) <|>
-      eInteger <$> integer <|>
-      parens (skipSpace *> parseInteger <* skipSpace)
-    exp 1 = chainl1 (exp 0) spacedOpIntegerBinary (opPrioIntegerBinary 1)
-    exp 2 = chainl1 (exp 1) spacedOpIntegerBinary (opPrioIntegerBinary 2)
-    opPrioIntegerBinary n =
-      eOpBinary . subset (\(_, (op, _)) -> prioIntegerBinary op == n)
 {- Figure 2.2 -}
 {-
  - SUBSECTION pred
@@ -1185,18 +1085,72 @@ parseInteger = exp 2
 {-
  - SUBSECTION π
  -}
+opPureBinary :: Syntax delta => delta OpPureBinary
+opPureBinary =
+  between optSpace optSpace (ePureAnd <$> text "^" <|> ePureOr <$> text "v")
+
+prioPureBinary :: OpPureBinary -> Integer
+prioPureBinary EPureAnd = 1
+prioPureBinary EPureOr = 2
+
+parsePure :: Syntax delta => delta Pure
+parsePure = exp 2
+  where
+    exp 0 =
+      text "~" *> (ePureNot <$> parsePure) <|> ePureBool <$> parseBool <|>
+      parens (skipSpace *> parsePure <* skipSpace)
+    exp 1 = chainl1 (exp 0) opPureBinary (opPrioPureBinary 1)
+    exp 2 = chainl1 (exp 1) opPureBinary (opPrioPureBinary 2)
+    opPrioPureBinary n =
+      eOpPureBinary . subset (\(_, (op, _)) -> prioPureBinary op == n)
+
 {-
  - SUBSECTION γ
  -}
 {-
  - SUBSECTION b
  -}
+opBoolBinary :: Syntax delta => delta OpBoolBinary
+opBoolBinary = between optSpace optSpace (eBoolEq <$> text "=")
+
+prioBoolBinary :: OpBoolBinary -> Integer
+prioBoolBinary EBoolEq = 1
+
+parseBool :: Syntax delta => delta Boole
+parseBool = exp 1
+  where
+    exp 0 = eBool <$> bool
+    exp 1 = chainl1 (exp 0) opBoolBinary (opPrioBoolBinary 1)
+    opPrioBoolBinary n =
+      eOpBoolBinary . subset (\(_, (op, _)) -> prioBoolBinary op == n)
+
 {-
  - SUBSECTION a
  -}
 {-
  - SUBSECTION s
  -}
+opIntegerBinary :: Syntax delta => delta OpIntegerBinary
+opIntegerBinary =
+  between
+    optSpace
+    optSpace
+    (eIntegerMul <$> text "*" <|> eIntegerAdd <$> text "+")
+
+prioIntegerBinary :: OpIntegerBinary -> Integer
+prioIntegerBinary EIntegerMul = 1
+prioIntegerBinary EIntegerAdd = 2
+
+parseInteger :: Syntax delta => delta Presburger
+parseInteger = exp 2
+  where
+    exp 0 =
+      text "-" *> (eIntegerNeg <$> parseInteger) <|> eInteger <$> integer <|>
+      parens (skipSpace *> parseInteger <* skipSpace)
+    exp 1 = chainl1 (exp 0) opIntegerBinary (opPrioIntegerBinary 1)
+    exp 2 = chainl1 (exp 1) opIntegerBinary (opPrioIntegerBinary 2)
+    opPrioIntegerBinary n =
+      eOpIntegerBinary . subset (\(_, (op, _)) -> prioIntegerBinary op == n)
 {- Figure 4.1 -}
 {-
  - SUBSECTION G

@@ -204,8 +204,7 @@ prioIntegerBinary EIntegerAdd = 2
 exprInteger = exp 2
   where
     exp 0 =
-      eOpUnary <$> (opIntegerUnary <*> (eInteger <$> integer)) <|>
-      eInteger <$> integer <|>
+      eOpUnary <$> (opIntegerUnary <*> exprInteger) <|> eInteger <$> integer <|>
       parens (skipSpace *> exprInteger <* skipSpace)
     exp 1 = chainl1 (exp 0) spacedOpIntegerBinary (opPrioIntegerBinary 1)
     exp 2 = chainl1 (exp 1) spacedOpIntegerBinary (opPrioIntegerBinary 2)
@@ -215,8 +214,7 @@ exprInteger = exp 2
 exprPure = exp 2
   where
     exp 0 =
-      eOpUnary <$> (opPureUnary <*> (ePureBool <$> (eBool <$> bool))) <|>
-      ePureBool <$> (eBool <$> bool) <|>
+      eOpUnary <$> (opPureUnary <*> exprPure) <|> ePureBool <$> (eBool <$> bool) <|>
       parens (skipSpace *> exprPure <* skipSpace)
     exp 1 = chainl1 (exp 0) spacedOpPureBinary (opPrioPureBinary 1)
     exp 2 = chainl1 (exp 1) spacedOpPureBinary (opPrioPureBinary 2)

@@ -20,7 +20,16 @@ import qualified Control.Exception (try)
 import Control.Monad (liftM)
 import Interpreter (Output, mainHaskeline)
 import System.IO (FilePath, readFile)
-import Text.Parsec ((<|>), alphaNum, between, lower, sepBy, sepBy1, try)
+import Text.Parsec
+  ( (<|>)
+  , alphaNum
+  , between
+  , lower
+  , optionMaybe
+  , sepBy
+  , sepBy1
+  , try
+  )
 import Text.ParserCombinators.Parsec.Expr
   ( Assoc(AssocLeft)
   , Operator(Infix, Prefix)
@@ -219,7 +228,7 @@ data Expr a
   {- G ::= S--(i)->R:c<v.Δ> | G*G | G|G | G;G | (+)(Ψ) | (-)(Ψ) | emp -}
   EGlobalProtocolTransmission
     :: Expr Role
-    -> Expr Label
+    -> Maybe (Expr Label)
     -> Expr Role
     -> Expr Channel
     -> Expr VarFirst
@@ -236,7 +245,7 @@ data Expr a
   EGlobalProtocolEmp :: Expr GlobalProtocol
   {- Figure 4.3 -}
   {- E ::= P(i) -}
-  EEvent :: Expr Role -> Expr Label -> Expr Event
+  EEvent :: Expr Role -> Maybe (Expr Label) -> Expr Event
   {- ν ::= E<CBE | E<HBE -}
   EConstraintCommunicates :: Expr Event -> Expr Event -> Expr Constraint
   EConstraintHappens :: Expr Event -> Expr Event -> Expr Constraint
@@ -250,13 +259,13 @@ data Expr a
   {- γ ::= c(i)!v.Δ | c(i)?v.Δ | γ*γ | γ|γ | γ;γ | (-)(Ψ) | (+)(Ψ) -}
   EPartyProtocolSend
     :: Expr Channel
-    -> Expr Label
+    -> Maybe (Expr Label)
     -> Expr VarFirst
     -> Expr Formula
     -> Expr PartyProtocol
   EPartyProtocolReceive
     :: Expr Channel
-    -> Expr Label
+    -> Maybe (Expr Label)
     -> Expr VarFirst
     -> Expr Formula
     -> Expr PartyProtocol
@@ -272,13 +281,13 @@ data Expr a
   {- L ::= (i)!v.Δ | (i)?v.Δ | L|L | L;L | (-)(Ψ) | (+)(Ψ) -}
   EEndpointProtocolSend
     :: Expr Channel
-    -> Expr Label
+    -> Maybe (Expr Label)
     -> Expr VarFirst
     -> Expr Formula
     -> Expr EndpointProtocol
   EEndpointProtocolReceive
     :: Expr Channel
-    -> Expr Label
+    -> Maybe (Expr Label)
     -> Expr VarFirst
     -> Expr Formula
     -> Expr EndpointProtocol
@@ -298,7 +307,7 @@ data Expr a
   {- Z ::= P--(i)->P:v.Δ | Z|Z | Z;Z | (-)(Ψ) | (+)(Ψ) -}
   EChannelProtocolTransmission
     :: Expr Role
-    -> Expr Label
+    -> Maybe (Expr Label)
     -> Expr Role
     -> Expr VarFirst
     -> Expr Formula
@@ -623,7 +632,11 @@ termGlobalProtocol =
 
 parseGlobalProtocolTransmission = do
   s <- parseRole
-  i <- between (reservedOp "--") (reservedOp "->") (parens parseLabel)
+  i <-
+    between
+      (reservedOp "--")
+      (reservedOp "->")
+      (optionMaybe $ parens parseLabel)
   r <- parseRole
   reservedOp ":"
   c <- parseChannel
@@ -653,7 +666,7 @@ parseGlobalProtocolEmp = reserved "emp" >> return EGlobalProtocolEmp
  -}
 parseEvent = do
   p <- parseRole
-  i <- parens parseLabel
+  i <- optionMaybe $ parens parseLabel
   return $ EEvent p i
 
 {-
@@ -727,7 +740,7 @@ termPartyProtocol =
 
 parsePartyProtocolSend = do
   c <- parseChannel
-  i <- parens parseLabel
+  i <- optionMaybe $ parens parseLabel
   reservedOp "!"
   reservedOp ":"
   v <- parseVarFirst
@@ -737,7 +750,7 @@ parsePartyProtocolSend = do
 
 parsePartyProtocolReceive = do
   c <- parseChannel
-  i <- parens parseLabel
+  i <- optionMaybe $ parens parseLabel
   reservedOp "?"
   reservedOp ":"
   v <- parseVarFirst
@@ -779,7 +792,7 @@ termEndpointProtocol =
 
 parseEndpointProtocolSend = do
   c <- parseChannel
-  i <- parens parseLabel
+  i <- optionMaybe $ parens parseLabel
   reservedOp "!"
   reservedOp ":"
   v <- parseVarFirst
@@ -789,7 +802,7 @@ parseEndpointProtocolSend = do
 
 parseEndpointProtocolReceive = do
   c <- parseChannel
-  i <- parens parseLabel
+  i <- optionMaybe $ parens parseLabel
   reservedOp "?"
   reservedOp ":"
   v <- parseVarFirst
@@ -829,7 +842,11 @@ termChannelProtocol =
 
 parseChannelProtocolTransmission = do
   s <- parseRole
-  i <- between (reservedOp "--") (reservedOp "->") (parens parseLabel)
+  i <-
+    between
+      (reservedOp "--")
+      (reservedOp "->")
+      (optionMaybe $ parens parseLabel)
   r <- parseRole
   reservedOp ":"
   v <- parseVarFirst

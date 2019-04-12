@@ -348,7 +348,7 @@ drawParties ss =
     extentsMap = mappingPartyExtent ss
 
 drawParty :: Int -> Int -> String -> Extent -> Picture
-drawParty w h s ex = pictures $ map (translate (xf + wf / 2) yf) shapes
+drawParty w h s ex = pictures $ map (translate xf yf) shapes
   where
     (x, y) = centerCoordOfExtent ex
     (xf, yf) = (fromIntegral x, fromIntegral y)

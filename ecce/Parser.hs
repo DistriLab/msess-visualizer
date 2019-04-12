@@ -371,6 +371,7 @@ languageDef =
         , "--"
         , "->"
         , "Inv"
+        , "--->"
         ]
     }
 
@@ -633,10 +634,12 @@ termGlobalProtocol =
 parseGlobalProtocolTransmission = do
   s <- parseRole
   i <-
-    between
-      (reservedOp "--")
-      (reservedOp "->")
-      (optionMaybe $ parens parseLabel)
+    try
+      (between
+         (reservedOp "--")
+         (reservedOp "->")
+         (optionMaybe $ parens parseLabel)) <|>
+    try (reservedOp "--->" >> optionMaybe parseLabel) -- TODO hack to match types
   r <- parseRole
   reservedOp ":"
   c <- parseChannel
@@ -843,10 +846,12 @@ termChannelProtocol =
 parseChannelProtocolTransmission = do
   s <- parseRole
   i <-
-    between
-      (reservedOp "--")
-      (reservedOp "->")
-      (optionMaybe $ parens parseLabel)
+    try
+      (between
+         (reservedOp "--")
+         (reservedOp "->")
+         (optionMaybe $ parens parseLabel)) <|>
+    try (reservedOp "--->" >> optionMaybe parseLabel) -- TODO hack to match types
   r <- parseRole
   reservedOp ":"
   v <- parseVarFirst

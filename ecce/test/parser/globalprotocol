@@ -4,3 +4,5 @@ emp*Assumption(s(1))
 EGlobalProtocolConcurrency EGlobalProtocolEmp (EGlobalProtocolAssumption (EAssertionEvent (EEvent (ERole "s") (Just (ELabel 1)))))
 Guard(s(1))|emp
 EGlobalProtocolChoice (EGlobalProtocolGuard (EAssertionEvent (EEvent (ERole "s") (Just (ELabel 1))))) EGlobalProtocolEmp
+emp;s--->r:c<3.E4.emp^true>
+EGlobalProtocolSequencing EGlobalProtocolEmp (EGlobalProtocolTransmission (ERole "s") Nothing (ERole "r") (EChannel "c") (EVarFirst 3) (EFormulaExists [EVarFirst 4] EHeapEmp (EPureBool (EBool True))))

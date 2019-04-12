@@ -107,6 +107,9 @@ transmitDescYOffset = 5
 
 textScale = 0.1
 
+numTransmitsOnScreenMax =
+  div ((div wHeight 2) - exHeight) transmitStepCountSpace
+
 {-
  - SECTION MAIN
  -}
@@ -186,7 +189,9 @@ networkDraw (bTransmits, bScrollPos) = do
     map (\(sX, rX, y, desc) -> translate 0 y (transmitSRDesc sX rX desc)) <$>
     transmitsOnScreen
   where
-    transmitsOnScreen = (\ts pos -> drop pos ts) <$> bTransmits <*> bScrollPos
+    transmitsOnScreen =
+      (\ts pos -> (take numTransmitsOnScreenMax . drop pos) ts) <$> bTransmits <*>
+      bScrollPos
 
 {-
  - SUBSECTION NETWORK PIPES

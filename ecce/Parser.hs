@@ -1168,7 +1168,7 @@ parseVarFirst :: Syntax delta => delta VarFirst
 parseVarFirst = integer
 
 parseDataStructure :: Syntax delta => delta DataStructure
-parseDataStructure = many token
+parseDataStructure = eDataStructure <$> many token
 
 parseVarType :: Syntax delta => delta VarType
 parseVarType = many token
@@ -1266,8 +1266,8 @@ parsePure :: Syntax delta => delta Pure
 parsePure = exp 2
   where
     exp 0 =
-      text "E" *> (ePureExists <$> (integer <*> parsePure)) <|>
-      text "A" *> (ePureForall <$> (integer <*> parsePure)) <|>
+      text "E" *> (ePureExists <$> (parseVarFirst <*> parsePure)) <|>
+      text "A" *> (ePureForall <$> (parseVarFirst <*> parsePure)) <|>
       text "~" *> (ePureNot <$> parsePure) <|>
       ePureVarType <$> (parseVarFirst <*> text ":" *> parseVarType) <|>
       ePureBoole <$> parseBoole <|>

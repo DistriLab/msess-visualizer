@@ -186,12 +186,16 @@ networkDraw :: (Behavior [Transmit], Behavior Int) -> Moment (Behavior Picture)
 networkDraw (bTransmits, bScrollPos) = do
   return $
     pictures .
-    map (\(sX, rX, y, desc) -> translate 0 y (transmitSRDesc sX rX desc)) <$>
+    map
+      (\((sX, rX, y, desc), firstTransmitY) ->
+         translate 0 (y - firstTransmitY) (transmitSRDesc sX rX desc)) .
+    (\ts -> zip ts (repeat . getTransmitY . head $ ts)) <$> -- TODO VERY UNSAFE
     transmitsOnScreen
   where
     transmitsOnScreen =
       (\ts pos -> (take numTransmitsOnScreenMax . drop pos) ts) <$> bTransmits <*>
       bScrollPos
+    getTransmitY (_, _, y, _) = y
 
 {-
  - SUBSECTION NETWORK PIPES

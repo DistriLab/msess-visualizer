@@ -15,7 +15,7 @@ import Base (extractParse)
 import Control.Monad (join)
 import Data.List (intercalate)
 import Interpreter (Output, mainHaskeline)
-import Parser (GlobalProtocol, parseGlobalProtocol)
+import Parser (Expr, parseExpr)
 import Text.Syntax (Syntax)
 import Text.Syntax.Printer.Naive (Printer)
 import qualified Text.Syntax.Printer.Naive (print)
@@ -37,14 +37,13 @@ commandOutputs =
 
 incommandOutput :: Output
 incommandOutput =
-  \(inputLine, _, _) ->
-    putStrLn $ un $ head $ extractParse parseGlobalProtocol inputLine
+  \(inputLine, _, _) -> putStrLn $ un $ head $ extractParse parseExpr inputLine
 
 {-
  - SUBSECTION UNPARSER
  -}
-un :: GlobalProtocol -> String
+un :: Expr -> String
 un e =
-  case Text.Syntax.Printer.Naive.print parseGlobalProtocol e of
+  case Text.Syntax.Printer.Naive.print parseExpr e of
     Just x -> x
     Nothing -> error "Print error: " ++ show e

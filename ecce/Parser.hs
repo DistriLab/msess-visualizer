@@ -1410,7 +1410,7 @@ prioAssertionBinary :: OpAssertionBinary -> Integer
 prioAssertionBinary EAssertionAnd = 1
 
 parseAssertion :: Syntax delta => delta Assertion
-parseAssertion = exp 1
+parseAssertion = exp 3
   where
     exp 0 =
       eAssertionEvent <$> parseEvent <|>

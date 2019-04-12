@@ -18,13 +18,16 @@ import Base (SParsec, extractParse)
 import Control.Exception (SomeException)
 import qualified Control.Exception (try)
 import Control.Monad (liftM)
+import Data.List (intercalate)
 import Interpreter (Output, mainHaskeline)
 import System.IO (FilePath, readFile)
 import Text.Parsec
   ( (<|>)
   , alphaNum
   , between
+  , eof
   , lower
+  , manyTill
   , optionMaybe
   , sepBy
   , sepBy1
@@ -58,8 +61,7 @@ commandOutputs =
   ]
 
 incommandOutput :: Output
-incommandOutput =
-  \(inputLine, _, _) -> putStrLn $ extractParseShow parseExpr inputLine
+incommandOutput = \(inputLine, _, _) -> putStrLn $ extractParseShow inputLine
 
 -- Parse file at filePath with shower
 parseFile ::
@@ -75,11 +77,7 @@ parseFile filePath s shower f = do
 
 parseFileLoad :: FilePath -> IO [String]
 parseFileLoad filePath =
-  parseFile
-    filePath
-    "Usage:\n\tload <relativepath>"
-    (extractParseShow parseExpr)
-    id
+  parseFile filePath "Usage:\n\tload <relativepath>" (extractParseShow) id
 
 -- All test files must follow a strict format:
 -- Must be in test/parser/ directory
@@ -113,7 +111,7 @@ parseTest (n, i, o) =
     else concat $
          "#" : show n : ":\tF\n\texpect\t" : o : "\n\tactual\t" : e : []
   where
-    e = extractParseShow parseExpr i
+    e = extractParseShow i
 
 {-
  - SECTION TYPES
@@ -397,8 +395,10 @@ whiteSpace = Token.whiteSpace lexer
 {-
  - SECTION PARSERS
  -}
-extractParseShow :: Show a => SParsec a -> String -> String
-extractParseShow p s = either show show $ extractParse p s
+extractParseShow :: String -> String
+extractParseShow s =
+  either show (\x -> intercalate " " (map show x)) $
+  extractParse (manyTill parseExpr eof) s
 
 {-
  - SUBSECTION HELPERS

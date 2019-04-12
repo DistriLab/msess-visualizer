@@ -91,12 +91,14 @@ un (AnyExpr e)
     EGlobalProtocolTransmission s i r c v f ->
       join $
       un (AnyExpr s) :
-      "--(" :
-      un (AnyExpr i) :
-      ")->" :
+      transmitString :
       un (AnyExpr r) :
       ":" :
       un (AnyExpr c) : "<" : un (AnyExpr v) : "." : un (AnyExpr f) : ">" : []
+      where transmitString =
+              case i of
+                Nothing -> "--->"
+                Just x -> join $ "--(" : un (AnyExpr x) : ")->" : []
     EGlobalProtocolConcurrency g1 g2 -> unSep "*" (AnyExpr g1 : AnyExpr g2 : [])
     EGlobalProtocolChoice g1 g2 -> unSep "|" (AnyExpr g1 : AnyExpr g2 : [])
     EGlobalProtocolSequencing g1 g2 -> unSep ";" (AnyExpr g1 : AnyExpr g2 : [])
@@ -104,7 +106,11 @@ un (AnyExpr e)
       join $ "Assumption(" : un (AnyExpr a) : ")" : []
     EGlobalProtocolGuard a -> join $ "Guard(" : un (AnyExpr a) : ")" : []
     EGlobalProtocolEmp -> "emp"
-    EEvent p i -> join $ un (AnyExpr p) : "(" : un (AnyExpr i) : ")" : []
+    EEvent p i -> join $ un (AnyExpr p) : labelString : []
+      where labelString =
+              case i of
+                Nothing -> ""
+                Just x -> join $ "(" : un (AnyExpr x) : ")" : []
     EConstraintCommunicates e1 e2 ->
       join $ un (AnyExpr e1) : "<CB" : un (AnyExpr e2) : []
     EConstraintHappens e1 e2 ->
@@ -117,11 +123,19 @@ un (AnyExpr e)
     EPartyProtocolSend c i v f ->
       join $
       un (AnyExpr c) :
-      "(" : un (AnyExpr i) : ")!:" : un (AnyExpr v) : "." : un (AnyExpr f) : []
+      labelString : "!:" : un (AnyExpr v) : "." : un (AnyExpr f) : []
+      where labelString =
+              case i of
+                Nothing -> ""
+                Just x -> join $ "(" : un (AnyExpr x) : ")" : []
     EPartyProtocolReceive c i v f ->
       join $
       un (AnyExpr c) :
-      "(" : un (AnyExpr i) : ")?:" : un (AnyExpr v) : "." : un (AnyExpr f) : []
+      labelString : "?:" : un (AnyExpr v) : "." : un (AnyExpr f) : []
+      where labelString =
+              case i of
+                Nothing -> ""
+                Just x -> join $ "(" : un (AnyExpr x) : ")" : []
     EPartyProtocolConcurrency p1 p2 -> unSep "*" (AnyExpr p1 : AnyExpr p2 : [])
     EPartyProtocolChoice p1 p2 -> unSep "|" (AnyExpr p1 : AnyExpr p2 : [])
     EPartyProtocolSequencing p1 p2 -> unSep ";" (AnyExpr p1 : AnyExpr p2 : [])
@@ -132,11 +146,19 @@ un (AnyExpr e)
     EEndpointProtocolSend c i v f ->
       join $
       un (AnyExpr c) :
-      "(" : un (AnyExpr i) : ")!:" : un (AnyExpr v) : "." : un (AnyExpr f) : []
+      labelString : "!:" : un (AnyExpr v) : "." : un (AnyExpr f) : []
+      where labelString =
+              case i of
+                Nothing -> ""
+                Just x -> join $ "(" : un (AnyExpr x) : ")" : []
     EEndpointProtocolReceive c i v f ->
       join $
       un (AnyExpr c) :
-      "(" : un (AnyExpr i) : ")?:" : un (AnyExpr v) : "." : un (AnyExpr f) : []
+      labelString : "?:" : un (AnyExpr v) : "." : un (AnyExpr f) : []
+      where labelString =
+              case i of
+                Nothing -> ""
+                Just x -> join $ "(" : un (AnyExpr x) : ")" : []
     EEndpointProtocolConcurrency e1 e2 ->
       unSep "*" (AnyExpr e1 : AnyExpr e2 : [])
     EEndpointProtocolChoice e1 e2 -> unSep "|" (AnyExpr e1 : AnyExpr e2 : [])
@@ -149,9 +171,12 @@ un (AnyExpr e)
     EChannelProtocolTransmission s i r v f ->
       join $
       un (AnyExpr s) :
-      "--(" :
-      un (AnyExpr i) :
-      ")->" : un (AnyExpr r) : ":" : un (AnyExpr v) : "." : un (AnyExpr f) : []
+      transmitString :
+      un (AnyExpr r) : ":" : un (AnyExpr v) : "." : un (AnyExpr f) : []
+      where transmitString =
+              case i of
+                Nothing -> "--->"
+                Just x -> join $ "--(" : un (AnyExpr x) : ")->" : []
     EChannelProtocolChoice g1 g2 -> unSep "|" (AnyExpr g1 : AnyExpr g2 : [])
     EChannelProtocolSequencing g1 g2 -> unSep ";" (AnyExpr g1 : AnyExpr g2 : [])
     EChannelProtocolAssumption a ->

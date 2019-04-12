@@ -259,7 +259,12 @@ networkOutputScroll eMouse =
  -}
 transToDesc :: Expr GlobalProtocol -> String
 transToDesc (EGlobalProtocolTransmission _ i _ c v f) =
-  intercalate " " $ map un [AnyExpr i, AnyExpr c, AnyExpr v, AnyExpr f]
+  intercalate " " $ labelString : map un [AnyExpr c, AnyExpr v, AnyExpr f]
+  where
+    labelString =
+      case i of
+        Nothing -> ""
+        Just x -> un (AnyExpr x)
 
 eventToRole :: Expr Parser.Event -> Expr Role
 eventToRole (EEvent p _) = p

@@ -15,7 +15,7 @@ module Frontend where
 import Control.Arrow (Kleisli(Kleisli), (***), returnA, runKleisli)
 import Control.Monad ((>=>), join)
 import Data.IORef (IORef, newIORef, readIORef, writeIORef)
-import Data.List (intercalate, nub)
+import Data.List (nub)
 import Graphics.Gloss
   ( Display(InWindow)
   , Picture
@@ -38,13 +38,20 @@ import Graphics.Gloss.Interface.IO.Game
   , playIO
   )
 import Parser
-  ( AnyExpr(AnyExpr)
-  , Expr(EEvent, EGlobalProtocolTransmission)
+  ( Boole(EBoole)
+  , Channel(EChannel)
+  , Formula(EFormulaExists)
+  , GlobalProtocol(EGlobalProtocolTransmission)
   , GlobalProtocol
+  , Heap(EHeapEmp)
+  , Label(ELabel)
+  , Pure(EPureBoole)
+  , Role(ERole)
   , Role
+  , VarFirst(EVarFirst)
   , extractFile
   )
-import qualified Parser (Event)
+import qualified Parser (Event(EEvent))
 import Processor
   ( Process(Leaf)
   , networkProcessor
@@ -199,7 +206,7 @@ networkDraw (bTransmits, bScrollPos, eKey) = do
 -- Treat sender and receiver as tuple
 networkTransmit ::
      [(String, Extent)]
-  -> ( Event (Maybe (Expr GlobalProtocol))
+  -> ( Event (Maybe GlobalProtocol)
      , Behavior (Maybe Process)
      , Event ()
      , Behavior Int)
@@ -217,7 +224,19 @@ networkTransmit extentsMap (eTrans, bProc, eDone, bStepCount) = do
         (\x -> ((mapTuple eventToRole . fst) x, snd x)) <$> srEventDesc
       srExtentsDesc =
         (\x ->
-           ( (mapTuple ((\s -> lookup s extentsMap) . un . AnyExpr) . fst) x
+           ( (mapTuple
+                ((\s -> lookup s extentsMap) .
+                 un .
+                 (\r ->
+                    EGlobalProtocolTransmission
+                      r
+                      (ELabel 0)
+                      (ERole "")
+                      (EChannel "")
+                      (EVarFirst 0) $
+                    EFormulaExists [] EHeapEmp $ EPureBoole $ EBoole True)) .
+              fst)
+               x
            , snd x)) <$>
         srRoleDesc -- TODO probably lookup returns Nothing
       srXDesc =
@@ -253,12 +272,11 @@ networkOutputScroll eMouse =
 {-
  - SUBSECTION NETWORK HELPERS
  -}
-transToDesc :: Expr GlobalProtocol -> String
-transToDesc (EGlobalProtocolTransmission _ i _ c v f) =
-  intercalate " " $ map un [AnyExpr i, AnyExpr c, AnyExpr v, AnyExpr f]
+transToDesc :: GlobalProtocol -> String
+transToDesc t = un t
 
-eventToRole :: Expr Parser.Event -> Expr Role
-eventToRole (EEvent p _) = p
+eventToRole :: Parser.Event -> Role
+eventToRole (Parser.EEvent p _) = p
 
 -- TODO srX :: (Maybe Extent, Maybe Extent) -> (Float, Float)
 -- handle this problem badly by changing type of this function
@@ -325,8 +343,8 @@ drawText = scale textScale textScale . text
 {-
  - SECTION PARTIES
  -}
-showParties :: Expr GlobalProtocol -> [String]
-showParties = nub . map (un . AnyExpr) . partiesInGlobalProtocol
+showParties :: GlobalProtocol -> [String]
+showParties = nub . map show . partiesInGlobalProtocol
 
 -- Also return extents map
 drawParties :: [String] -> (Picture, [(String, Extent)])

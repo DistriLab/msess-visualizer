@@ -13,27 +13,29 @@ module Projector where
  -}
 import Parser
   ( Assertion
-  , Assertion(EAssertionAnd, EAssertionConstraint, EAssertionEvent,
-          EAssertionImplies, EAssertionNEvent)
+  , Assertion(EAssertionConstraint, EAssertionEvent, EAssertionImplies,
+          EAssertionNEvent, EOpAssertionBinary)
   , Channel
   , Constraint
   , Constraint(EConstraintCommunicates, EConstraintHappens)
-  , EndpointProtocol(EEndpointProtocolChoice,
-                 EEndpointProtocolConcurrency, EEndpointProtocolEmp,
-                 EEndpointProtocolReceive, EEndpointProtocolSend,
-                 EEndpointProtocolSequencing)
+  , EndpointProtocol(EEndpointProtocolEmp, EEndpointProtocolReceive,
+                 EEndpointProtocolSend, EOpEndpointProtocolBinary)
   , EndpointProtocol
   , Event
   , Event(EEvent)
-  , Expr
-  , GlobalProtocol(EGlobalProtocolAssumption, EGlobalProtocolChoice,
-               EGlobalProtocolConcurrency, EGlobalProtocolEmp,
-               EGlobalProtocolGuard, EGlobalProtocolSequencing,
-               EGlobalProtocolSequencing, EGlobalProtocolTransmission)
+  , GlobalProtocol(EGlobalProtocolAssumption, EGlobalProtocolEmp,
+               EGlobalProtocolGuard, EGlobalProtocolTransmission,
+               EOpGlobalProtocolBinary)
   , GlobalProtocol
-  , PartyProtocol(EPartyProtocolChoice, EPartyProtocolConcurrency,
-              EPartyProtocolEmp, EPartyProtocolReceive, EPartyProtocolSend,
-              EPartyProtocolSequencing)
+  , OpAssertionBinary(EAssertionAnd)
+  , OpEndpointProtocolBinary(EEndpointProtocolChoice,
+                         EEndpointProtocolConcurrency, EEndpointProtocolSequencing)
+  , OpGlobalProtocolBinary(EGlobalProtocolChoice,
+                       EGlobalProtocolConcurrency, EGlobalProtocolSequencing)
+  , OpPartyProtocolBinary(EPartyProtocolChoice,
+                      EPartyProtocolConcurrency, EPartyProtocolSequencing)
+  , PartyProtocol(EOpPartyProtocolBinary, EPartyProtocolEmp,
+              EPartyProtocolReceive, EPartyProtocolSend)
   , PartyProtocol
   , Role
   )
@@ -48,9 +50,9 @@ tr :: GlobalProtocol -> [GlobalProtocol]
 tr g =
   case g of
     EGlobalProtocolTransmission _ _ _ _ _ _ -> [g]
-    EGlobalProtocolConcurrency g1 g2 -> tr g1 ++ tr g2
-    EGlobalProtocolChoice g1 g2 -> tr g1 ++ tr g2
-    EGlobalProtocolSequencing g1 g2 -> tr g1 ++ tr g2
+    EOpGlobalProtocolBinary g1 EGlobalProtocolConcurrency g2 -> tr g1 ++ tr g2
+    EOpGlobalProtocolBinary g1 EGlobalProtocolChoice g2 -> tr g1 ++ tr g2
+    EOpGlobalProtocolBinary g1 EGlobalProtocolSequencing g2 -> tr g1 ++ tr g2
     EGlobalProtocolAssumption _ -> []
     EGlobalProtocolGuard _ -> []
     EGlobalProtocolEmp -> []
@@ -72,9 +74,9 @@ ev :: GlobalProtocol -> [Event]
 ev g =
   case g of
     EGlobalProtocolTransmission s i r _ _ _ -> [EEvent s i, EEvent r i]
-    EGlobalProtocolConcurrency g1 g2 -> ev g1 ++ ev g2
-    EGlobalProtocolChoice g1 g2 -> ev g1 ++ ev g2
-    EGlobalProtocolSequencing g1 g2 -> ev g1 ++ ev g2
+    EOpGlobalProtocolBinary g1 EGlobalProtocolConcurrency g2 -> ev g1 ++ ev g2
+    EOpGlobalProtocolBinary g1 EGlobalProtocolChoice g2 -> ev g1 ++ ev g2
+    EOpGlobalProtocolBinary g1 EGlobalProtocolSequencing g2 -> ev g1 ++ ev g2
     EGlobalProtocolAssumption a -> evAssertion a
     EGlobalProtocolGuard a -> evAssertion a
     EGlobalProtocolEmp -> []
@@ -88,7 +90,7 @@ evAssertion a =
     EAssertionEvent e -> [e]
     EAssertionNEvent e -> [e]
     EAssertionConstraint c -> evConstraint c
-    EAssertionAnd a1 a2 -> evAssertion a1 ++ evAssertion a2
+    EOpAssertionBinary a1 EAssertionAnd a2 -> evAssertion a1 ++ evAssertion a2
     EAssertionImplies e a -> e : evAssertion a
 
 evConstraint :: Constraint -> [Event]
@@ -124,17 +126,20 @@ projectGlobalToParty g p =
       | p == s -> EPartyProtocolSend c i v f
       | p == r -> EPartyProtocolReceive c i v f
       | otherwise -> EPartyProtocolEmp
-    EGlobalProtocolConcurrency g1 g2 ->
-      EPartyProtocolConcurrency
+    EOpGlobalProtocolBinary g1 EGlobalProtocolConcurrency g2 ->
+      EOpPartyProtocolBinary
         (projectGlobalToParty g1 p)
+        EPartyProtocolConcurrency
         (projectGlobalToParty g2 p)
-    EGlobalProtocolChoice g1 g2 ->
-      EPartyProtocolChoice
+    EOpGlobalProtocolBinary g1 EGlobalProtocolChoice g2 ->
+      EOpPartyProtocolBinary
         (projectGlobalToParty g1 p)
+        EPartyProtocolChoice
         (projectGlobalToParty g2 p)
-    EGlobalProtocolSequencing g1 g2 ->
-      EPartyProtocolSequencing
+    EOpGlobalProtocolBinary g1 EGlobalProtocolSequencing g2 ->
+      EOpPartyProtocolBinary
         (projectGlobalToParty g1 p)
+        EPartyProtocolSequencing
         (projectGlobalToParty g2 p)
     EGlobalProtocolEmp -> EPartyProtocolEmp
 
@@ -156,21 +161,24 @@ projectPartyToEndpoint :: PartyProtocol -> Channel -> EndpointProtocol
 projectPartyToEndpoint p c =
   case p of
     EPartyProtocolSend c1 i v f
-      | c == c1 -> EEndpointProtocolSend c i v f
+      | c == c1 -> EEndpointProtocolSend i v f
       | otherwise -> EEndpointProtocolEmp
     EPartyProtocolReceive c1 i v f
-      | c == c1 -> EEndpointProtocolReceive c i v f
+      | c == c1 -> EEndpointProtocolReceive i v f
       | otherwise -> EEndpointProtocolEmp
-    EPartyProtocolConcurrency g1 g2 ->
-      EEndpointProtocolConcurrency
+    EOpPartyProtocolBinary g1 EPartyProtocolConcurrency g2 ->
+      EOpEndpointProtocolBinary
         (projectPartyToEndpoint g1 c)
+        EEndpointProtocolConcurrency
         (projectPartyToEndpoint g2 c)
-    EPartyProtocolChoice g1 g2 ->
-      EEndpointProtocolChoice
+    EOpPartyProtocolBinary g1 EPartyProtocolChoice g2 ->
+      EOpEndpointProtocolBinary
         (projectPartyToEndpoint g1 c)
+        EEndpointProtocolChoice
         (projectPartyToEndpoint g2 c)
-    EPartyProtocolSequencing g1 g2 ->
-      EEndpointProtocolSequencing
+    EOpPartyProtocolBinary g1 EPartyProtocolSequencing g2 ->
+      EOpEndpointProtocolBinary
         (projectPartyToEndpoint g1 c)
+        EEndpointProtocolSequencing
         (projectPartyToEndpoint g2 c)
     EPartyProtocolEmp -> EEndpointProtocolEmp

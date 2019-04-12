@@ -12,12 +12,8 @@ module Unparser where
  - SECTION IMPORTS
  -}
 import Base (extractParse)
-import Control.Monad (join)
-import Data.List (intercalate)
 import Interpreter (Output, mainHaskeline)
-import Parser (Expr, parseExpr)
-import Text.Syntax (Syntax)
-import Text.Syntax.Printer.Naive (Printer)
+import Parser (GlobalProtocol, parseGlobalProtocol)
 import qualified Text.Syntax.Printer.Naive (print)
 
 {-
@@ -37,13 +33,14 @@ commandOutputs =
 
 incommandOutput :: Output
 incommandOutput =
-  \(inputLine, _, _) -> putStrLn $ un $ head $ extractParse parseExpr inputLine
+  \(inputLine, _, _) ->
+    putStrLn $ un $ head $ extractParse parseGlobalProtocol inputLine
 
 {-
  - SUBSECTION UNPARSER
  -}
-un :: Expr -> String
+un :: GlobalProtocol -> String
 un e =
-  case Text.Syntax.Printer.Naive.print parseExpr e of
+  case Text.Syntax.Printer.Naive.print parseGlobalProtocol e of
     Just x -> x
     Nothing -> error "Print error: " ++ show e

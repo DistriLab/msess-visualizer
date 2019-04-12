@@ -18,24 +18,23 @@ import Control.Monad (when)
 import Control.Monad.Fix (fix)
 import Control.Monad.IO.Class (liftIO)
 import Data.Char (isDigit)
-import Data.Either (rights)
 import Data.Functor ((<$), (<$>))
 import Data.List (intercalate, nub)
 import Data.Maybe (fromJust)
 import Interpreter (Output, mainHaskeline)
 import Parser
-  ( AnyExpr(AnyExpr)
-  , Channel
-  , EndpointProtocol
-  , Expr(EEvent, EGlobalProtocolChoice, EGlobalProtocolConcurrency,
-     EGlobalProtocolEmp, EGlobalProtocolSequencing,
-     EGlobalProtocolTransmission)
-  , Expr
+  ( Channel(EChannel)
+  , EndpointProtocol(EEndpointProtocolReceive, EEndpointProtocolSend)
+  , GlobalProtocol(EGlobalProtocolEmp, EGlobalProtocolTransmission,
+               EOpGlobalProtocolBinary)
   , GlobalProtocol
-  , Role
+  , OpGlobalProtocolBinary(EGlobalProtocolChoice,
+                       EGlobalProtocolConcurrency, EGlobalProtocolSequencing)
+  , Role(ERole)
   , extractFile
   , parseGlobalProtocol
   )
+import qualified Parser (Event(EEvent))
 import Projector (ev, projectGlobalToParty, projectPartyToEndpoint, tr)
 import Reactive.Banana
   ( Behavior
@@ -126,7 +125,7 @@ commands = "help" : "load" : []
 -- resolve the head process, then process the tails.
 -- A concurrent process resolves processes without a defined order.
 data Process
-  = Leaf (Expr GlobalProtocol)
+  = Leaf GlobalProtocol
   | NodeS [Process]
   | NodeC [Process]
   deriving (Show)
@@ -143,7 +142,7 @@ networkDescription filePath eKey =
 networkProcessor ::
      Maybe Process
   -> Event (Maybe Char)
-  -> Moment ( Event (Maybe (Expr GlobalProtocol))
+  -> Moment ( Event (Maybe GlobalProtocol)
             , Behavior (Maybe Process)
             , Event ()
             , Behavior Int)
@@ -160,14 +159,14 @@ networkProcessor p eKey
       --    looks at bProcChoiceMay to get list of processes to be chosen from
       --    returns selected process from that list of processes
       --    always guaranteed to have [Process], not Maybe [Process]
-      --        because of how eChooseMay guarantees bProcChoiceMay will always 
+      --        because of how eChooseMay guarantees bProcChoiceMay will always
       --        be (Just ...)
  =
   mdo let bProcChoiceMay :: Behavior (Maybe [Process])
           bProcChoiceMay =
             ((\x ->
                 case x of
-                  Just (NodeS (Leaf (EGlobalProtocolChoice g1 g2):_)) ->
+                  Just (NodeS (Leaf (EOpGlobalProtocolBinary g1 EGlobalProtocolChoice g2):_)) ->
                     Just [Leaf g1, Leaf g2] -- TODO assumed NodeS, not NodeC
                   otherwise -> Nothing) <$>
              bProc)
@@ -197,7 +196,7 @@ networkProcessor p eKey
       --    processStep:
       --        Ignore the accumulated bProc
       --        Take in the new bProc
-      (eTrans :: Event (Maybe (Expr GlobalProtocol)), bProc :: Behavior (Maybe Process)) <-
+      (eTrans :: Event (Maybe GlobalProtocol), bProc :: Behavior (Maybe Process)) <-
         mapAccum p $
         unionWith
           const
@@ -215,15 +214,14 @@ networkProcessor p eKey
       return (eTrans, bProc, eDone, bStepCount)
 
 networkPrinter ::
-     ( Event (Maybe (Expr GlobalProtocol))
+     ( Event (Maybe GlobalProtocol)
      , Behavior (Maybe Process)
      , Event ()
      , Behavior Int)
   -> MomentIO ()
 networkPrinter (eTrans, bProc, eDone, bStepCount) = do
   reactimate $
-    maybe (return ()) (putStrLn . ("Transmission: " ++) . un . AnyExpr) <$>
-    eTrans
+    maybe (return ()) (putStrLn . ("Transmission: " ++) . un) <$> eTrans
   eProc <- changes bProc
   -- TODO find more efficient way of getting endpoint protocols
   reactimate' $
@@ -231,27 +229,47 @@ networkPrinter (eTrans, bProc, eDone, bStepCount) = do
       (putStrLn .
        intercalate "\n" .
        nub .
-       map (un . AnyExpr) . projectGlobalToEndpoint . mayProcessToGlobalProtocol) <$>
+       map
+         (un .
+          (\x ->
+             case x of
+               EEndpointProtocolSend i v f ->
+                 EGlobalProtocolTransmission
+                   (ERole "")
+                   i
+                   (ERole "")
+                   (EChannel "")
+                   v
+                   f
+               EEndpointProtocolReceive i v f ->
+                 EGlobalProtocolTransmission
+                   (ERole "")
+                   i
+                   (ERole "")
+                   (EChannel "")
+                   v
+                   f)) .
+       projectGlobalToEndpoint . mayProcessToGlobalProtocol) <$>
     eProc
   eStepCount <- changes bStepCount
   reactimate' $ fmap (putStrLn . show) <$> eStepCount
   reactimate $ putStrLn "Done!" <$ eDone
 
-projectGlobalToEndpoint :: Expr GlobalProtocol -> [Expr EndpointProtocol]
+projectGlobalToEndpoint :: GlobalProtocol -> [EndpointProtocol]
 projectGlobalToEndpoint g =
   [ projectPartyToEndpoint (projectGlobalToParty g p) c
   | p <- partiesInGlobalProtocol g
   , c <- channelsInGlobalProtocol g
   ]
 
-partiesInGlobalProtocol :: Expr GlobalProtocol -> [Expr Role]
-partiesInGlobalProtocol g = [p | EEvent p _ <- ev g]
+partiesInGlobalProtocol :: GlobalProtocol -> [Role]
+partiesInGlobalProtocol g = [p | Parser.EEvent p _ <- ev g]
 
-channelsInGlobalProtocol :: Expr GlobalProtocol -> [Expr Channel]
+channelsInGlobalProtocol :: GlobalProtocol -> [Channel]
 channelsInGlobalProtocol g =
   [c | EGlobalProtocolTransmission _ _ _ c _ _ <- tr g]
 
-mayProcessToGlobalProtocol :: Maybe Process -> Expr GlobalProtocol
+mayProcessToGlobalProtocol :: Maybe Process -> GlobalProtocol
 mayProcessToGlobalProtocol =
   maybe
     EGlobalProtocolEmp
@@ -269,13 +287,11 @@ parseContents xs =
   either
     (\e -> error $ "Parse error: " ++ show e)
     (\xs ->
-       let gs = map (extractParse parseGlobalProtocol) xs
-        in if any (either (const True) (const False)) gs
-             then Nothing
-             else Just $ map Leaf (rights gs))
+       let gs = head $ map (extractParse parseGlobalProtocol) xs
+        in Just $ map Leaf gs)
     xs
 
-processStep :: Maybe Process -> (Maybe (Expr GlobalProtocol), Maybe Process)
+processStep :: Maybe Process -> (Maybe GlobalProtocol, Maybe Process)
 processStep p =
   case p of
     Nothing -> (Nothing, Nothing)
@@ -283,9 +299,9 @@ processStep p =
       case p of
         Leaf g ->
           case g of
-            EGlobalProtocolConcurrency g1 g2 ->
+            EOpGlobalProtocolBinary g1 EGlobalProtocolConcurrency g2 ->
               (Nothing, Just $ NodeC [Leaf g1, Leaf g2])
-            EGlobalProtocolSequencing g1 g2 ->
+            EOpGlobalProtocolBinary g1 EGlobalProtocolSequencing g2 ->
               (Nothing, Just $ NodeS [Leaf g1, Leaf g2])
             otherwise -> (Just g, Nothing)
         NodeS [] -> (Nothing, Nothing)

@@ -165,8 +165,7 @@ aPicture p extentsMap =
                      -< eCharMay
      bScrollPos <- Kleisli (networkInputScroll >=> networkOutputScroll)
                      -< eGloss
-     picture <- Kleisli networkDraw -<
-                  (bTransmits, bScrollPos, eCharMay)
+     picture <- Kleisli networkDraw -< (bTransmits, bScrollPos)
      returnA -< picture
 
 {-
@@ -181,17 +180,12 @@ networkInputScroll eGloss = return $ mayScroll <$> eGloss
 {-
  - SUBSECTION NETWORK OUTPUTS
  -}
-networkDraw ::
-     (Behavior [Transmit], Behavior Int, Event (Maybe Char))
-  -> Moment (Behavior Picture)
-networkDraw (bTransmits, bScrollPos, eKey) = do
-  bScrollPosAuto <- accumB 0 ((+ 1) <$ filterJust eKey)
-  let bScrollPosCombined = (+) <$> bScrollPosAuto <*> bScrollPos
+networkDraw :: (Behavior [Transmit], Behavior Int) -> Moment (Behavior Picture)
+networkDraw (bTransmits, bScrollPos) = do
   return $
     (pictures .
      map (\(sX, rX, y, desc) -> translate 0 y (transmitSRDesc sX rX desc))) <$>
-    ((\ts pos -> drop (length ts - pos) ts) <$> bTransmits <*>
-     bScrollPosCombined)
+    ((\ts pos -> drop pos ts) <$> bTransmits <*> bScrollPos)
 
 {-
  - SUBSECTION NETWORK PIPES

@@ -3,5 +3,8 @@ syntax: glob
 .*.swo
 *.o
 *.hi
+*.dyn_o
+*.dyn_hi
 dist/
 *.img
+ecce/Main

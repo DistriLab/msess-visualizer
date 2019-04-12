@@ -115,7 +115,7 @@ numTransmitsOnScreenMax =
  -}
 main :: IO ()
 main = do
-  xs <- extractFile "test/processor/names"
+  xs <- extractFile "test/processor/example"
   let p = fmap head (parseContents xs)
       Just (Leaf g) = p -- TODO deconstruct p better
       (picBase, extentsMap) = drawParties (showParties g)

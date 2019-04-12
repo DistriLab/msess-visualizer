@@ -183,7 +183,9 @@ data SymbolicPredicate =
   deriving (Show)
 
 {- Φ ::= |Δ -}
-type FormulaDisjunct = [Formula]
+data FormulaDisjunct =
+  EFormulaDisjunct [Formula]
+  deriving (Show)
 
 {- Δ ::= ∃v*.κ^π | Δ*Δ -}
 data Formula
@@ -468,6 +470,14 @@ eSymbolicPredicate =
        case x_aeaM of
          ESymbolicPredicate x_aeaI x_aeaJ x_aeaK x_aeaL ->
            Just (x_aeaI, (x_aeaJ, (x_aeaK, x_aeaL))))
+
+-- $(defineIsomorphisms ''FormulaDisjunct)
+eFormulaDisjunct :: Iso [Formula] FormulaDisjunct
+eFormulaDisjunct =
+  (Iso (\x_aebJ -> Just (EFormulaDisjunct x_aebJ)))
+    (\x_aebK ->
+       case x_aebK of
+         EFormulaDisjunct x_aebJ -> Just x_aebJ)
 
 -- $(defineIsomorphisms ''Formula)
 eFormulaExists :: Iso ([VarFirst], (Heap, Pure)) Formula
@@ -1195,7 +1205,7 @@ parseSymbolicPredicate = exp 0
 parseFormulaDisjunct :: Syntax delta => delta FormulaDisjunct
 parseFormulaDisjunct = exp 0
   where
-    exp 0 = parseFormula `sepBy` text "|"
+    exp 0 = eFormulaDisjunct <$> parseFormula `sepBy` text "|"
 
 {-
  - SUBSECTION Δ

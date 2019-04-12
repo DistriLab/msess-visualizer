@@ -364,12 +364,10 @@ data OpPartyProtocolBinary
 
 {- L ::= (i)!v.Δ | (i)?v.Δ | L|L | L;L | (-)(Ψ) | (+)(Ψ) -}
 data EndpointProtocol
-  = EEndpointProtocolSend Channel
-                          Label
+  = EEndpointProtocolSend Label
                           VarFirst
                           Formula
-  | EEndpointProtocolReceive Channel
-                             Label
+  | EEndpointProtocolReceive Label
                              VarFirst
                              Formula
   -- Note:
@@ -999,28 +997,26 @@ ePartyProtocolSequencing =
          _ -> Nothing)
 
 -- $(defineIsomorphisms ''EndpointProtocol)
-eEndpointProtocolSend ::
-     Iso (Channel, (Label, (VarFirst, Formula))) EndpointProtocol
+eEndpointProtocolSend :: Iso (Label, (VarFirst, Formula)) EndpointProtocol
 eEndpointProtocolSend =
   (Iso
-     (\(x_aewS, (x_aewT, (x_aewU, x_aewV))) ->
-        Just ((((EEndpointProtocolSend x_aewS) x_aewT) x_aewU) x_aewV)))
+     (\(x_aewT, (x_aewU, x_aewV)) ->
+        Just (((EEndpointProtocolSend x_aewT) x_aewU) x_aewV)))
     (\x_aewW ->
        case x_aewW of
-         EEndpointProtocolSend x_aewS x_aewT x_aewU x_aewV ->
-           Just (x_aewS, (x_aewT, (x_aewU, x_aewV)))
+         EEndpointProtocolSend x_aewT x_aewU x_aewV ->
+           Just (x_aewT, (x_aewU, x_aewV))
          _ -> Nothing)
 
-eEndpointProtocolReceive ::
-     Iso (Channel, (Label, (VarFirst, Formula))) EndpointProtocol
+eEndpointProtocolReceive :: Iso (Label, (VarFirst, Formula)) EndpointProtocol
 eEndpointProtocolReceive =
   (Iso
-     (\(x_aewX, (x_aewY, (x_aewZ, x_aex0))) ->
-        Just ((((EEndpointProtocolReceive x_aewX) x_aewY) x_aewZ) x_aex0)))
+     (\(x_aewY, (x_aewZ, x_aex0)) ->
+        Just (((EEndpointProtocolReceive x_aewY) x_aewZ) x_aex0)))
     (\x_aex1 ->
        case x_aex1 of
-         EEndpointProtocolReceive x_aewX x_aewY x_aewZ x_aex0 ->
-           Just (x_aewX, (x_aewY, (x_aewZ, x_aex0)))
+         EEndpointProtocolReceive x_aewY x_aewZ x_aex0 ->
+           Just (x_aewY, (x_aewZ, x_aex0))
          _ -> Nothing)
 
 eEndpointProtocolAssumption :: Iso Assertion EndpointProtocol
@@ -1486,12 +1482,10 @@ parseEndpointProtocol = exp 3
     exp 0 =
       eEndpointProtocolEmp <$> text "emp" <|>
       eEndpointProtocolSend <$>
-      (parseChannel <*> parens parseLabel <*> text "!:" *> parseVarFirst <*>
-       text "." *>
+      (parens parseLabel <*> text "!:" *> parseVarFirst <*> text "." *>
        parseFormula) <|>
       eEndpointProtocolReceive <$>
-      (parseChannel <*> parens parseLabel <*> text "?:" *> parseVarFirst <*>
-       text "." *>
+      (parens parseLabel <*> text "?:" *> parseVarFirst <*> text "." *>
        parseFormula) <|>
       eEndpointProtocolAssumption <$> text "Assumption" *> parseAssertion <|>
       eEndpointProtocolGuard <$> text "Guard" *> parseAssertion <|>

@@ -82,9 +82,9 @@ import Unparser (un)
  -}
 fps = 30
 
-wWidth = 320
+wWidth = 640
 
-wHeight = 240
+wHeight = 480
 
 exWidth = 8
 

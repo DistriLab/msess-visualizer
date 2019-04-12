@@ -5,6 +5,8 @@
 {-# LANGUAGE TemplateHaskell, NoMonomorphismRestriction #-}
 {-# LANGUAGE StandaloneDeriving #-} -- Allows `deriving` on its own line
 {-# LANGUAGE ScopedTypeVariables #-} -- Allows type signatures in patterns
+{-# LANGUAGE EmptyDataDecls #-} -- Allows datatypes without constructors
+{-# LANGUAGE EmptyDataDeriving #-} -- Allows deriving for empty datatypes
 
 {-
  - SECTION MODULE
@@ -159,19 +161,33 @@ extractParseShow p s = show $ head $ extractParse p s
 {-
  - SUBSECTION HELPERS
  -}
-type VarFirst = Integer
+data VarFirst =
+  EVarFirst Integer
+  deriving (Show)
 
-type DataStructure = String
+data DataStructure =
+  EDataStructure String
+  deriving (Show)
 
-type VarType = String
+data VarType =
+  EVarType String
+  deriving (Show)
 
-type Predicate = String
+data Predicate =
+  EPredicate String
+  deriving (Show)
 
-type Role = String
+data Role =
+  ERole String
+  deriving (Show, Eq)
 
-type Channel = String
+data Channel =
+  EChannel String
+  deriving (Show, Eq)
 
-type Label = Integer
+data Label =
+  ELabel Integer
+  deriving (Show)
 
 {- Figure 2.2 -}
 {- pred ::= p(root,v*) = Φ inv π -}
@@ -459,6 +475,62 @@ angles = between (text "<") (text ">")
  - SECTION SPLICE
  - TODO splice templates properly
  -}
+-- $(defineIsomorphisms ''VarFirst)
+eVarFirst :: Iso Integer VarFirst
+eVarFirst =
+  (Iso (\x_aegM -> Just (EVarFirst x_aegM)))
+    (\x_aegN ->
+       case x_aegN of
+         EVarFirst x_aegM -> Just x_aegM)
+
+-- $(defineIsomorphisms ''DataStructure)
+eDataStructure :: Iso String DataStructure
+eDataStructure =
+  (Iso (\x_aeh9 -> Just (EDataStructure x_aeh9)))
+    (\x_aeha ->
+       case x_aeha of
+         EDataStructure x_aeh9 -> Just x_aeh9)
+
+-- $(defineIsomorphisms ''VarType)
+eVarType :: Iso String VarType
+eVarType =
+  (Iso (\x_aehw -> Just (EVarType x_aehw)))
+    (\x_aehx ->
+       case x_aehx of
+         EVarType x_aehw -> Just x_aehw)
+
+-- $(defineIsomorphisms ''Predicate)
+ePredicate :: Iso String Predicate
+ePredicate =
+  (Iso (\x_aehT -> Just (EPredicate x_aehT)))
+    (\x_aehU ->
+       case x_aehU of
+         EPredicate x_aehT -> Just x_aehT)
+
+-- $(defineIsomorphisms ''Role)
+eRole :: Iso String Role
+eRole =
+  (Iso (\x_aeig -> Just (ERole x_aeig)))
+    (\x_aeih ->
+       case x_aeih of
+         ERole x_aeig -> Just x_aeig)
+
+-- $(defineIsomorphisms ''Channel)
+eChannel :: Iso String Channel
+eChannel =
+  (Iso (\x_aeiD -> Just (EChannel x_aeiD)))
+    (\x_aeiE ->
+       case x_aeiE of
+         EChannel x_aeiD -> Just x_aeiD)
+
+-- $(defineIsomorphisms ''Label)
+eLabel :: Iso Integer Label
+eLabel =
+  (Iso (\x_aej0 -> Just (ELabel x_aej0)))
+    (\x_aej1 ->
+       case x_aej1 of
+         ELabel x_aej0 -> Just x_aej0)
+
 -- $(defineIsomorphisms ''SymbolicPredicate)
 eSymbolicPredicate ::
      Iso (Predicate, ([Formula], (FormulaDisjunct, Pure))) SymbolicPredicate
@@ -1165,25 +1237,25 @@ eChannelProtocolSequencing =
  - SUBSECTION HELPERS
  -}
 parseVarFirst :: Syntax delta => delta VarFirst
-parseVarFirst = integer
+parseVarFirst = eVarFirst <$> integer
 
 parseDataStructure :: Syntax delta => delta DataStructure
 parseDataStructure = eDataStructure <$> many token
 
 parseVarType :: Syntax delta => delta VarType
-parseVarType = many token
+parseVarType = eVarType <$> many token
 
 parsePredicate :: Syntax delta => delta Predicate
-parsePredicate = many token
+parsePredicate = ePredicate <$> many token
 
 parseRole :: Syntax delta => delta Role
-parseRole = many token
+parseRole = eRole <$> many token
 
 parseChannel :: Syntax delta => delta Channel
-parseChannel = many token
+parseChannel = eChannel <$> many token
 
 parseLabel :: Syntax delta => delta Label
-parseLabel = integer
+parseLabel = eLabel <$> integer
 
 {- Figure 2.2 -}
 {-

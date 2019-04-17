@@ -8,3 +8,9 @@ syntax: glob
 dist/
 *.img
 ecce/Main
+*.aux
+*.log
+*.ptb
+*.toc
+*.out
+*.tex

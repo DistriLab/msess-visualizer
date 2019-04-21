@@ -1,3 +1,7 @@
+\documentclass{article}
+%include polycode.fmt
+\begin{document}
+\begin{code}
 {-
  - SECTION PRAGMAS
  -}
@@ -160,7 +164,7 @@ networkProcessor p eKey
       --    looks at bProcChoiceMay to get list of processes to be chosen from
       --    returns selected process from that list of processes
       --    always guaranteed to have [Process], not Maybe [Process]
-      --        because of how eChooseMay guarantees bProcChoiceMay will always 
+      --        because of how eChooseMay guarantees bProcChoiceMay will always
       --        be (Just ...)
  =
   mdo let bProcChoiceMay :: Behavior (Maybe [Process])
@@ -296,3 +300,5 @@ processStep p =
         NodeC (p:ps) -> (s', Just $ NodeC ps')
           where (s', p') = processStep (Just p)
                 ps' = maybe ps (: ps) p'
+\end{code}
+\end{document}

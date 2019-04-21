@@ -1,3 +1,7 @@
+\documentclass{article}
+%include polycode.fmt
+\begin{document}
+\begin{code}
 {-
  - SECTION PRAGMAS
  -}
@@ -892,3 +896,5 @@ parseExpr =
         where
           (h:t) = parseOrder
    in parseInOrder
+\end{code}
+\end{document}

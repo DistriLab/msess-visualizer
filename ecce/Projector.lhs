@@ -1,3 +1,7 @@
+\documentclass{article}
+%include polycode.fmt
+\begin{document}
+\begin{code}
 {-
  - SECTION PRAGMAS
  -}
@@ -58,11 +62,11 @@ tr g =
  - Note:
  -  Defined in terms of List, instead of Set in the thesis.
  -  This is because Set requires Eq to be derived for the Expr datatype,
- -  which means that certain constructors of Expr like EHeapProtocol and 
+ -  which means that certain constructors of Expr like EHeapProtocol and
  -  ESymbolicProtocol will also need to derive Eq.
- -  However, this is not possible because both of those constructors have an 
+ -  However, this is not possible because both of those constructors have an
  -  argument of type [AnyExpr].
- -  Hence, in deriving Eq for both of those constructors, we assume Eq for 
+ -  Hence, in deriving Eq for both of those constructors, we assume Eq for
  -  AnyExpr, which assumes Eq for both of those constructors.
  -  This is circular reasoning.
  -}
@@ -140,15 +144,15 @@ projectGlobalToParty g er@(ERole p) =
  - SUBSECTION PER PARTY SPEC -> PER ENDPOINT SPEC
  -}
 -- Note:
---  - projectPartyToEndpoint (EPartyProtocolConcurrency ...) here is 
---  semantically same as the specification in Figure 4.6 (b). However, here we 
+--  - projectPartyToEndpoint (EPartyProtocolConcurrency ...) here is
+--  semantically same as the specification in Figure 4.6 (b). However, here we
 --  don't have the well-formedness constraint.
 --  - this also means the grammar for L in Parser.hs will have an extra L*L.
 --  Future work:
 --      - normalize the projected endpoints, checking for well-formedness:
 --      L*emp, emp*L, emp*emp are well-formed, but L*L is not.
---      - when we extend our project to allow race conditions, we will need to 
---      change the definition of well-formedness, and allow L*L in the grammar 
+--      - when we extend our project to allow race conditions, we will need to
+--      change the definition of well-formedness, and allow L*L in the grammar
 --      of L. This allows concurrent usage of the same endpoint.
 projectPartyToEndpoint ::
      Expr PartyProtocol -> Expr Channel -> Expr EndpointProtocol
@@ -173,3 +177,5 @@ projectPartyToEndpoint p ec@(EChannel c) =
         (projectPartyToEndpoint g1 ec)
         (projectPartyToEndpoint g2 ec)
     EPartyProtocolEmp -> EEndpointProtocolEmp
+\end{code}
+\end{document}

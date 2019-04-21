@@ -1,3 +1,7 @@
+\documentclass{article}
+%include polycode.fmt
+\begin{document}
+\begin{code}
 {-
  - SECTION PRAGMAS
  -}
@@ -194,3 +198,5 @@ un (AnyExpr e)
 
 unSep :: String -> [AnyExpr] -> String
 unSep s es = intercalate s (map un es)
+\end{code}
+\end{document}

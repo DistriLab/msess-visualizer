@@ -1,3 +1,7 @@
+\documentclass{article}
+%include polycode.fmt
+\begin{document}
+\begin{code}
 {-
  - SECTION PRAGMAS
  -}
@@ -76,7 +80,7 @@ interpret commandOutputs incommandOutput inputLine =
     ($ (inputLine, commands, restInputLine))
     (lookup command commandOutputs)
     -- TODO fix double parsing
-    -- TODO if "error" is a legitimate command, then if extractParse fails, the 
+    -- TODO if "error" is a legitimate command, then if extractParse fails, the
     -- interpreter will not detect the failure
   where
     commands = (fst . unzip) commandOutputs
@@ -94,3 +98,5 @@ parseCommand commands = foldl (\p p' -> p <|> try p') (try h) t
 parseRestInputLine :: [String] -> SParsec String
 parseRestInputLine commands =
   parseCommand commands >> many space >> many anyChar
+\end{code}
+\end{document}

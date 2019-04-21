@@ -6,7 +6,7 @@ syntax: glob
 *.dyn_o
 *.dyn_hi
 dist/
-*.img
+*.png
 ecce/Main
 *.aux
 *.log

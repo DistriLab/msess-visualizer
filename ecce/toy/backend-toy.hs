@@ -1,33 +1,96 @@
 {- SECTION PRAGMAS -}
--- Allows putting `deriving` on a standalone line, needed for GADTs to derive 
--- (Show)
-{-# LANGUAGE StandaloneDeriving #-}
--- Allows constrained ASTs
-{-# LANGUAGE GADTs #-}
--- Allows more than one StandaloneDeriving
-{-# LANGUAGE UndecidableInstances #-}
--- Allows ambiguity check in instance declarations, to use sites
-{-# LANGUAGE AllowAmbiguousTypes #-}
--- Allows datatypes without constructors
-{-# LANGUAGE EmptyDataDecls #-}
+-- Pragmas of invertible-parser
+{-# LANGUAGE TemplateHaskell, NoMonomorphismRestriction #-}
+{-# LANGUAGE EmptyDataDecls #-} -- Allows datatypes without constructors
+{-# LANGUAGE EmptyDataDeriving #-} -- Allows deriving for empty data types
+
+module Toy where
 
 {-
  - SECTION IMPORTS
  -}
-import Control.Monad
-import Data.List (intercalate)
+import Control.Category ((.))
+import Control.Isomorphism.Partial ((<$>), cons, inverse, right, subset)
+import Control.Isomorphism.Partial.TH (defineIsomorphisms)
+import Control.Isomorphism.Partial.Unsafe (Iso(..))
+import Data.Char (isDigit, isLetter)
+import Data.List (elem, head, intercalate)
+import Prelude
+  ( Bool(False, True)
+  , Char
+  , Eq(..)
+  , IO
+  , Integer
+  , Maybe(..)
+  , Show(..)
+  , String
+  , ($)
+  , drop
+  , getLine
+  , length
+  , lines
+  , map
+  , mapM_
+  , notElem
+  , putStrLn
+  , reads
+  , return
+  , seq
+  , take
+  )
 import System.IO (IOMode(ReadMode), hClose, hGetContents, openFile)
-import Text.Parsec
-import Text.ParserCombinators.Parsec.Expr
-import Text.ParserCombinators.Parsec.Language
-import qualified Text.ParserCombinators.Parsec.Token as Token
+import Text.Syntax
+  ( Syntax
+  , (*>)
+  , (<*)
+  , (<*>)
+  , (<+>)
+  , (<|>)
+  , between
+  , chainl1
+  , many
+  , optSpace
+  , skipSpace
+  , text
+  , token
+  )
+import Text.Syntax.Parser.Naive (parse)
+import Text.Syntax.Printer.Naive (print)
+
+{-
+ - SECTION TYPES
+ -}
+data Pure
+  deriving (Show)
+
+data Expr
+  = EBool Bool
+  | EPureBool Expr
+  | EPureNot Expr
+  | EInteger Integer
+  | EIntegerNeg Expr
+  | EOpBinary Expr
+              OpBinary
+              Expr
+  deriving (Show)
+
+data OpBinary
+  = EPureAnd
+  | EPureOr
+  | EIntegerMul
+  | EIntegerAdd
+  deriving (Show, Eq)
+
+$(defineIsomorphisms ''Expr)
+
+$(defineIsomorphisms ''OpBinary)
 
 {-
  - SECTION USER INTERFACE
  -}
 main = do
   inputLines <- interpreter
-  let s = intercalate "\n" $ map (show . extractParse parseExpr) inputLines
+  let s = intercalate "\n" $ map (show . parse exprPure) inputLines
    in putStrLn s
 
 interpreter :: IO [String]
@@ -50,120 +113,102 @@ interpreter = do
     loadStringLength = length loadString
 
 {-
- - SECTION TYPES
- -}
-type SParsec = Parsec String ()
-
-data Pure
-
-data Expr a where
-  EBool :: Bool -> Expr Bool
-  EPureBool :: Expr Bool -> Expr Pure
-  EPureAnd :: Expr Pure -> Expr Pure -> Expr Pure
-  EPureOr :: Expr Pure -> Expr Pure -> Expr Pure
-  EPureNot :: Expr Pure -> Expr Pure
-  EInteger :: Integer -> Expr Integer
-  EIntegerNeg :: Expr Integer -> Expr Integer
-  EIntegerMul :: Expr Integer -> Expr Integer -> Expr Integer
-  EIntegerAdd :: Expr Integer -> Expr Integer -> Expr Integer
-
--- Existentially quantify Expr
--- Contains a well-formed Expr, but precise type of Expr is secret
-data AnyExpr where
-  AnyExpr :: Expr a -> AnyExpr
-
-deriving instance Show (Expr a)
-
-instance Show (AnyExpr) where
-  show (AnyExpr a) = show a
-
-anyExpr :: SParsec (Expr a) -> SParsec AnyExpr
-anyExpr e = fmap AnyExpr e
-
+main = print exprPure (head (parse exprPure "~true ^ false"))
+main =
+  print
+    exprPure
+    (EOpBinary
+       (EOpUnary EPureNot (EPureBool (EBool True)))
+       EPureAnd
+       (EPureBool (EBool False)))
+main = print exprInteger (head (parse exprInteger "-1+-2"))
+main =
+  print
+    exprInteger
+    (EOpBinary
+       (EOpUnary EIntegerNeg (EInteger 1))
+       EIntegerAdd
+       (EOpUnary EIntegerNeg (EInteger 2)))
+-}
 {-
  - SECTION LEXER
  -}
-languageDef =
-  emptyDef
-    { Token.commentStart = "/*"
-    , Token.commentEnd = "*/"
-    , Token.commentLine = "//"
-    , Token.identStart = letter
-    , Token.identLetter = alphaNum
-    , Token.reservedNames = ["true", "false", "~", "^", "v"]
-    , Token.reservedOpNames = ["+", "-", "x", "^", "v", "~"]
-    }
+keywords = []
 
-lexer = Token.makeTokenParser languageDef
+letter, digit :: Syntax delta => delta Char
+letter = subset isLetter <$> token
 
-identifier = Token.identifier lexer -- parses an identifier
+digit = subset isDigit <$> token
 
-reserved = Token.reserved lexer -- parses a reserved name
+identifier :: Syntax delta => delta String
+identifier =
+  subset (`notElem` keywords) . cons <$> letter <*> many (letter <|> digit)
 
-reservedOp = Token.reservedOp lexer -- parses an operator
+keyword :: Syntax delta => String -> delta ()
+keyword s = inverse right <$> (identifier <+> text s)
 
-parens = Token.parens lexer -- parses surrounding parenthesis:
-                                    --   parens p
-                                    -- takes care of the parenthesis and
-                                    -- uses p to parse what's inside them
+integer :: Syntax delta => delta Integer
+integer = Iso read' show' <$> many digit
+  where
+    read' s =
+      case [x | (x, "") <- reads s] of
+        [] -> Nothing
+        (x:_) -> Just x
+    show' x = Just (show x)
 
-integer = Token.integer lexer -- parses an integer
+bool :: Syntax delta => delta Bool
+bool = caster <$> (subset (`elem` ["true", "false"]) <$> many letter)
+  where
+    caster :: Iso String Bool
+    caster =
+      Iso
+        (\s ->
+           case s of
+             "true" -> Just True
+             "false" -> Just False)
+        (\b ->
+           case b of
+             True -> Just "true"
+             False -> Just "false")
 
-semi = Token.semi lexer -- parses a semicolon
+parens = between (text "(") (text ")")
 
-whiteSpace = Token.whiteSpace lexer -- parses whitespace
+opPureBinary :: Syntax delta => delta OpBinary
+opPureBinary = ePureAnd <$> text "^" <|> ePureOr <$> text "v"
 
-{-
- - SECTION PARSERS
- -}
-extractParse :: SParsec a -> String -> a
-extractParse p s =
-  case parse p "" s of
-    Left x -> error $ show x
-    Right x -> x
+spacedOpPureBinary :: Syntax delta => delta OpBinary
+spacedOpPureBinary = between optSpace optSpace opPureBinary
 
-{-
- - SUBSECTION PURE
- -}
-parsePure = buildExpressionParser opPure termPure
+prioPureBinary :: OpBinary -> Integer
+prioPureBinary EPureAnd = 1
+prioPureBinary EPureOr = 2
 
-opPure =
-  [ [Prefix (reservedOp "~" >> return EPureNot)]
-  , [ Infix (reservedOp "^" >> return EPureAnd) AssocLeft
-    , Infix (reservedOp "|" >> return EPureOr) AssocLeft
-    ]
-  ]
+opIntegerBinary :: Syntax delta => delta OpBinary
+opIntegerBinary = eIntegerMul <$> text "*" <|> eIntegerAdd <$> text "+"
 
-termPure = parens parsePure <|> try parsePureBool
+spacedOpIntegerBinary :: Syntax delta => delta OpBinary
+spacedOpIntegerBinary = between optSpace optSpace opIntegerBinary
 
-parsePureBool = do
-  b <- parseBool
-  return $ EPureBool b
+prioIntegerBinary :: OpBinary -> Integer
+prioIntegerBinary EIntegerMul = 1
+prioIntegerBinary EIntegerAdd = 2
 
-{-
- - SUBSECTION BOOL
- -}
-parseBool =
-  (reserved "true" >> return (EBool True)) <|>
-  (reserved "false" >> return (EBool False))
+exprInteger = exp 2
+  where
+    exp 0 =
+      text "-" *> (eIntegerNeg <$> exprInteger) <|> eInteger <$> integer <|>
+      parens (skipSpace *> exprInteger <* skipSpace)
+    exp 1 = chainl1 (exp 0) spacedOpIntegerBinary (opPrioIntegerBinary 1)
+    exp 2 = chainl1 (exp 1) spacedOpIntegerBinary (opPrioIntegerBinary 2)
+    opPrioIntegerBinary n =
+      eOpBinary . subset (\(_, (op, _)) -> prioIntegerBinary op == n)
 
-{-
- - SUBSECTION INT
- -}
-parseInteger = buildExpressionParser opInteger termInteger
-
-opInteger =
-  [ [Prefix (reservedOp "-" >> return EIntegerNeg)]
-  , [Infix (reservedOp "x" >> return EIntegerMul) AssocLeft]
-  , [Infix (reservedOp "+" >> return EIntegerAdd) AssocLeft]
-  ]
-
-termInteger = parens parseInteger <|> liftM EInteger integer
-
-{-
- - SUBSECTION EXPR
- -}
-parseExpr :: SParsec AnyExpr
-parseExpr = do
-  e <- try (anyExpr parsePure) <|> try (anyExpr parseInteger)
-  return e
+exprPure = exp 2
+  where
+    exp 0 =
+      text "~" *> (ePureNot <$> exprPure) <|> ePureBool <$> (eBool <$> bool) <|>
+      parens (skipSpace *> exprPure <* skipSpace)
+    exp 1 = chainl1 (exp 0) spacedOpPureBinary (opPrioPureBinary 1)
+    exp 2 = chainl1 (exp 1) spacedOpPureBinary (opPrioPureBinary 2)
+    opPrioPureBinary n =
+      eOpBinary . subset (\(_, (op, _)) -> prioPureBinary op == n)

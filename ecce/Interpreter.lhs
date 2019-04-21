@@ -18,7 +18,7 @@ module Interpreter where
 {-
  - SECTION IMPORTS
  -}
-import Base (SParsec, extractParse)
+import Base (SParsec)
 import Control.Monad.IO.Class (liftIO)
 import System.Console.Haskeline
   ( InputT
@@ -27,11 +27,15 @@ import System.Console.Haskeline
   , outputStrLn
   , runInputT
   )
-import Text.Parsec ((<|>), anyChar, many, space, string, try)
+import Text.Parsec (ParseError, (<|>), anyChar, many, space, string, try)
+import qualified Text.Parsec (parse)
 
 -- Every output function must have the same inputs
 -- So that the interpret function can be generalized
 type Output = (String, [String], String) -> IO ()
+
+extractParse :: SParsec a -> String -> Either ParseError a
+extractParse p s = Text.Parsec.parse p "" s
 
 mainHaskeline :: [(String, Output)] -> Output -> IO ()
 mainHaskeline commandOutputs incommandOutput = do

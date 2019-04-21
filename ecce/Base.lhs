@@ -1,6 +1,3 @@
-\documentclass{article}
-%include polycode.fmt
-\begin{document}
 \begin{code}
 {-
  - Types or functions common to many modules
@@ -21,4 +18,3 @@ type SParsec = Parsec String ()
 extractParse :: Parser a -> String -> [a]
 extractParse p s = parse p s
 \end{code}
-\end{document}

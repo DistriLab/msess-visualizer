@@ -1,6 +1,3 @@
-\documentclass{article}
-%include polycode.fmt
-\begin{document}
 \begin{code}
 {-
  - SECTION PRAGMAS
@@ -105,23 +102,6 @@ evConstraint c =
 
 {-
  - SUBSECTION GLOBAL SPEC -> PER PARTY SPEC
-projectGlobalToParty :: Expr GlobalProtocol -> Expr Role -> Expr PartyProtocol
-projectGlobalToParty (EGlobalProtocolTransmission (ERole s) i (ERole r) c v f) (ERole p)
-  | p == s = EPartyProtocolSend c i v f
-  | p == r = EPartyProtocolReceive c i v f
-  | otherwise = EPartyProtocolEmp
-projectGlobalToParty (EGlobalProtocolConcurrency g1 g2) p =
-  EPartyProtocolConcurrency
-    (projectGlobalToParty g1 p)
-    (projectGlobalToParty g2 p)
-projectGlobalToParty (EGlobalProtocolChoice g1 g2) p =
-  EPartyProtocolChoice (projectGlobalToParty g1 p) (projectGlobalToParty g2 p)
-projectGlobalToParty (EGlobalProtocolSequencing g1 g2) p =
-  EPartyProtocolSequencing
-    (projectGlobalToParty g1 p)
-    (projectGlobalToParty g2 p)
-projectGlobalToParty EGlobalProtocolEmp _ = EPartyProtocolEmp
-
  -}
 projectGlobalToParty :: GlobalProtocol -> Role -> PartyProtocol
 projectGlobalToParty g p =
@@ -187,4 +167,3 @@ projectPartyToEndpoint p c =
         (projectPartyToEndpoint g2 c)
     EPartyProtocolEmp -> EEndpointProtocolEmp
 \end{code}
-\end{document}

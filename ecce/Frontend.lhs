@@ -1,6 +1,3 @@
-\documentclass{article}
-%include polycode.fmt
-\begin{document}
 \begin{code}
 {-
  - SECTION PRAGMAS
@@ -389,4 +386,3 @@ getPartiesExtents ss w h s =
 mappingPartyExtent :: [String] -> [(String, Extent)]
 mappingPartyExtent ss = zip ss (getPartiesExtents ss exWidth exHeight exSpace)
 \end{code}
-\end{document}

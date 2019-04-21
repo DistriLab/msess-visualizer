@@ -1,6 +1,3 @@
-\documentclass{article}
-%include polycode.fmt
-\begin{document}
 \begin{code}
 {-
  - SECTION PRAGMAS
@@ -49,4 +46,3 @@ un e =
     Just x -> x
     Nothing -> error "Print error: " ++ show e
 \end{code}
-\end{document}

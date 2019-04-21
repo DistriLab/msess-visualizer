@@ -1,6 +1,3 @@
-\documentclass{article}
-%include polycode.fmt
-\begin{document}
 \begin{code}
 {-
  - SECTION PRAGMAS
@@ -317,4 +314,3 @@ processStep p =
           where (s', p') = processStep (Just p)
                 ps' = maybe ps (: ps) p'
 \end{code}
-\end{document}

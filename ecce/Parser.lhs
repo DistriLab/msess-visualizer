@@ -1,6 +1,3 @@
-\documentclass{article}
-%include polycode.fmt
-\begin{document}
 \begin{code}
 {-
  - SECTION PRAGMAS
@@ -1622,4 +1619,3 @@ parseChannelProtocol = exp 2
       eOpChannelProtocolBinary .
       subset (\(_, (op, _)) -> prioChannelProtocolBinary op == n)
 \end{code}
-\end{document}

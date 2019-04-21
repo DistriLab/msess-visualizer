@@ -1,6 +1,3 @@
-\documentclass{article}
-%include polycode.fmt
-\begin{document}
 \begin{code}
 {-
  - SECTION PRAGMAS
@@ -103,4 +100,3 @@ parseRestInputLine :: [String] -> SParsec String
 parseRestInputLine commands =
   parseCommand commands >> many space >> many anyChar
 \end{code}
-\end{document}

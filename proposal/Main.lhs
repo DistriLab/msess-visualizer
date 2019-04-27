@@ -86,10 +86,6 @@ $
 $
 \end{center}
 
-%include ../ecce/Base.lhs
-%include ../ecce/Parser.lhs
-%include ../ecce/Unparser.lhs
-
 \subsection{DSL for Building and Simulating Session Protocols}
 
 \begin{itemize}
@@ -115,9 +111,6 @@ $
                                    | end.
 \end{verbatim}
 
-%include ../ecce/Projector.lhs
-%include ../ecce/Processor.lhs
-
 \emph{\bf Dynamic}.
 
 \asay{Should we employ some sort of FRP here? for the simulation part.
@@ -136,7 +129,12 @@ we further need:
   \item a way to represent arbitrary order / concurrency intra-party
 \end{itemize}
 
+%include ../ecce/Base.lhs
 %include ../ecce/Interpreter.lhs
+%include ../ecce/Parser.lhs
+%include ../ecce/Unparser.lhs
+%include ../ecce/Projector.lhs
+%include ../ecce/Processor.lhs
 %include ../ecce/Frontend.lhs
 
 % The bibliography should be embedded for final submission.

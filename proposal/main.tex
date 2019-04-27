@@ -129,6 +129,100 @@ we further need:
   \item a way to represent arbitrary order / concurrency intra-party
 \end{itemize}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%      LISTING RELATED         %%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\def\commentcolor{purple!40!black}
+\newcommand{\codecomment}[1]{\color{\commentcolor}{#1}}
+
+\lstdefinestyle{customc}{
+  belowcaptionskip=1\baselineskip,
+  breaklines=true,
+  % frame=L,
+  % xleftmargin=\parindent,
+  language=C,
+  numbers=left,
+  showstringspaces=false,
+  basicstyle=\footnotesize\ttfamily,
+  keywordstyle=\bfseries\color{green!40!black},
+  % commentstyle=\itshape\color{purple!40!black},
+  commentstyle=\itshape\color{\commentcolor},
+  % identifierstyle=\color{blue},
+  identifierstyle=\color{black},
+  stringstyle=\color{orange},
+}
+
+\lstdefinestyle{informal}{
+  belowcaptionskip=1\baselineskip,
+  breaklines=true,
+  % frame=L,
+  % xleftmargin=\parindent,
+  showstringspaces=false,
+  basicstyle=\footnotesize\ttfamily\color{blue},
+  keywordstyle=\bfseries\color{blue},
+  commentstyle=\itshape\color{blue},
+  identifierstyle=\color{blue},
+  stringstyle=\color{blue},
+}
+
+\lstset{escapechar=@,style=customc}
+
+\begin{minipage}[c]{\textwidth}
+\lstset{
+  numbers=left,
+  stepnumber=1,
+  firstnumber=1,
+  numberfirstline=true,
+  numberblanklines=false
+}
+\noindent \begin{tabular}{@{\hspace{3em}} @{}l}
+\begin{lstlisting}[language=C]
+struct node { int val; struct node *next; };
+struct Channel { int id; int bufsize; struct node *buf; };
+
+void foo()  {
+  Channel *c = new Channel(fresh_id(),200,NULL);
+  c = open();
+\end{lstlisting}
+\end{tabular}
+\lstset{ firstline=7,  numbers=left,  stepnumber=1, firstnumber=5,  numberfirstline=false}
+\noindent \begin{tabular}{@{\hspace{3em}}l || l}
+\begin{lstlisting}[language=C]
+  // producer
+  struct node *x;
+  x = new node(10,NULL);
+  send(c, x);
+\end{lstlisting}
+&
+{
+\lstset{numbers=none}
+\begin{lstlisting}[language=C]
+  // consumer
+  struct node *element;
+  element = receive(c);
+  consume_element(element);
+\end{lstlisting}
+}
+\end{tabular} \\
+\lstset{
+  numbers=left,
+  stepnumber=1,
+  firstnumber=10,
+  numberfirstline=true
+}
+\noindent \begin{tabular}{@{\hspace{3em}}l}
+\begin{lstlisting}
+  close(c);
+}
+\end{lstlisting}
+\end{tabular}
+\end{minipage}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%   (end) LISTING RELATED   %%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
 
 % The bibliography should be embedded for final submission.
 

@@ -1,3 +1,14 @@
+\subsection{Projector}
+
+Now that we have our \textit{GlobalProtocol}s, we can define some functions to
+deconstruct them.  We project (or decompose) big structures onto small
+structures, sometimes forgetting some information.  This projection is
+performed by deconstructors.
+\par
+Each level of projection is performed by a function.  The biggest structure to
+be projected is a \textit{GlobalProtocol}.
+
+%if False
 \begin{code}
 {-
  - SECTION PRAGMAS
@@ -40,13 +51,35 @@ import Parser
   , PartyProtocol
   , Role
   )
+\end{code}
+%endif
 
+%if False
+\begin{code}
 {-
  - SECTION Formal Definitions 4.2.1
  -}
 {-
  - SUBSECTION TRANSMISSION
  -}
+\end{code}
+%endif
+
+\textit{tr} decomposes a \textit{GlobalProtocol} into many
+\textit{Transmission}s.  There are three patterns to note about this style of
+decomposition.  We will see similar patterns in the other projection functions.
+\begin{enumerate}
+  \item Firstly, the pattern of decomposition for \textit{Concurrency},
+  \textit{Choice}, and \textit{Sequencing}.  These are binary deconstructors
+  (indicated by \textit{EOpGlobalProtocolBinary}), so \textit{tr} takes the two
+  \textit{GlobalProtocol}s on both sides of the deconstructor, then further
+  processes them.
+  \item Secondly, \textit{Assumption}, \textit{Guard}, and \textit{Emp} are
+  ignored, because they do not contain any \textit{Transmission}s.
+  \item Thirdly, \textit{tr} returns an order-preserved list.
+\end{enumerate}
+
+\begin{code}
 tr :: GlobalProtocol -> [GlobalProtocol]
 tr g =
   case g of
@@ -57,7 +90,10 @@ tr g =
     EGlobalProtocolAssumption _ -> []
     EGlobalProtocolGuard _ -> []
     EGlobalProtocolEmp -> []
+\end{code}
 
+%if False
+\begin{code}
 {-
  - SUBSECTION EVENT
  - Note:
@@ -71,6 +107,20 @@ tr g =
  -  AnyExpr, which assumes Eq for both of those constructors.
  -  This is circular reasoning.
  -}
+\end{code}
+%endif
+
+\textit{ev} decomposes a \textit{GlobalProtocol} in a similar manner to
+\textit{tr}.  However, when it takes a \textit{Transmission} as input, it
+extracts the sender role \textit{s}, label \textit{i}, and receiver role
+\textit{r}, to create two \textit{Event}s: one event for the sender, and one
+for the receiver, with the same label.  Then, it puts those two events in a
+list, with the sender event coming before the receiver event.  We enforce this
+order because it reflects real-world transmissions: the sender sends the
+transmission first, and time is needed for the transmission to propogate,
+before the receiver receives the transmission.
+
+\begin{code}
 ev :: GlobalProtocol -> [Event]
 ev g =
   case g of
@@ -81,7 +131,14 @@ ev g =
     EGlobalProtocolAssumption a -> evAssertion a
     EGlobalProtocolGuard a -> evAssertion a
     EGlobalProtocolEmp -> []
+\end{code}
 
+Decompositions to lists of \textit{Event}s are defined similarly for
+\textit{Assertion}s and \textit{Constraint}s.  We will not be discussing them
+here.
+
+%if False
+\begin{code}
 -- Paper defines ev on Assumptions and Guards, so,
 -- (1) also define ev on Assertions
 -- (2) also define ev on Constraints
@@ -99,10 +156,30 @@ evConstraint c =
   case c of
     EConstraintCommunicates e1 e2 -> [e1, e2]
     EConstraintHappens e1 e2 -> [e1, e2]
+\end{code}
+%endif
 
+%if False
+\begin{code}
 {-
  - SUBSECTION GLOBAL SPEC -> PER PARTY SPEC
  -}
+\end{code}
+%endif
+
+\textit{projectGlobalToParty} rewraps \textit{GlobalProtocol} to
+\textit{PartyProtocol}, by recursively using \textit{GlobalProtocol}
+deconstructors to get the operands, then wrapping those operands with a
+\textit{PartyProtocol} constructor.  For readability, we only show one.
+\par
+The interesting case is when \textit{projectGlobalToParty} takes a
+\textit{Transmission} as input, where the behavior of
+\textit{projectGlobalToParty} depends on the role it gets as input.  If the
+role is a sender, then it constructs a \textit{PartySend} event.  If the role
+is a receiver, then it constructs a \textit{PartyReceive} event.  Otherwise, it
+constructs an empty \textit{Party} event.
+\par
+\begin{code}
 projectGlobalToParty :: GlobalProtocol -> Role -> PartyProtocol
 projectGlobalToParty g p =
   case g of
@@ -115,6 +192,9 @@ projectGlobalToParty g p =
         (projectGlobalToParty g1 p)
         EPartyProtocolConcurrency
         (projectGlobalToParty g2 p)
+\end{code}
+%if False
+\begin{code}
     EOpGlobalProtocolBinary g1 EGlobalProtocolChoice g2 ->
       EOpPartyProtocolBinary
         (projectGlobalToParty g1 p)
@@ -126,7 +206,11 @@ projectGlobalToParty g p =
         EPartyProtocolSequencing
         (projectGlobalToParty g2 p)
     EGlobalProtocolEmp -> EPartyProtocolEmp
+\end{code}
+%endif
 
+%if False
+\begin{code}
 {-
  - SUBSECTION PER PARTY SPEC -> PER ENDPOINT SPEC
  -}
@@ -141,6 +225,18 @@ projectGlobalToParty g p =
 --      - when we extend our project to allow race conditions, we will need to
 --      change the definition of well-formedness, and allow L*L in the grammar
 --      of L. This allows concurrent usage of the same endpoint.
+\end{code}
+%endif
+
+\textit{projectPartyToEndpoint} behaves similarly to
+\textit{projectGlobalToParty}, except that it projects on \textit{Channel}s
+rather than \textit{Role}s.  This function deconstructs and looks at the
+channel of a \textit{PartySend}, and constructs an \textit{EndpointSend} event
+only if its input channel matches.  Otherwise, no \textit{Endpoint} event will
+be constructed.  \textit{PartyReceive} is handled similarly to construct
+\textit{EndpointReceive}.  We again exclude the uninteresting projections.
+
+\begin{code}
 projectPartyToEndpoint :: PartyProtocol -> Channel -> EndpointProtocol
 projectPartyToEndpoint p c =
   case p of
@@ -150,6 +246,9 @@ projectPartyToEndpoint p c =
     EPartyProtocolReceive c1 i v f
       | c == c1 -> EEndpointProtocolReceive i v f
       | otherwise -> EEndpointProtocolEmp
+\end{code}
+%if False
+\begin{code}
     EOpPartyProtocolBinary g1 EPartyProtocolConcurrency g2 ->
       EOpEndpointProtocolBinary
         (projectPartyToEndpoint g1 c)
@@ -167,3 +266,4 @@ projectPartyToEndpoint p c =
         (projectPartyToEndpoint g2 c)
     EPartyProtocolEmp -> EEndpointProtocolEmp
 \end{code}
+%endif

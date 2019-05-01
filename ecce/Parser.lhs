@@ -425,10 +425,10 @@ data PartyProtocol
                        Label
                        VarFirst
                      Formula
-| EPartyProtocolReceive Channel
-                        Label
-                        VarFirst
-                        Formula
+  | EPartyProtocolReceive Channel
+                          Label
+                          VarFirst
+                          Formula
   | EPartyProtocolAssumption Assertion
   | EPartyProtocolGuard Assertion
   | EPartyProtocolEmp

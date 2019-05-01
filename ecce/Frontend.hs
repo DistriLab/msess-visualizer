@@ -348,7 +348,7 @@ drawParty w h s ex = pictures $ map (translate (xf + wf / 2) yf) shapes
     -- Define shapes
     drawBox = rectangleWire wf hf
     drawLine =
-      translate 0 (-hf / 2 - wHeightf) (rectangleSolid 2 (wHeightf * 2))
+      translate (-wf / 2) (-hf / 2 - wHeightf) (rectangleSolid 2 (wHeightf * 2))
     shapes = [drawBox, (translate (-wf / 3) (-hf / 4) . drawText) s, drawLine]
 
 -- All party extents in one line at the top

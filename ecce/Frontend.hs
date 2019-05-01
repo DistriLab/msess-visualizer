@@ -310,7 +310,7 @@ transmitSRDesc sX rX desc
     translate (-(abs $ rX - distance / 2)) 0 $
     pictures [transmitDesc, transmitSR]
   | sX > rX =
-    (translate (-(abs $ sX - distance / 2)) 0) $
+    translate (-(abs $ sX - distance / 2)) 0 $
     pictures [transmitDesc, rotate 180 transmitSR]
   | otherwise = error "transmitsSR: sX and rX are too close"
   where

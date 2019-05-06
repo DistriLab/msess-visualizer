@@ -1,0 +1,27 @@
+@startuml
+
+hide empty description
+
+title ecce: Module Dependencies\n<size:15>Arrows from module A to B indicates that A depends on B</size>
+
+[*] --> ecce
+ecce --> Main
+Main --> Frontend
+Frontend --> Parser
+Frontend --> Processor
+Frontend --> Projector
+Frontend --> Unparser
+Interpreter --> Base
+Parser --> Base
+Parser --> Interpreter
+Processor --> Base
+Processor --> Interpreter
+Processor --> Parser
+Processor --> Projector
+Processor --> Unparser
+Projector --> Parser
+Unparser --> Base
+Unparser --> Interpreter
+Unparser --> Parser
+
+@enduml

@@ -129,6 +129,14 @@ we further need:
   \item a way to represent arbitrary order / concurrency intra-party
 \end{itemize}
 
+\section{Modules}
+In this section, we give an overview of each module in \textit{ecce}, and
+explain the implementation.  The module dependencies are graphed in Fig. TODO.
+
+\begin{center}
+\includegraphics[scale=0.5]{../ecce/plantuml/modules.png}
+\end{center}
+
 %include ../ecce/Base.lhs
 %include ../ecce/Interpreter.lhs
 %include ../ecce/Parser.lhs

@@ -599,6 +599,14 @@ unprocessed processes, just note that for each call to \textit{processStep},
 processing is done only on the head of the input \textit{Process}, and the
 results from that processing is prepended onto the tail of the input
 \textit{Process}.
+\par
+This circular nature of the network is strongly reminiscent of Hughes'
+\textit{ArrowLoop} class, where signals output from the \textit{Arrow} are fed
+back as input.  Indeed, if we define \textit{reactive-banana} behavior
+transformations as \textit{Arrow}s, then we would be able to replace the
+circular network with an \textit{ArrowLoop}.  However, choosing this more
+imperative style eases explanation, and the reader does not need to understand
+arrows in order to understand the \textit{reactive-banana} network.
 
 \begin{code}
 processStep :: Maybe Process -> (Maybe GlobalProtocol, Maybe Process)

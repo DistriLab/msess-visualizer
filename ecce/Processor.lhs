@@ -181,7 +181,7 @@ a \textit{GlobalChoice}, or \textit{'2'} to choose the right side of a
 \textit{networkProcessor} is defined as a recursive monadic-do, meaning there
 is some cycle in the sequential composition of monads (Fig. TODO).
 \\\begin{center}
-\includegraphics[scale=0.4]{../ecce/processor.png}
+\includegraphics[scale=0.4]{../ecce/plantuml/processor.png}
 \end{center}
 
 \textit{networkProcessor} also uses \textit{Event}s and \textit{Behavior}s from

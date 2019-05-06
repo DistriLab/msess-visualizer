@@ -148,7 +148,7 @@ in order to get a list of parties involved in the protocol.  An overview can be
 found in Fig. TODO.
 
 \begin{center}
-\includegraphics[scale=0.5]{../ecce/network.png}
+\includegraphics[scale=0.5]{../ecce/plantuml/network.png}
 \end{center}
 
 \textit{drawParties} defines the base picture and the mapping between each

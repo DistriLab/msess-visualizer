@@ -333,10 +333,10 @@ data Presburger
 \end{code}
 %endif
 
-As a convention, if a data type named \textit{Presburger} has a binary constructor,
-then all binary constructors will be moved to another data type definition,
-named \textit{OpTypeBinary}.  The \textit{Presburger} data type will have all its
-binary constructors replaced by this:
+As a convention, if a data type named \textit{Presburger} has a binary
+constructor, then all binary constructors will be moved to another data type
+definition, named \textit{OpTypeBinary}.  The \textit{Presburger} data type
+will have all its binary constructors replaced by this:
 \begin{code}
   | EOpPresburgerBinary Presburger
                         OpPresburgerBinary
@@ -561,6 +561,12 @@ A partial isomorphism is defined for each constructor.  It consists of two
 functions: one that constructs the data type, and the other that deconstructs
 the data type.  We are thus establishing an isomorphism between a constructor's
 inputs and its data type.
+\par
+Note that both of the two components of the isomorphisms, are functions that
+return a \textit{Maybe} value.  This is because the partial isomorphism could
+be undefined for certain elements in its domain, in which case the function
+that maps the domain to the image will return \textit{Nothing} for that
+element.
 \par
 Since by convention the constructor names always start with \textit{E}, and
 defining an isomorphism using Template Haskell makes the first letter

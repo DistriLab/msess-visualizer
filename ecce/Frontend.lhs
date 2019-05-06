@@ -1,10 +1,13 @@
 \subsection{Frontend}
 
-This section defines the graphical hook to \textit{Processor}, which means it 
-displays the textual results from \textit{Processor} as graphics.  We first 
-define a bunch of graphical objects, like \textit{Extent}s and pictorial 
-arrows, then combine these objects according to the results from 
+This section defines the graphical hook to \textit{Processor}, which means it
+displays the textual results from \textit{Processor} as graphics.  We first
+define a bunch of graphical objects, like \textit{Extent}s and pictorial
+arrows, then combine these objects according to the results from
 \textit{Processor}.
+\par
+We chose the graphical application \textit{gloss}, because of the simplicity of 
+its usage, which in turn simplifies explanation.
 
 %if False
 \begin{code}
@@ -150,8 +153,8 @@ found in Fig. TODO.
 
 \textit{drawParties} defines the base picture and the mapping between each
 party and the \textit{Extent}s defined in the package \textit{gloss}.  We
-create a reference to a blank image, then compile a network, binding an \textit{eventHandler} to
-the network.
+create a reference to a blank image, then compile a \textit{gloss} network,
+binding an \textit{eventHandler} to the network.
 
 \begin{code}
 main :: IO ()
@@ -233,6 +236,16 @@ into \textit{networkProcessor} defined in \textit{Processor.lhs}.
 Similar unpacking of scroll events is done for \textit{networkInputScroll}, and
 \textit{networkOutputScroll} accumulates the scroll state as an
 \textit{Integer}.
+\par
+Note the usage of the fish operator \textit{(>=>)}, which has the type:
+\textit{(>=>) :: Monad m => (a -> m b) -> (b -> m c) -> a -> m c}. That is, it
+composes two monadic functions with the same type as the monadic
+\textit{return}. Providing a input to this composed function will yield a
+monad.
+\par
+In this case, \textit{eCharMay} is input to the result of three composed
+Kleisli arrows, and yields a \textit{Behavior} monad, captured by the variable
+\textit{bTransmits}.
 
 \begin{code}
 aPicture p extentsMap =
@@ -641,7 +654,7 @@ drawParty w h s ex = pictures $ map (translate xf yf) shapes
 
 \textit{getPartiesExtents} creates an \textit{Extent} for each party.  An
 \textit{Extent} is a rectangular area.  The width and height of each
-\textit{Extent}s, and the spacing between two \textit{Extent}s, are given as
+\textit{Extent}, and the spacing between two \textit{Extent}s, are given as
 \textit{w}, \textit{h}, and \textit{s} respectively.
 \par
 

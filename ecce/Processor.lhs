@@ -554,13 +554,15 @@ parseContents xs =
 %endif
 
 \textit{processStep} deconstructs a single level of \textit{Process}, to return
-a tuple of \textit{Maybe GlobalProtocol} and \textit{Process}.  This
+a tuple of \textit{Maybe GlobalProtocol} and \textit{Maybe Process}.  This
 \textit{GlobalProtocol} is actually a \textit{GlobalTransmission}, and the
 returned \textit{Process} is the rest of the unprocessed \textit{Process}es.
 This way of interpretation draws parallels between \textit{procesStep} and the
-model of a debugger.
+model of a debugger.  We now explain how \textit{processStep} derives its
+return value.
 \par
-When deconstructing with binary operators, \textit{Maybe GlobalProtocol} is
+Firstly, we analyze \textit{Maybe GlobalProtocol} return value.  When
+deconstructing with binary operators, \textit{Maybe GlobalProtocol} is
 \textit{Nothing}, as deconstructing a single level of \textit{Process} does not
 yield any transmissions.  However, for all other types of
 \textit{GlobalProtocol}s, and in the recursive calls to \textit{processStep},
@@ -568,10 +570,35 @@ some \textit{GlobalTransmission} is yielded.  We do not handle
 \textit{GlobalChoice} here, since it is already handled by
 \textit{networkProcessor}.
 \par
+Secondly, we analyze the \textit{Maybe Process} return value.  We apply
+induction on the structure of \textit{Process}, with an induction hypothesis
+that the \textit{Maybe Process} return value of the subsequent call to
+\textit{processStep} is well-formed.  We split our analysis by cases.  If the
+input \textit{Process} \textit{p} is a \textit{Leaf}, then the \textit{Process}
+return value is a well-formed process, since the \textit{Process} constructors
+\textit{NodeC} and \textit{NodeS} are used.  Otherwise, if the input \textit{p
+:: Process} is a \textit{NodeS} or \textit{NodeC}, then we deconstruct the node
+into its well-formed head \textit{p :: Maybe Process} and tail \textit{ps ::
+[Maybe Process]}.  We next take the \textit{p' :: Maybe Process} from the
+subsequent call to \textit{processStep}, which we know is well-formed by our
+induction hypothesis.  Then, we form \textit{ps' :: [Maybe Process]} by
+prepending \textit{p'} to \textit{ps} only if \textit{p'} is not
+\textit{Nothing}.  Since both \textit{p'} and \textit{ps} are well-formed, thus
+both \textit{NodeS ps'} and \textit{NodeC ps'} are also well-formed.
+\par
 We now fully discharge the assumption that we had at the beginning of our
 circular analysis of \textit{networkProcessor}.  Remember that we reasonably
 claimed that the input \textit{Process} to \textit{networkProcessor} satisfies
-our assumption.  Now, we prove the inductive step.
+our assumption.  Now, we can observe that the inductive step is true, that
+subsequent \textit{Maybe Process} are also well-formed.  This stems from what
+we have shown, that \textit{processStep} returns a well-formed \textit{Maybe
+Process}.
+\par
+To observe that the returned \textit{Maybe Process} is the list of remaining
+unprocessed processes, just note that for each call to \textit{processStep},
+processing is done only on the head of the input \textit{Process}, and the
+results from that processing is prepended onto the tail of the input
+\textit{Process}.
 
 \begin{code}
 processStep :: Maybe Process -> (Maybe GlobalProtocol, Maybe Process)

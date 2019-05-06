@@ -66,6 +66,35 @@ impossible, since we do not know which expression type is actually being
 wrapped inside \textit{AnyExpr}.  Therefore, we can only construct existential
 types, but not destruct existential types.  So, we are unable to establish an
 isomorphism between the existential and the expression types.
+\par
+Note that by using partial isomorphisms, we guarantee a one-to-one
+correspondence betwene the parsed string and the printed string.  This avoids
+any confusion to the user, that stems from a mismatch between the printed
+string and the parsed string.
+\par
+There is also a benefit of using partial isomorphisms: only the parser needs to
+be defined, and we get an unparser for free.  This reduces the amount of
+maintenance work, since for parsers defined without partial isomorphisms, the
+unparser also has to be changed whenever there are changes to the parser.  This
+contrasts with a parser defined with partial isomorphisms: the unparser is
+dependent on the parser, so only the parser needs to be changed.
+\par
+It may seem logical to extend partial isomorphisms to all transformations
+within \textit{ecce}: that is, to also have a partial isomorphism between the
+ADT and the visualization.  However, there are a few challenges.
+\begin{enumerate}
+    \item There has to be an interface that connects the graphical objects to
+    the other parts of the code, since our current frontend \textit{gloss} does
+    not have functional reactive bindings.  A different
+    graphical application like \textit{reactive-fieldtrip} defined in terms of
+    reactive components will probably be easier to integrate.
+    \item For other parts of \textit{ecce}, the definition of partial
+    isomorphisms on each transformation is not obvious.  For example, it is not
+    obvious how the inverse function of the \textit{Arrow} constructor can be
+    formulated.
+\end{enumerate}
+As such, we have limited the application of partial isomorphisms purely to
+syntax parsing and printing.
 
 \begin{code}
 un :: GlobalProtocol -> String

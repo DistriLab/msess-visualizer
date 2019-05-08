@@ -129,6 +129,48 @@ we further need:
   \item a way to represent arbitrary order / concurrency intra-party
 \end{itemize}
 
+\section{Introduction}
+\textit{ecce} is a module that deals with structured data and its
+transformations.  This can be seen at every level of its implementation.
+Parsing fails unless the input string is structured, and the resulting Abstract
+Syntax Tree (AST) is structured.  Processing peels off single layers of
+structure off of the AST.  Projection is a direct functional mapping between
+data types.  Finally, the images shown to the user are also structured.
+
+Functional programming is ideal to deal with such many disparate structures, as
+it can express transformations between these structures succinctly.
+Furthermore, we can encode bidirectional transformations as partial
+isomorphisms, to avoid repeating similar code.
+
+For example, code for parsing and pretty-printing are similar, in the sense
+that there is a normal form of the AST that the parser and pretty-printer both
+understand.  Encoding this normalized AST in the parser involves correctly
+parsing the input string, and encoding this normalized AST in the printer
+involves assuming the normalized AST already exists in that exact form.  This
+double-encoding is tedious for the programmer to maintain, since a change made
+in the parser mandates a corresponding change in the pretty-printer, and
+vice-versa.
+
+Partial isomorphisms are constructors that have both the parser and
+pretty-printer functions in the same object.  The crucial idea is, the
+programmer explicitly defines these two functions only in a base set of partial
+isomorphisms, from which more complex partial isomorphisms are formed without
+any more explicit definitions.  This work-saving technique is enabled by an
+algebra of partial isomorphisms \cite{Rendel}.
+
+\section{Types}
+A diagram will summarize the structured data transformations in \textit{ecce}.
+So, we give an overview of the type transformations in \textit{ecce} (Fig.
+TODO).  Note that partial isomorphisms exist only for the \textit{String}
+\leftrightarrow \textit{GlobalProtocol} transformation, since this is the
+transformation that uses lexers and parsers already defined in the
+\textit{invertible-syntax} package.  Partial isomorphisms for other
+transformations are a work in progress.
+
+\begin{center}
+\includegraphics[scale=0.4]{../ecce/plantuml/transformations.png}
+\end{center}
+
 \section{Modules}
 In this section, we give an overview of each module in \textit{ecce}, and
 explain the implementation.  The module dependencies are graphed in Fig. TODO.

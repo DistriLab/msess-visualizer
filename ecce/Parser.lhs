@@ -1,8 +1,8 @@
 \subsection{Parser}
 
-A parser converts well-formed strings into Abstract Data Types (ADTs).  If the
-string is not well-formed, there will be a parsing error that needs to be
-handled.
+A parser converts well-formed strings into ASTs.  If the string is not
+well-formed, there will be a parsing error that needs to be handled.  An AST is
+constructed with Abstract Data Types (ADTs).
 \par
 In this section, our ADT is given by the grammars in \cite{Andreea2017thesis}.
 However, we also define some base ADTs that are not explicitly mentioned in the

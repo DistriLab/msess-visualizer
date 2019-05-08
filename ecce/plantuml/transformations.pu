@@ -1,0 +1,47 @@
+@startuml
+
+hide empty description
+
+title Transformations between datatypes\n<size:15>Labels are the processes that mutate the datatype</size>
+
+state Moment {
+  state eTrans
+  state bProc
+  state eDone
+  state bStepCount
+}
+
+state GlobalTransmission {
+  Process --> Moment
+  Char --> Moment
+}
+
+state networkTransmit {
+  state events as "(Event, Event)"
+  state roles as "(Role, Role)"
+  state extents as "(Extent, Extent)"
+  state xcoords as "(Float, Float)"
+  eTrans --> Description: un
+  eTrans --> events: ev
+  events --> roles: eventToRole
+  roles --> extents: lookup s extentsMap
+  extents --> xcoords: centerOfExtent
+  bStepCount --> ycoord: ((+exYOffset) . (*transmitStepCountSpace))
+  xcoords --> Transmit
+  ycoord --> Transmit
+  Description --> Transmit
+}
+
+Transmit --> Picture: networkDraw
+bScrollPos --> Picture: networkDraw
+
+[*] --> String: user input
+[*] --> Char: user input
+[*] --> bScrollPos: user input
+
+String --> GlobalProtocol: parser
+GlobalProtocol --> String: printer
+
+GlobalProtocol --> process: processor
+
+@enduml

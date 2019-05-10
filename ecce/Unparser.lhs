@@ -81,18 +81,11 @@ dependent on the parser, so only the parser needs to be changed.
 \par
 It may seem logical to extend partial isomorphisms to all transformations
 within \textit{ecce}: that is, to also have a partial isomorphism between the
-ADT and the visualization.  However, there are a few challenges.
-\begin{enumerate}
-    \item There has to be an interface that connects the graphical objects to
-    the other parts of the code, since our current frontend \textit{gloss} does
-    not have functional reactive bindings.  A different
-    graphical application like \textit{reactive-fieldtrip} defined in terms of
-    reactive components will probably be easier to integrate.
-    \item For other parts of \textit{ecce}, the definition of partial
-    isomorphisms on each transformation is not obvious.  For example, it is not
-    obvious how the inverse function of the \textit{Arrow} constructor can be
-    formulated.
-\end{enumerate}
+ADT and the visualization.  However, there is a challenge.  For other parts of
+\textit{ecce}, the definition of partial isomorphisms on each transformation is
+not obvious.  For example, it is not obvious how the inverse function of the
+\textit{Event} constructor can be formulated.
+
 As such, we have limited the application of partial isomorphisms purely to
 syntax parsing and printing.
 

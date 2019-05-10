@@ -227,10 +227,10 @@ There are a few directions we can expand our work to.
     \textit{reactive-banana} also have to be reversed.
     \item The \textit{Processor} network defined in terms of reactive-banana \textit{Event}s
     and \textit{Behavior}s has to be reversed. We can either define
-    the inverse constructors of \textit{Event}s and \textit{Behavior}s, or we
-    can define new deconstructors, that look at the stream of
-    \textit{GlobalTransmits} from the GUI and reconstructs a stream of
-    \textit{GlobalProtocol}.
+    the inverse constructors of \textit{Event}s and \textit{Behavior}s (but it
+    is not obvious how to), or we can define new deconstructors, that look at
+    the stream of \textit{GlobalTransmits} from the GUI and reconstructs a
+    stream of \textit{GlobalProtocol}.
   \end{enumerate}
 \end{enumerate}
 

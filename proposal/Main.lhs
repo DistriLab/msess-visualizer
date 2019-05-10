@@ -187,6 +187,53 @@ explain the implementation.  The module dependencies are graphed in Fig. TODO.
 %include ../ecce/Processor.lhs
 %include ../ecce/Frontend.lhs
 
+\section{Conclusion}
+Overall, this project was an exercise in transforming structured descriptions.
+
+\subsection{Future Work}
+There are a few directions we can expand our work to.
+\begin{enumerate}
+  \item Continue describing more structure in the frontend, to match the
+  structure in the grammar.  For example, to draw a box, whose contents are all
+  signified to be concurrent transmissions, even though they may not appear
+  concurrent.  This is analogous to what the Unified Modelling Language has
+  \cite{TODO}.  We can emphasize the concurrency property of transmissions in
+  this box, by reordering these transmissions within the box on a keypress.
+  This has the added benefit of allowing the user to visually inspect if their
+  concurrent section has undesirable behaviors.  Some other expansions on
+  structure need current types to change, e.g. if we want to show the choice of
+  protocols to the user, then our processor needs to be able to return both
+  \textit{Transmit}s and \textit{GlobalChoice}s.
+  \item Make the graphical user interface interactive.  Specifically, clicking
+  and dragging to re-order the transmissions.  Dragging can be done by
+  registering which graphical object, if any, was pointed to by the mouse and
+  offsetting its translation corresponding to the mouse movement.  Bindings
+  from the graphical description to the graphical user interface should exist,
+  so that the graphical description can be updated to reflect the new
+  transmission order.
+  \item Introduce communication and event happens-before ordering.  The current
+  graphical user interface shows horizontal arrows.  This means that
+  transmissions occur sequentially: before a transmission happens, all parties
+  are free to receive at all times, and during a transmission, the sender sends
+  the transmission without waiting.  However, this does not reflect real world
+  comumnications.  We can introduce blocking sends by having downward-slanted
+  arrows, meaning that the receive happens after the send.  This allows
+  situations where some parties are not available to receive, and communication
+  ordering must be introduced to resolve this.  Otherwise, race conditions
+  could occur.
+  \item Make every transformation have an inverse. This means:
+  \begin{enumerate}
+    \item Transformations within external packages like
+    \textit{reactive-banana} also have to be reversed.
+    \item The \textit{Processor} network defined in terms of reactive-banana \textit{Event}s
+    and \textit{Behavior}s has to be reversed. We can either define
+    the inverse constructors of \textit{Event}s and \textit{Behavior}s, or we
+    can define new deconstructors, that look at the stream of
+    \textit{GlobalTransmits} from the GUI and reconstructs a stream of
+    \textit{GlobalProtocol}.
+  \end{enumerate}
+\end{enumerate}
+
 % The bibliography should be embedded for final submission.
 
 %\begin{thebibliography}{}

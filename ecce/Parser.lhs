@@ -222,10 +222,6 @@ data Label =
 \end{code}
 %endif
 
-With the base types constructed, we define the data types as in Fig. 2.2 of
-\cite{Andreea2017thesis}.  Once again, for brevity, we show only the most
-interesting data types.
-
 %if False
 \begin{code}
 {- Figure 2.2 -}
@@ -326,12 +322,19 @@ data BoolePresburger
   deriving (Show)
 
 {- s ::= k | v | k x s | s + s | -s -}
+\end{code}
+%endif
+
+With the base types constructed, we define the data types as in Fig. 2.2 of
+\cite{Andreea2017thesis}.  Once again, for brevity, we show only the most
+interesting data types.
+
+\begin{code}
 data Presburger
   = EPresburger Integer
   | EPresburgerVarFirst VarFirst
   | EPresburgerNeg Presburger
 \end{code}
-%endif
 
 As a convention, if a data type named \textit{Presburger} has a binary
 constructor, then all binary constructors will be moved to another data type

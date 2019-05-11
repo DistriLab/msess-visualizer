@@ -1,10 +1,11 @@
-\subsection{Interpreter}
-
-The interpreter provides a high-level abstraction of the textual interface 
-between \textit{ecce} and the user.  The library user configures a mapping 
-between commands and functions.  Then, when the first word from the user 
-matches a command in the mapping, the mapped function will be executed on the 
-rest of the user input.
+\defslide{InterpreterIntroduction}{
+Abstracted textual interface between \textit{ecce} and the user.
+\begin{itemize}
+  \item Configures a mapping between commands and functions.
+  \item Mapping matches first word from user, mapped function executes on the
+  rest of the user input.
+\end{itemize}
+}
 
 %if False
 \begin{code}
@@ -41,13 +42,13 @@ import qualified Text.Parsec (parse)
 \end{code}
 %endif
 
-The interpreter defines a configurable textual interface, that many other
-modules use.  We define an \textit{Output} function that prints a tuple
-of information.  We will explain how this function is used later.
+\defslide{InterpreterOutput}{
+The \textit{Output} function prints a tuple of information.
 
 \begin{code}
 type Output = (String, [String], String) -> IO ()
 \end{code}
+}
 
 %if False
 \begin{code}
@@ -56,6 +57,7 @@ extractParse p s = Text.Parsec.parse p "" s
 \end{code}
 %endif
 
+%if False
 We use \textit{Output} to define two interpreters with two input-output (IO)
 backends: either the \textit{Haskeline} library, or Haskell's usual monadic IO.
 \textit{Haskeline} includes many more textual interface features, like allowing
@@ -129,6 +131,7 @@ interpreterHaskeline commandOutputs incommandOutput = do
        interpreterHaskeline commandOutputs incommandOutput)
     mInputLine
 \end{code}
+%endif
 
 %if False
 \begin{code}
@@ -143,50 +146,23 @@ interpreterHaskeline commandOutputs incommandOutput = do
 \end{code}
 %endif
 
-Here, we explain how the \textit{Output} function is used.  \textit{interpret}
-takes three inputs: a mapping of \textit{String}s to \textit{Output}s
-(\textit{commandOutputs}), a single \textit{Output} (\textit{incommandOutput}),
-and a \textit{String} (\textit{inputLine}) to be interpreted.  In general,
+\defslide{InterpreterInterpret}{
 \textit{interpret} parses the first word of \textit{inputLine} as a command,
 then looks up this command in the \textit{commandOutputs} mapping to get the
-corresponding \textit{Output} function.  If the command does not exist, then
-\textit{interpret} uses \textit{incommandOutput} as a default \textit{Output}
-function.  The selected \textit{Output} function defines the behavior of
+corresponding \textit{Output} function.
+\begin{itemize}
+  \item For each \textit{String} in \textit{commands}, we create a parser that
+  parses only that \textit{String}.  We try each parser on \textit{inputLine},
+  and the parsed value is stored in \textit{command}.
+  \item The order of trying parsers matters.
+  \item If \textit{command} does not exist in the \textit{commandOutputs}
+  mapping, then we pass the rest of the input line to be processed by
+  \textit{incommandOutput}.  Otherwise, if \textit{command} exists in the
+  mapping, then we use the mapped \textit{Output} to process the rest of the
+  input line.
+\end{itemize}
+The selected \textit{Output} function defines the behavior of
 \textit{interpret}.
-\par
-We first extract the keys of \textit{commandOutputs} as \textit{commands}, with
-type \textit{[String]}.  Then, \textit{parseCommand} behaves like so: for each
-\textit{String} in \textit{commands}, we create a parser that parses only that
-\textit{String}, using the \textit{string} parser constructor.  We try each
-parser on \textit{inputLine}, and the parsed value is stored in
-\textit{command}.  There is a shortcoming of this strategy: the order of trying
-parsers matters.  If short commands and long commands start with the same
-letters, and if we always try to construct the parser for the short commands
-first, then we will never construct the parser for the long command.  This is
-not a limitation in our current usage of the interpreter, since our commands
-have very different letters.  However, this could be a problem if more commands
-are defined.
-\par
-\textit{parseRestInputLine} takes the \textit{inputLine}, and parses it like
-\textit{parseCommand}, but ignores the result.  \textit{parseRestInputLine}
-also ignores spaces between the command and the rest of \textit{inputLine}.
-Finally, it creates a parser that returns the other characters of
-\textit{inputLine}.
-\par
-Each of the constructed parsers returned by \textit{parseCommand} and
-\textit{parseRestInputLine} parse the \textit{inputLine}, and on parse failure,
-returns a \textit{String} \textit{"error"}.  This is not the best way to handle
-parsing failure, since there is no way to differentiate between an actual
-parsing failure and a command \textit{"error"} or an input line
-\textit{"error"}.  However, this is once again not a problem because we do not
-use those commands, and an input of \textit{"error"} would lead to some parsing
-errors in the later parts of the program.
-\par
-Finally, we use the parsed \textit{command} to get the mapped \textit{Output}.
-If \textit{command} does not exist in the \textit{commandOutputs} mapping, then
-we pass the rest of the input line to be processed by \textit{incommandOutput}.
-Otherwise, if \textit{command} exists in the mapping, then we use the mapped
-\textit{Output} to process the rest of the input line.
 
 \begin{code}
 interpret :: [(String, Output)] -> Output -> String -> IO ()
@@ -211,7 +187,10 @@ interpret commandOutputs incommandOutput inputLine =
     restInputLine =
       either (const "error") id $
       extractParse (parseRestInputLine commands) inputLine
+\end{code}
+}
 
+%if False
 parseCommand :: [String] -> SParsec String
 parseCommand commands = foldl (\p p' -> p <|> try p') (try h) t
   where
@@ -220,4 +199,8 @@ parseCommand commands = foldl (\p p' -> p <|> try p') (try h) t
 parseRestInputLine :: [String] -> SParsec String
 parseRestInputLine commands =
   parseCommand commands >> many space >> many anyChar
-\end{code}
+%endif
+
+\slide{InterpreterIntroduction}
+\slide{InterpreterOutput}
+\slide{InterpreterInterpret}

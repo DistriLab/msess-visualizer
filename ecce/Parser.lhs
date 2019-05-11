@@ -1,13 +1,11 @@
-\subsection{Parser}
-
-A parser converts well-formed strings into ASTs.  If the string is not
-well-formed, there will be a parsing error that needs to be handled.  An AST is
-constructed with Abstract Data Types (ADTs).
-\par
-In this section, our ADT is given by the grammars in \cite{Andreea2017thesis}.
-However, we also define some base ADTs that are not explicitly mentioned in the
-paper, but are needed to construct the more complex ADTs.  These base ADTs are
-lifted from Haskell's base data types.
+\defslide{ParserIntroduction}{
+\begin{itemize}
+  \item A parser converts well-formed strings into Abstract Syntax Trees
+  (ASTs).  An AST is constructed with Abstract Data Types (ADTs).
+  \item Our ADT is given by the grammars in \cite{Andreea2017thesis}.
+  \item We also define some base ADTs, lifted from Haskell's base types.
+\end{itemize}
+}
 
 %if False
 \begin{code}
@@ -181,18 +179,16 @@ extractParseShow p s = show $ head $ extractParse p s
 \end{code}
 %endif
 
-Firstly, we define data types and constructors that lift the base Haskell
-types: \textit{VarFirst}, \textit{DataStructure}, \textit{VarType},
-\textit{Predicate}, \textit{Role}, \textit{Channel}, and \textit{Label}.  The
-constructors have the same name as the data type, but with an \textit{E}
-prepended to signify that it constructs an \textit{E}xpression.  We only show
-one data type definition for brevity.
+\defslide{ParserVarFirst}{
+Constructors have the same name as the data type, but with an \textit{E}
+prepended to signify that it constructs an \textit{E}xpression.
 
 \begin{code}
 data VarFirst =
   EVarFirst Integer
   deriving (Show)
 \end{code}
+}
 
 %if False
 \begin{code}
@@ -325,9 +321,9 @@ data BoolePresburger
 \end{code}
 %endif
 
-With the base types constructed, we define the data types as in Fig. 2.2 of
-\cite{Andreea2017thesis}.  Once again, for brevity, we show only the most
-interesting data types.
+\defslide{ParserPresburger}{
+We use the base types to define the data types as in Fig. 2.2 of
+\cite{Andreea2017thesis}.
 
 \begin{code}
 data Presburger
@@ -335,16 +331,17 @@ data Presburger
   | EPresburgerVarFirst VarFirst
   | EPresburgerNeg Presburger
 \end{code}
+}
 
-As a convention, if a data type named \textit{Presburger} has a binary
-constructor, then all binary constructors will be moved to another data type
-definition, named \textit{OpTypeBinary}.  The \textit{Presburger} data type
-will have all its binary constructors replaced by this:
+\defslide{ParserEOpPresburgerBinary}{
+Convention: binary constructors of datatype \textit{Presburger} moved to
+another definition, named \textit{OpTypeBinary}.
 \begin{code}
   | EOpPresburgerBinary Presburger
                         OpPresburgerBinary
                         Presburger
 \end{code}
+}
 
 %if False
 \begin{code}
@@ -352,8 +349,9 @@ will have all its binary constructors replaced by this:
 \end{code}
 %endif
 
-The \textit{OpPresburgerBinary} data type will then have the binary operators as
-nullary constructors, like \textit{EPresburgerSeparate} in this example:
+\defslide{ParserOpPresburgerBinary}{
+The \textit{OpPresburgerBinary} has the binary operators as nullary
+constructors.
 
 \begin{code}
 data OpPresburgerBinary
@@ -361,9 +359,7 @@ data OpPresburgerBinary
   | EPresburgerAdd
   deriving (Show)
 \end{code}
-
-We define binary constructors in such an unconventional manner, because it
-makes specifying constructor precedence in the subsequent sections easier.
+}
 
 %if False
 \begin{code}
@@ -502,9 +498,9 @@ data OpChannelProtocolBinary
 \end{code}
 %endif
 
+%if False
 We take the lexer from \cite{Rendel}.
 
-%if False
 \begin{code}
 keywords = []
 
@@ -560,21 +556,13 @@ angles = between (text "<") (text ">")
 \end{code}
 %endif
 
-A partial isomorphism is defined for each constructor.  It consists of two
-functions: one that constructs the data type, and the other that deconstructs
-the data type.  We are thus establishing an isomorphism between a constructor's
-inputs and its data type.
-\par
-Note that both of the two components of the isomorphisms, are functions that
-return a \textit{Maybe} value.  This is because the partial isomorphism could
-be undefined for certain elements in its domain, in which case the function
-that maps the domain to the image will return \textit{Nothing} for that
-element.
-\par
-Since by convention the constructor names always start with \textit{E}, and
-defining an isomorphism using Template Haskell makes the first letter
-lower-case, then by convention, the isomorphism names always start with
-\textit{e}.
+\defslide{ParserEVarFirst}{
+Each constructor has a partial isomorphism.  It consists of two functions:
+\begin{enumerate}
+  \item Constructs the data type,
+  \item Deconstructs the data type.
+\end{enumerate}
+By convention, the isomorphism names always start with \textit{e}.
 
 \begin{code}
 eVarFirst :: Iso Integer VarFirst
@@ -584,6 +572,7 @@ eVarFirst =
        case x_aegN of
          EVarFirst x_aegM -> Just x_aegM)
 \end{code}
+}
 
 %if False
 \begin{code}
@@ -1347,15 +1336,18 @@ eChannelProtocolSequencing =
 \end{code}
 %endif
 
-Parsers are applications of isomorphisms on the base type.  As an example, the
-\textit{parseVarFirst} parser first lexes an \textit{Integer}, then passes the
-result to the \textit{eVarFirst} constructor.  Similar parsers of other base
-types are defined, but not shown.
+\defslide{ParserParseVarFirst}{
+\begin{itemize}
+  \item Parsers are applications of isomorphisms on the base type.
+  \item The \textit{parseVarFirst} parser first lexes an \textit{Integer}, then
+  passes the result to the \textit{eVarFirst} constructor.
+\end{itemize}
 
 \begin{code}
 parseVarFirst :: Syntax delta => delta VarFirst
 parseVarFirst = eVarFirst <$> integer
 \end{code}
+}
 
 %if False
 \begin{code}
@@ -1523,13 +1515,10 @@ parseBoolePresburger = exp 0
 \end{code}
 %endif
 
-A parser of more complex expression needs to be handled in multiple stages.  We
-again look at the example of \textit{Presburger} data type.
-\par
-Firstly, a parser that ignores leading and trailing spaces for binary operators
-is defined, \textit{.opPresburgerBinary}.  The \textit{<||>} operator has an
-implied ordering, to first try the left parser, then if the left fails, the
-right parser is tried.
+\defslide{ParserComplexOp}{
+A parser of more complex expression is handled in multiple stages.
+Firstly, a parser that ignores leading and trailing spaces,
+\textit{opPresburgerBinary}.
 
 \begin{code}
 opPresburgerBinary :: Syntax delta => delta OpPresburgerBinary
@@ -1539,28 +1528,30 @@ opPresburgerBinary =
     optSpace
     (ePresburgerMul <$> text "*" <|> ePresburgerAdd <$> text "+")
 \end{code}
+}
 
-However, the ordering implied by \textit{<||>} does not matter, because we
-define \textit{prioPresburgerBinary}, a mapping from constructors to
-\textit{Integer}s.  Here, we have the convention that operators mapped to a
-higher integer are parsed first.  For example, since we want multiplications to
-have a higher precedence than additions, we want additions to be parsed before
-multiplications, so that multiplication expressions are embedded inside
-addition expressions.  So \textit{EPresburgerAdd} will have a priority of
-\textit{2}, higher than \textit{EpresburgerMul}'s priority of 1.
+\defslide{ParserComplexPrio}{
+\begin{itemize}
+  \item We override the ordering implied by \textit{<||>} with
+  \textit{prioPresburgerBinary}.
+  \item Convention: operators mapped to a higher integer are parsed first.
+\end{itemize}
 
 \begin{code}
 prioPresburgerBinary :: OpPresburgerBinary -> Integer
 prioPresburgerBinary EPresburgerMul = 1
 prioPresburgerBinary EPresburgerAdd = 2
 \end{code}
+}
 
-With those two tools, we can now define the actual \textit{Presburger} parser.
-Our parser is a recursive-descent parser, so have have a top-level grammar of a
-binary operator of highest priority, then one or more lower-level grammars,
-each with a binary operator with descending priority, and finally a base
-grammar which contains all non-binary constructors, as well as the recursive
-parser wrapped in parantheses.
+\defslide{ParserComplexParse}{
+Recursive-descent parser:
+\begin{itemize}
+  \item Top-level binary operator of highest priority,
+  \item one or more lower-level binary operators with descending priority,
+  \item base grammar with all non-binary constructors, and the recursive
+  parser.
+\end{itemize}
 
 \begin{code}
 parsePresburger :: Syntax delta => delta Presburger
@@ -1574,15 +1565,18 @@ parsePresburger = exp 2
     exp 1 = chainl1 (exp 0) opPresburgerBinary (opPrioPresburgerBinary 1)
     exp 2 = chainl1 (exp 1) opPresburgerBinary (opPrioPresburgerBinary 2)
 \end{code}
+}
 
-\textit{opPrioPresburgerBinary} is defined using \textit{prioPresburgerBinary}.
-It returns the binary operator that matches the input priority.
+\defslide{ParserComplexOpPrio}{
+\textit{opPrioPresburgerBinary} returns the binary operator that matches the
+input priority.
 
 \begin{code}
     opPrioPresburgerBinary n =
       eOpPresburgerBinary .
       subset (\(_, (op, _)) -> prioPresburgerBinary op == n)
 \end{code}
+}
 
 %if False
 \begin{code}
@@ -1788,3 +1782,14 @@ parseChannelProtocol = exp 2
       subset (\(_, (op, _)) -> prioChannelProtocolBinary op == n)
 \end{code}
 %endif
+
+\slide{ParserIntroduction}
+\slide{ParserVarFirst}
+\slide{ParserPresburger}
+\slide{ParserEOpPresburgerBinary}
+\slide{ParserPresburgerBinary}
+\slide{ParserEVarFirst}
+\slide{ParserComplexOp}
+\slide{ParserComplexPrio}
+\slide{ParserComplexParse}
+\slide{ParserComplexOpPrio}

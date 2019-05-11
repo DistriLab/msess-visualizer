@@ -1,12 +1,10 @@
 \subsection{Projector}
 
-Now that we have our \textit{GlobalProtocol}s, we can define some functions to
-deconstruct them.  We project (or decompose) big structures onto small
-structures, sometimes forgetting some information.  This projection is
-performed by deconstructors.
-\par
-Each level of projection is performed by a function.  The biggest structure to
-be projected is a \textit{GlobalProtocol}.
+\defslide{ProjectorIntroduction}{
+Decompose big structures onto small structures, sometimes forgetting some
+information.
+Each level of projection is performed by a function.
+}
 
 %if False
 \begin{code}
@@ -65,9 +63,10 @@ import Parser
 \end{code}
 %endif
 
+\defslide{ProjectorTr}{
 \textit{tr} decomposes a \textit{GlobalProtocol} into many
 \textit{Transmission}s.  There are three patterns to note about this style of
-decomposition.  We will see similar patterns in the other projection functions.
+decomposition:
 \begin{enumerate}
   \item Firstly, the pattern of decomposition for \textit{Concurrency},
   \textit{Choice}, and \textit{Sequencing}.  These are binary deconstructors
@@ -91,6 +90,7 @@ tr g =
     EGlobalProtocolGuard _ -> []
     EGlobalProtocolEmp -> []
 \end{code}
+}
 
 %if False
 \begin{code}
@@ -110,15 +110,9 @@ tr g =
 \end{code}
 %endif
 
+\defslide{ProjectorEv}{
 \textit{ev} decomposes a \textit{GlobalProtocol} in a similar manner to
-\textit{tr}.  However, when it takes a \textit{Transmission} as input, it
-extracts the sender role \textit{s}, label \textit{i}, and receiver role
-\textit{r}, to create two \textit{Event}s: one event for the sender, and one
-for the receiver, with the same label.  Then, it puts those two events in a
-list, with the sender event coming before the receiver event.  We enforce this
-order because it reflects real-world transmissions: the sender sends the
-transmission first, and time is needed for the transmission to propogate,
-before the receiver receives the transmission.
+\textit{tr}.
 
 \begin{code}
 ev :: GlobalProtocol -> [Event]
@@ -132,10 +126,13 @@ ev g =
     EGlobalProtocolGuard a -> evAssertion a
     EGlobalProtocolEmp -> []
 \end{code}
+}
 
+%if False
 Decompositions to lists of \textit{Event}s are defined similarly for
 \textit{Assertion}s and \textit{Constraint}s.  We will not be discussing them
 here.
+%endif
 
 %if False
 \begin{code}
@@ -228,6 +225,7 @@ projectGlobalToParty g p =
 \end{code}
 %endif
 
+%if False
 \textit{projectPartyToEndpoint} behaves similarly to
 \textit{projectGlobalToParty}, except that it projects on \textit{Channel}s
 rather than \textit{Role}s.  This function deconstructs and looks at the
@@ -247,6 +245,8 @@ projectPartyToEndpoint p c =
       | c == c1 -> EEndpointProtocolReceive i v f
       | otherwise -> EEndpointProtocolEmp
 \end{code}
+%endif
+
 %if False
 \begin{code}
     EOpPartyProtocolBinary g1 EPartyProtocolConcurrency g2 ->
@@ -267,3 +267,7 @@ projectPartyToEndpoint p c =
     EPartyProtocolEmp -> EEndpointProtocolEmp
 \end{code}
 %endif
+
+\slide{ProjectorIntroduction}
+\slide{ProjectorTr}
+\slide{ProjectorEv}

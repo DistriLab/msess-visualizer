@@ -1,13 +1,8 @@
-\subsection{Frontend}
-
-This section defines the graphical hook to \textit{Processor}, which means it
-displays the textual results from \textit{Processor} as graphics.  We first
-define a bunch of graphical objects, like \textit{Extent}s and pictorial
-arrows, then combine these objects according to the results from
-\textit{Processor}.
-\par
-We chose the graphical application \textit{gloss}, because of the simplicity of 
-its usage, which in turn simplifies explanation.
+\defslide{FrontendIntroduction}{
+The frontend displays the textual results from \textit{Processor} as graphics.
+We first define a bunch of graphical objects, then combine these objects
+according to the results from \textit{Processor}.
+}
 
 %if False
 \begin{code}
@@ -140,22 +135,22 @@ numTransmitsOnScreenMax =
 \end{code}
 %endif
 
-\textit{Frontend.lhs} has the only significant \textit{main} implementation,
-since the interface is not textual, but graphical.  After extracting the
-contents of a file, parsing its contents, and extracting the
-\textit{GlobalProtocol} \textit{g}, we pass \textit{g} to \textit{showParties}
-in order to get a list of parties involved in the protocol.  An overview can be
-found in Fig. TODO.
-
+\defslide{FrontendDiagram}{
 \begin{center}
 \includegraphics[scale=0.5]{../ecce/plantuml/network.png}
 \end{center}
+}
 
-\textit{drawParties} defines the base picture and the mapping between each
-party and the \textit{Extent}s defined in the package \textit{gloss}.  We
-create a reference to a blank image, then compile a \textit{gloss} network,
-binding an \textit{eventHandler} to the network.
+\defslide{FrontendOverview}{
+\begin{itemize}
+  \item Extract file contents,
+  \item Parsing contents to \textit{GlobalProtocol} \textit{g},
+  \item Get parties involved in \textit{g},
+  \item Map each party to an \textit{Extent}.
+  \item Draw \textit{Transmit}s between \textit{Extent}s.
+\end{itemize}
 
+%if False
 \begin{code}
 main :: IO ()
 main = do
@@ -168,9 +163,6 @@ main = do
   network <-
     compile $
     fromAddHandler eventHandler >>= networkDescription p picRef extentsMap
-\end{code}
-%if False
-\begin{code}
   actuate network
   playIO
     (InWindow "Frontend.hs" (wWidth, wHeight) (0, 0))
@@ -193,12 +185,13 @@ main = do
 \end{code}
 %endif
 
-\textit{Transmit}s are tuples of sender x-coordinate, receiver x-coordinate,
-transmission y-coordinate, and a transmission description.
+\textit{Transmit}s are tuples of sender x-coord, receiver x-coord, transmission
+y-coord, and a description.
 
 \begin{code}
 type Transmit = (Float, Float, Float, String)
 \end{code}
+}
 
 %if False
 \begin{code}
@@ -228,24 +221,8 @@ networkDescription p picRef extentsMap eGloss = do
   valueBLater picture >>= liftIO . writeIORef picRef
 \end{code}
 
-The picture arrow, \textit{aPicture}, is a composition of many Kleisli arrows.
-\textit{eGloss} is an event defined by \textit{gloss}.  \textit{networkInput}
-extracts the \textit{Char} from \textit{eGloss}, then passes that \textit{Char}
-into \textit{networkProcessor} defined in \textit{Processor.lhs}.
-\par
-Similar unpacking of scroll events is done for \textit{networkInputScroll}, and
-\textit{networkOutputScroll} accumulates the scroll state as an
-\textit{Integer}.
-\par
-Note the usage of the fish operator \textit{(>=>)}, which has the type:
-\textit{(>=>) :: Monad m => (a -> m b) -> (b -> m c) -> a -> m c}. That is, it
-composes two monadic functions with the same type as the monadic
-\textit{return}. Providing a input to this composed function will yield a
-monad.
-\par
-In this case, \textit{eCharMay} is input to the result of three composed
-Kleisli arrows, and yields a \textit{Behavior} monad, captured by the variable
-\textit{bTransmits}.
+\defslide{FrontendAPicture}{
+Composition of many Kleisli arrows.
 
 \begin{code}
 aPicture p extentsMap =
@@ -260,6 +237,8 @@ aPicture p extentsMap =
      picture <- Kleisli networkDraw -< (bTransmits, bScrollPos)
      returnA -< picture
 \end{code}
+}
+
 %if False
 \begin{code}
 {-
@@ -287,23 +266,14 @@ networkInputScroll eGloss = return $ mayScroll <$> eGloss
 \end{code}
 %endif
 
-\textit{networkDraw} takes the history of transmissions \textit{bTransmits},
-and the current scroll position \textit{bScrollPos}, and returns a picture.
-The current scroll position determines which transmissions from the
-transmissions history is drawn on screen.  This is done by applying a function
-on the product of \textit{bTransmits} and \textit{bScrollPos}, which selects a
-contiguous range of indexes, [\textit{bScrollPos}, \textit{bScrollPos +
-numTransmitsOnScreenMax}).  This selected list of transmissions is stored in
-\textit{transmitsOnScreen}.
-\par
-Then, we wrap each transmission in a 2-tuple.  The first element is the
-transmission, and the second element is the y-coordinate of the first
-transmission, \textit{firstTransmitY}.  Then, we decompose each transmission
-into a \textit{transmitSRDesc}, forgetting about the y-coordinate of that
-transmission.  We forget the y-coordinate because we have already used that
-information to translate the \textit{transmitSRDesc} by its own y-coordinate.
-The \textit{firstTransmitY} is used to offset all transmissions by
-\textit{firstTransmitY} pixels.
+\defslide{FrontendNetworkDraw}{
+\begin{itemize}
+  \item Scroll position selects which transmissions drawn on screen,
+  \item Pair each transmission with the y-coordinate of first transmission,
+  which is used to offset all transmissions.
+  \item Decompose each transmission into a \textit{transmitSRDesc}, which
+  does not have a y-coordinate field.
+\end{itemize}
 
 \begin{code}
 networkDraw :: (Behavior [Transmit], Behavior Int) -> Moment (Behavior Picture)
@@ -321,6 +291,7 @@ networkDraw (bTransmits, bScrollPos) = do
       bScrollPos
     getTransmitY (_, _, y, _) = y
 \end{code}
+}
 
 %if False
 \begin{code}
@@ -331,15 +302,10 @@ networkDraw (bTransmits, bScrollPos) = do
 \end{code}
 %endif
 
-\textit{networkTransmit} looks at the 4-tuple \textit{(eTrans, bProc,
-eDone, bStepCount)} returned by \textit{networkDescription} in
-\textit{Processor.lhs}, and returns a stream of \textit{Transmit}s.  These
-\textit{Transmit}s have coordinates determined by \textit{extentsMap}.
-\par
-\textit{networkTransmit} uses \textit{Behavior}s and \textit{Event}s from
-\textit{reactive-banana}.  These \textit{reactive-banana} \textit{Event}s are
-not to be confused with \textit{Event}s from \textit{gloss}.
-\textit{networkTransmit} performs stream processing.
+\defslide{FrontendNetworkTransmitType}{
+\textit{networkTransmit} looks at the 4-tuple from \textit{Processor.lhs}, and
+returns a stream of \textit{Transmit}s.  The coordinates of these
+\textit{Transmit}s are determined by \textit{extentsMap}.
 
 \begin{code}
 networkTransmit ::
@@ -351,20 +317,22 @@ networkTransmit ::
   -> Moment (Event Transmit)
 networkTransmit extentsMap (eTrans, bProc, eDone, bStepCount) = do
 \end{code}
+}
 
+\defslide{FrontendNetworkTransmitETransJust}{
 \textit{eTransJust} is identical to \textit{eTrans}, except when the value of
 \textit{eTrans} is \textit{Nothing}.
 
 \begin{code}
   let eTransJust = filterJust eTrans
 \end{code}
+}
 
-Each \textit{GlobalTransmission} in \textit{eTransJust} is projected into
-sender and receiver \textit{Event}s (these are the \textit{Event}s are defined
-in \textit{Parser.lhs}).  Then, we unparse the \textit{GlobalTransmission} with
-the unparsing function \textit{un}. \textit{srEventDesc} contains these
-\textit{Event}s and the transmission description.
-\par
+\defslide{FrontendNetworkTransmitSREventDesc}{
+\begin{itemize}
+  \item Project into sender and receiver \textit{Event}s.
+  \item Unparse the \textit{GlobalTransmission} to get the description.
+\end{itemize}
 Subsequent stream processings will preserve the transmission description in
 \textit{srEventDesc}, because the transmission description does not need to be
 processed.
@@ -377,11 +345,12 @@ processed.
            , transToDesc x)) <$>
         eTransJust
 \end{code}
+}
+
 %if False
 \begin{code}
       -- [sender, receiver] in that order
 \end{code}
-%endif
 
 \textit{srRoleDesc} converts each \textit{Event} in \textit{srEventDesc} into a
 \textit{Role}.  Note the use of the \textit{mapTuple} function, which applies
@@ -417,10 +386,8 @@ unparsed string in \textit{extentsMap}, so that our 2-tuple now has a pair of
                x
            , snd x)) <$>
         srRoleDesc
-\end{code}
-%if False
         -- TODO probably lookup returns Nothing
-%endif
+\end{code}
 
 \textit{srXDesc} converts each \textit{Extent} into the x-coordinate of their
 centers.  The first x-coordinate is the sender's, and the second x-coordinate
@@ -436,7 +403,6 @@ already have the sender's x-coordinate, the receiver's x-coordinate, and the
 transmission description, all that is left is to calculate the y-coordinate of
 the transmission.  This is done by first applying a constant offset
 \textit{exYOffset}, then a variable offset that depends on \textit{bStepCount}.
-\par
 
 \begin{code}
       srXYDesc =
@@ -445,19 +411,11 @@ the transmission.  This is done by first applying a constant offset
               ( sX
               , rX
               , fromIntegral $ exYOffset + (-step * transmitStepCountSpace)
-\end{code}
-%if False
               -- negative because time increases downwards
-%endif
-\begin{code}
               , desc)) <$>
          bStepCount) <@>
         srXDesc
   return srXYDesc
-\end{code}
-
-%if False
-\begin{code}
   where
     mapTuple = join (***)
 \end{code}
@@ -531,12 +489,9 @@ mayScroll e =
 \end{code}
 %endif
 
-\textit{transmit} defines a transmission as a picture.  The transmission is
-drawn as a pictorial arrow.  This pictorial arrow does not have any origin
-coordinate.  \textit{transmit} takes four \textit{Float}s as input: the arrow
-body length, the arrow head height, the arrow head length, and the arrow
-thickness.
-\par
+\defslide{FrontendTransmit}{
+\textit{transmit} defines a transmission as a pictorial arrow, without an
+origin.
 
 \begin{code}
 transmit :: Float -> Float -> Float -> Float -> Picture
@@ -552,6 +507,7 @@ transmit bl hh hl t =
       translate ((bl - hl) / 2) (-hh / 4) . rotate (degrees (-angleHead))
     degrees = (*) (180 / pi)
 \end{code}
+}
 
 %if False
 \begin{code}
@@ -562,16 +518,14 @@ transmit bl hh hl t =
 \end{code}
 %endif
 
-\textit{transmitSRDesc} defines a transmission with an origin coordinate as a
-pictorial arrow.  The x-coordinate of the origin is always the sender of the
-transmission's x-coordinate.  The direction of the pictorial arrow depends on
-the x-coordinate of the receiver relative to the x-coordinate of the sender.
-If the receiver's x-coordinate is greater than the sender's x-coordinate, then
-the arrow faces right.  If the receiver's x-coordinate is less than the
-sender's x-coordinate, then the arrow faces left.  Otherwise, we raise an
-error, because the sender and the receiver have the same coordinate (up to
-float precision).
-\par
+\defslide{FrontendTransmitSRDesc}{
+\begin{enumerate}
+  \item \textit{transmit} defines a transmission as a pictorial arrow,
+  \textbf{with} an origin.  The x-coordinate of the origin is always the sender
+  of the transmission's x-coordinate.
+  \item The direction of the pictorial arrow depends on the x-coordinate of the
+  receiver relative to the x-coordinate of the sender.
+\end{enumerate}
 
 \begin{code}
 transmitSRDesc :: Float -> Float -> String -> Picture
@@ -590,6 +544,7 @@ transmitSRDesc sX rX desc
     transmitDesc =
       (translate (-distance / 2) transmitDescYOffset . drawText) desc
 \end{code}
+}
 
 %if False
 \begin{code}
@@ -626,6 +581,7 @@ drawParties ss =
 \end{code}
 %endif
 
+%if False
 \textit{drawParty} draws each party as text in a box, centered on its
 \textit{Extent}, and a vertical line starting from and centered on the
 x-coordinate of the box, ending at the bottom of the screen.
@@ -645,6 +601,7 @@ drawParty w h s ex = pictures $ map (translate xf yf) shapes
       translate 0 (-hf / 2 - wHeightf) (rectangleSolid 2 (wHeightf * 2))
     shapes = [drawBox, (translate (-wf / 3) (-hf / 4) . drawText) s, drawLine]
 \end{code}
+%endif
 
 %if False
 \begin{code}
@@ -652,11 +609,11 @@ drawParty w h s ex = pictures $ map (translate xf yf) shapes
 \end{code}
 %endif
 
+%if False
 \textit{getPartiesExtents} creates an \textit{Extent} for each party.  An
 \textit{Extent} is a rectangular area.  The width and height of each
 \textit{Extent}, and the spacing between two \textit{Extent}s, are given as
 \textit{w}, \textit{h}, and \textit{s} respectively.
-\par
 
 \begin{code}
 getPartiesExtents :: [String] -> Int -> Int -> Int -> [Extent]
@@ -667,6 +624,7 @@ getPartiesExtents ss w h s =
   where
     num = length ss
 \end{code}
+%endif
 
 %if False
 \begin{code}
@@ -674,3 +632,14 @@ mappingPartyExtent :: [String] -> [(String, Extent)]
 mappingPartyExtent ss = zip ss (getPartiesExtents ss exWidth exHeight exSpace)
 \end{code}
 %endif
+
+\slide{FrontendIntroduction}
+\slide{FrontendDiagram}
+\slide{FrontendOverview}
+\slide{FrontendAPicture}
+\slide{FrontendNetworkDraw}
+\slide{FrontendNetworkTransmitType}
+\slide{FrontendNetworkTransmitETransJust}
+\slide{FrontendNetworkTransmitSREventDesc}
+\slide{FrontendTransmit}
+\slide{FrontendTransmitSRDesc}

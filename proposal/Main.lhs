@@ -1,4 +1,4 @@
-\documentclass{beamer}
+\documentclass[9pt]{beamer}
 %include Library/polycode.fmt
 %include Library/beamer.fmt
 

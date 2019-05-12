@@ -9,12 +9,14 @@
 \newcommand{\ldiamond}[2][0.25ex]{\hbox to 1.5em{\hfil\clap{\raisebox{-0.45ex}{\TriangleLeft\ }}\clap{\raisebox{#1}{\scriptsize #2}}\hfil}}
 
 %format delta = "\delta{}"
-%format >=> = ">\!\!\!\!\:\!=\!\!\!\!\!\:\!>"
+%format -< = "-\!\!\!<"
+%format >=> = ">\:\!\!\!=\!\!\!>"
 %format <+> = "\diamond{$+$}"
 %format <-> = "\diamond{$-$}"
 %format <|> = "\diamond{$|$}"
 %format <$> = "\diamond[0ex]{\rm\$}"
 %format <*> = "\diamond{$\ast$}"
+%format <@> = "\diamond{$@$}"
 %format *> = "\rdiamond{$\ast$}"
 %format <* = "\ldiamond{$\ast$}"
 

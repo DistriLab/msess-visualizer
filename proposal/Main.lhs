@@ -2,8 +2,6 @@
 %include Library/polycode.fmt
 %include Library/beamer.fmt
 
-\newcommand{\ignore}[1]{}
-
 \newcommand{\defslide}[2]{
 \frame<hidden>[label=#1]{#2}
 }

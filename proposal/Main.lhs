@@ -10,6 +10,11 @@
 
 \newcommand{\slide}[1]{\againframe<1->{#1}}
 
+\title{ecce}
+\subtitle{A Visualizer and Simulator for Session Protocols}
+\author{Koo Zhengqun}
+\date{\today}
+
 \begin{document}
 
 \defslide{Overview}{
@@ -66,6 +71,7 @@ There are a few directions we can expand our work to.
 \end{enumerate}
 }
 
+\frame{\titlepage}
 \slide{Overview}
 \slide{ecce}
 \slide{Types}

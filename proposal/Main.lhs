@@ -108,6 +108,7 @@ There are a few directions we can expand our work to.
 \section{Future Work}
 \slide{Future Work}
 
+\section{Refs}
 \begin{frame}[allowframebreaks]
   \frametitle<presentation>{Further Reading}
   \begin{thebibliography}{10}

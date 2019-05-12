@@ -328,9 +328,9 @@ networkDraw (bTransmits, bScrollPos) = do
 returned by |networkDescription| in |Processor.lhs|, and returns a stream of
 |Transmit|s.  These |Transmit|s have coordinates determined by |extentsMap|.
 \par
-|networkTransmit| uses |Behavior|s and |Event|s from |reactive-banana|.  These
-|reactive-banana| |Event|s are not to be confused with |Event|s from |gloss|.
-|networkTransmit| performs stream processing.
+|networkTransmit| uses |Behavior|s and |Event|s from \textit{reactive-banana}.
+These \textit{reactive-banana} |Event|s are not to be confused with |Event|s
+from |gloss|.  |networkTransmit| performs stream processing.
 
 \begin{code}
 networkTransmit ::

@@ -181,8 +181,8 @@ A diagram will summarize the structured data transformations in |ecce|.  So, we
 give an overview of the type transformations in |ecce| (Fig.  TODO).  Note that 
 partial isomorphisms exist only for the |String| \leftrightarrow 
 |GlobalProtocol| transformation, since this is the transformation that uses 
-lexers and parsers already defined in the |invertible-syntax| package.  Partial 
-isomorphisms for other transformations are a work in progress.
+lexers and parsers already defined in the \textit{invertible-syntax} package.  
+Partial isomorphisms for other transformations are a work in progress.
 
 \begin{center}
 \includegraphics[scale=0.4]{../ecce/plantuml/transformations.png}
@@ -240,12 +240,12 @@ There are a few directions we can expand our work to.
   could occur.
   \item Make every transformation have an inverse. This means:
   \begin{enumerate}
-    \item Transformations within external packages like |reactive-banana| also 
-    have to be reversed.
-    \item The |Processor| network defined in terms of reactive-banana |Event|s 
-    and |Behavior|s has to be reversed. We can either define the inverse 
-    constructors of |Event|s and |Behavior|s (but it is not obvious how to), or 
-    we can define new deconstructors, that look at the stream of 
+    \item Transformations within external packages like 
+    \textit{reactive-banana} also have to be reversed.
+    \item The |Processor| network defined in terms of \textit{reactive-banana}
+    |Event|s and |Behavior|s has to be reversed. We can either define the 
+    inverse constructors of |Event|s and |Behavior|s (but it is not obvious how 
+    to), or we can define new deconstructors, that look at the stream of 
     |GlobalTransmits| from the GUI and reconstructs astream of 
     |GlobalProtocol|.
   \end{enumerate}

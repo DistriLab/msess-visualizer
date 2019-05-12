@@ -156,8 +156,8 @@ data Process
 %endif
 
 |networkDescription| reads a |GlobalProtocol| from a file at |filePath|.
-|reactive-banana| provides the user input as asingle character, |eKey|, which
-|networkDescription| passes on to |networkProcessor|, before passing the
+\textit{reactive-banana} provides the user input as asingle character, |eKey|,
+which |networkDescription| passes on to |networkProcessor|, before passing the
 processed result to |networkPrinter|.
 
 \begin{code}
@@ -181,11 +181,12 @@ cycle in the sequential composition of monads (Fig. TODO).
 \includegraphics[scale=0.4]{../ecce/plantuml/processor.png}
 \end{center}
 
-|networkProcessor| also uses |Event|s and |Behavior|s from |reactive-banana|.
-We give a rough overview of |reactive-banana|.  This overview is merely
-conceptual, the underlying implementation of |reactive-banana| could be
-different.  |reactive-banana| is a functional reactive programming framework,
-that processes data streams.  Data streams are lists with potentially infinite
+|networkProcessor| also uses |Event|s and |Behavior|s from
+\textit{reactive-banana}.  We give a rough overview of
+\textit{reactive-banana}.  This overview is merely conceptual, the underlying
+implementation of \textit{reactive-banana} could be different.
+\textit{reactive-banana} is a functional reactive programming framework, that
+processes data streams.  Data streams are lists with potentially infinite
 elements.  Each element can be understood as a 2-tuple of |Time| and |Data|,
 meaning the |Data| was generated at time |Time|.  An event is a data stream.  A
 behavior is a description of how |Data| varies with |Time|.
@@ -576,11 +577,11 @@ from that processing is prepended onto the tail of the input |Process|.
 \par
 This circular nature of the network is strongly reminiscent of Hughes'
 |ArrowLoop| class, where signals output from the |Arrow| are fed back as input.
-Indeed, if we define |reactive-banana| behavior transformations as |Arrow|s,
-then we would be able to replace the circular network with an |ArrowLoop|.
-However, choosing this more imperative style eases explanation, and the reader
-does not need to understand arrows in order to understand the |reactive-banana|
-network.
+Indeed, if we define \textit{reactive-banana} behavior transformations as
+|Arrow|s, then we would be able to replace the circular network with an
+|ArrowLoop|.  However, choosing this more imperative style eases explanation,
+and the reader does not need to understand arrows in order to understand the
+\textit{reactive-banana} network.
 
 \begin{code}
 processStep :: Maybe Process -> (Maybe GlobalProtocol, Maybe Process)

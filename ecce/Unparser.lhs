@@ -2,9 +2,9 @@
 
 The unparser, or pretty-printer, is just the inverse function of the parser.
 That is, an unparser converts an ADT into a string.  Implementing this with
-|partial-isomorphism|s is not only straightforward, but also has the advantage
-of being isomorphic.  That is, an unparsed ADT can be parsed to get the same
-ADT, and a parsed string can be unparsed to get the same string.
+\textit{partial-isomorphism}s is not only straightforward, but also has the
+advantage of being isomorphic.  That is, an unparsed ADT can be parsed to get
+the same ADT, and a parsed string can be unparsed to get the same string.
 
 %if False
 \begin{code}
@@ -53,9 +53,9 @@ incommandOutput =
 %endif
 
 Unparsing is done by simply passing the partial isomorphism
-|parseGlobalProtocol| and a |GlobalProtocol| to |invertible-syntax|'s |print|
-function.  We then unwrap the |Maybe| result, and display an error if |Nothing|
-is returned.
+|parseGlobalProtocol| and a |GlobalProtocol| to \textit{invertible-syntax}'s
+|print| function.  We then unwrap the |Maybe| result, and display an error if
+|Nothing| is returned.
 \par
 |un| takes a |GlobalProtocol| as input instead of any well-formed expression in
 typical pretty-printers.  This is because partial isomorphisms and existential

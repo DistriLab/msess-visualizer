@@ -15,6 +15,14 @@
 \author{Koo Zhengqun}
 \date{\today}
 
+\AtBeginSection[]
+{
+  \begin{frame}
+    \frametitle{Table of Contents}
+    \tableofcontents[currentsection]
+  \end{frame}
+}
+
 \begin{document}
 
 \defslide{Overview}{
@@ -72,6 +80,7 @@ There are a few directions we can expand our work to.
 }
 
 \frame{\titlepage}
+\section{Overview}
 \slide{Overview}
 \slide{ecce}
 \slide{Types}
@@ -85,6 +94,7 @@ There are a few directions we can expand our work to.
 %include ../ecce/Processor.lhs
 %include ../ecce/Frontend.lhs
 
+\section{Future Work}
 \slide{Future Work}
 
 \end{document}

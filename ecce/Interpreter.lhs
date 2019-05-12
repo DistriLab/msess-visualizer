@@ -203,6 +203,7 @@ parseRestInputLine commands =
   parseCommand commands >> many space >> many anyChar
 %endif
 
+\section{Interpreter}
 \slide{InterpreterIntroduction}
 \slide{InterpreterOutput}
 \slide{InterpreterInterpretDesc}

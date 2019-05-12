@@ -610,6 +610,7 @@ processStep p =
 \end{code}
 }
 
+\section{Processor}
 \slide{ProcessorIntroduction}
 \slide{ProcessorProcess}
 \slide{ProcessorInputs}

@@ -1,5 +1,3 @@
-\subsection{Projector}
-
 \defslide{ProjectorIntroduction}{
 Decompose big structures onto small structures, sometimes forgetting some
 information.
@@ -273,6 +271,7 @@ projectPartyToEndpoint p c =
 \end{code}
 %endif
 
+\section{Projector}
 \slide{ProjectorIntroduction}
 \slide{ProjectorTrDesc}
 \slide{ProjectorTrCode}

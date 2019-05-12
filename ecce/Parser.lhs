@@ -1783,6 +1783,7 @@ parseChannelProtocol = exp 2
 \end{code}
 %endif
 
+\section{Parser}
 \slide{ParserIntroduction}
 \slide{ParserVarFirst}
 \slide{ParserPresburger}

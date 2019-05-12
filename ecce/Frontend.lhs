@@ -637,6 +637,7 @@ mappingPartyExtent ss = zip ss (getPartiesExtents ss exWidth exHeight exSpace)
 \end{code}
 %endif
 
+\section{Frontend}
 \slide{FrontendIntroduction}
 \slide{FrontendDiagram}
 \slide{FrontendOverview}

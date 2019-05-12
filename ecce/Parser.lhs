@@ -498,9 +498,10 @@ data OpChannelProtocolBinary
 \end{code}
 %endif
 
-%if False
-We take the lexer from \cite{Rendel}.
+\defslide{ParserIdentifier}{
+We take the lexer from \cite{Rendel}.  Here is one of the lexer's functions.
 
+%if False
 \begin{code}
 keywords = []
 
@@ -508,11 +509,17 @@ letter, digit :: Syntax delta => delta Char
 letter = subset isLetter <$> token
 
 digit = subset isDigit <$> token
+\end{code}
+%endif
 
+\begin{code}
 identifier :: Syntax delta => delta String
 identifier =
   subset (`notElem` keywords) . cons <$> letter <*> many (letter <|> digit)
+\end{code}
+}
 
+%if False
 keyword :: Syntax delta => String -> delta ()
 keyword s = inverse right <$> (identifier <+> text s)
 
@@ -1789,6 +1796,7 @@ parseChannelProtocol = exp 2
 \slide{ParserPresburger}
 \slide{ParserEOpPresburgerBinary}
 \slide{ParserPresburgerBinary}
+\slide{ParserIdentifier}
 \slide{ParserEVarFirst}
 \slide{ParserComplexOp}
 \slide{ParserComplexPrio}

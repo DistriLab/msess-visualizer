@@ -89,20 +89,20 @@ There are a few directions we can expand our work to.
 \section{Future Work}
 \slide{Future Work}
 
-\section{References}
 \begin{frame}[allowframebreaks]
   \frametitle<presentation>{Further Reading}
   \begin{thebibliography}{10}
   \beamertemplatebookbibitems
-  \bibitem{Autor1990}
-    A.~Autor.
-    \newblock {\em Introduction to Giving Presentations}.
-    \newblock Klein-Verlag, 1990.
+  \bibitem{Andreea2017thesis}
+    C.~Andreea.
+    \newblock {\em A Session Logic for Relaxed Communication Protocols}.
+    \newblock National University of Singapore, 2017.
   \beamertemplatearticlebibitems
-  \bibitem{Jemand2000}
-    S.~Jemand.
-    \newblock On this and that.
-    \newblock {\em Journal of This and That}, 2(1):50--100, 2000.
+  \bibitem{Rendel}
+    T.~Rendel, K. Ostermann.
+    \newblock {\em Invertible Syntax Descriptions: Unifying Parsing and Pretty
+    Printing}
+    \newblock University of Marburg, 2010.
   \end{thebibliography}
 \end{frame}
 

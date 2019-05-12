@@ -10,6 +10,10 @@ With the new version of `cabal-install`, to avoid passing `-package` options to
 ```
 cabal new-repl
 ```
+After that, you may use `ghci` as normal:
+```
+ghci
+```
 
 # Usage
 ## General

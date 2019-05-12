@@ -1,6 +1,6 @@
 \defslide{ParserIntroduction}{
 \begin{itemize}
-  \item A parser converts well-formed strings into Abstract Syntax Trees 
+  \item A parser converts well-formed strings into Abstract Syntax Trees
   (ASTs).  An AST is constructed with Abstract Data Types (ADTs).
   \item Our ADT is given by the grammars in \cite{Andreea2017thesis}.
   \item We also define some base ADTs, lifted from Haskell's base types.
@@ -180,7 +180,7 @@ extractParseShow p s = show $ head $ extractParse p s
 %endif
 
 \defslide{ParserVarFirst}{
-Constructors have the same name as the data type, but with an |E| prepended to 
+Constructors have the same name as the data type, but with an |E| prepended to
 signify that it constructs an |E|xpression.
 
 \begin{code}
@@ -322,7 +322,7 @@ data BoolePresburger
 %endif
 
 \defslide{ParserPresburger}{
-We use the base types to define the data types as in Fig. 2.2 of 
+We use the base types to define the data types as in Fig. 2.2 of
 \cite{Andreea2017thesis}.
 
 \begin{code}
@@ -334,7 +334,7 @@ data Presburger
 }
 
 \defslide{ParserEOpPresburgerBinary}{
-Convention: binary constructors of datatype |Presburger| moved to another 
+Convention: binary constructors of datatype |Presburger| moved to another
 definition, named |OpTypeBinary|.
 \begin{code}
   | EOpPresburgerBinary Presburger
@@ -564,7 +564,7 @@ angles = between (text "<") (text ">")
 %endif
 
 \defslide{ParserEVarFirst}{
-Each constructor has a partial isomorphism.  It consists of two functions:
+Each constructor is a partial isomorphism.  It consists of two functions:
 \begin{enumerate}
   \item Constructs the data type,
   \item Deconstructs the data type.
@@ -1346,7 +1346,7 @@ eChannelProtocolSequencing =
 \defslide{ParserParseVarFirst}{
 \begin{itemize}
   \item Parsers are applications of isomorphisms on the base type.
-  \item The |parseVarFirst| parser first lexes an |Integer|, then passes the 
+  \item The |parseVarFirst| parser first lexes an |Integer|, then passes the
   result to the |eVarFirst| constructor.
 \end{itemize}
 
@@ -1523,7 +1523,7 @@ parseBoolePresburger = exp 0
 %endif
 
 \defslide{ParserComplexOp}{
-A parser of more complex expression is handled in multiple stages.  Firstly, a 
+A parser of more complex expression is handled in multiple stages.  Firstly, a
 parser that ignores leading and trailing spaces, |opPresburgerBinary|.
 
 \begin{code}
@@ -1554,7 +1554,7 @@ Recursive-descent parser:
 \begin{itemize}
   \item Top-level binary operator of highest priority,
   \item one or more lower-level binary operators with descending priority,
-  \item base grammar with all non-binary constructors, and the recursive 
+  \item base grammar with all non-binary constructors, and the recursive
   parser.
 \end{itemize}
 
@@ -1573,7 +1573,7 @@ parsePresburger = exp 2
 }
 
 \defslide{ParserComplexOpPrio}{
-|opPrioPresburgerBinary| returns the binary operator that matches the input 
+|opPrioPresburgerBinary| returns the binary operator that matches the input
 priority.
 
 \begin{code}

@@ -282,7 +282,7 @@ the first choice |g1| and the second choice |g2|.
 \begin{itemize}
   \item maps |Char|s to |Process|es,
   \item indexes into |bProcChoiceMay| by ASCII,
-  \item maps |'1'| to |'g1'|, and |'2'| to |'g2'|.
+  \item maps |'1'| to |g1|, and |'2'| to |g2|.
 \end{itemize}
 
 \begin{code}

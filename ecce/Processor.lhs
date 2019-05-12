@@ -184,7 +184,9 @@ networkDescription filePath eKey =
 }
 
 \defslide{ProcessorDiagram}{
-|networkProcessor| is a recursive monadic-do, there is some cycle.
+|networkProcessor| is a recursive monadic-do: the data flow is unidirectional
+except for two back edges from |bProc| to |bProc| and from |bProc| to
+|bProcChoiceMay|.
 \\\begin{center}
 \includegraphics[scale=0.2]{../ecce/plantuml/processor.png}
 \end{center}

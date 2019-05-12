@@ -1,7 +1,6 @@
 \defslide{FrontendIntroduction}{
-The frontend displays the textual results from \textit{Processor} as graphics.
-We define graphical objects, then combine them according to the
-\textit{Processor}.
+The frontend displays the textual results from |Processor| as graphics.  We
+define graphical objects, then combine them according to the |Processor|.
 }
 
 %if False
@@ -144,10 +143,10 @@ numTransmitsOnScreenMax =
 \defslide{FrontendOverview}{
 \begin{itemize}
   \item Extract file contents,
-  \item Parsing contents to \textit{GlobalProtocol} \textit{g},
-  \item Get parties involved in \textit{g},
-  \item Map each party to an \textit{Extent}.
-  \item Draw \textit{Transmit}s between \textit{Extent}s.
+  \item Parsing contents to |GlobalProtocol| |g|,
+  \item Get parties involved in |g|,
+  \item Map each party to an |Extent|.
+  \item Draw |Transmit|s between |Extent|s.
 \end{itemize}
 
 %if False
@@ -185,7 +184,7 @@ main = do
 \end{code}
 %endif
 
-\textit{Transmit}s are tuples of sender x-coord, receiver x-coord, transmission
+|Transmit|s are tuples of sender x-coord, receiver x-coord, transmission
 y-coord, and a description.
 
 \begin{code}
@@ -205,9 +204,9 @@ type Transmit = (Float, Float, Float, String)
 %endif
 
 \defslide{FrontendNetworkDescription}{
-\textit{networkDescription} displays a picture on the screen.  It runs the
-Kleisli arrow \textit{(aPicture p extentsMap)} to get a picture, then monitors
-changes in the picture and displays to the screen through a reference.
+|networkDescription| displays a picture on the screen.  It runs the Kleisli
+arrow |(aPicture p extentsMap)| to get a picture, then monitors changes in the
+picture and displays to the screen through a reference.
 
 \begin{code}
 networkDescription ::
@@ -273,8 +272,8 @@ networkInputScroll eGloss = return $ mayScroll <$> eGloss
   \item Scroll position selects which transmissions drawn on screen,
   \item Pair each transmission with the y-coordinate of first transmission,
   which is used to offset all transmissions.
-  \item Decompose each transmission into a \textit{transmitSRDesc}, which
-  does not have a y-coordinate field.
+  \item Decompose each transmission into a |transmitSRDesc|, which does not
+  have a y-coordinate field.
 \end{itemize}
 
 \begin{code}
@@ -305,9 +304,9 @@ networkDraw (bTransmits, bScrollPos) = do
 %endif
 
 \defslide{FrontendNetworkTransmitType}{
-\textit{networkTransmit} looks at the 4-tuple from \textit{Processor.lhs}, and
-returns a stream of \textit{Transmit}s.  The coordinates of these
-\textit{Transmit}s are determined by \textit{extentsMap}.
+|networkTransmit| looks at the 4-tuple from |Processor.lhs|, and returns a
+stream of |Transmit|s.  The coordinates of these |Transmit|s are determined by
+|extentsMap|.
 
 \begin{code}
 networkTransmit ::
@@ -322,8 +321,8 @@ networkTransmit extentsMap (eTrans, bProc, eDone, bStepCount) = do
 }
 
 \defslide{FrontendNetworkTransmitETransJust}{
-\textit{eTransJust} is identical to \textit{eTrans}, except when the value of
-\textit{eTrans} is \textit{Nothing}.
+|eTransJust| is identical to |eTrans|, except when the value of |eTrans| is
+|Nothing|.
 
 \begin{code}
   let eTransJust = filterJust eTrans
@@ -332,11 +331,11 @@ networkTransmit extentsMap (eTrans, bProc, eDone, bStepCount) = do
 
 \defslide{FrontendNetworkTransmitSREventDesc}{
 \begin{itemize}
-  \item Project into sender and receiver \textit{Event}s.
-  \item Unparse the \textit{GlobalTransmission} to get the description.
+  \item Project into sender and receiver |Event|s.
+  \item Unparse the |GlobalTransmission| to get the description.
 \end{itemize}
 Subsequent stream processings will preserve the transmission description in
-\textit{srEventDesc}, because the transmission description does not need to be
+|srEventDesc|, because the transmission description does not need to be
 processed.
 
 \begin{code}
@@ -354,9 +353,9 @@ processed.
       -- [sender, receiver] in that order
 \end{code}
 
-\textit{srRoleDesc} converts each \textit{Event} in \textit{srEventDesc} into a
-\textit{Role}.  Note the use of the \textit{mapTuple} function, which applies
-the same function over both elements in a 2-tuple.  \textit{mapTuple} is used
+|srRoleDesc| converts each |Event| in |srEventDesc| into a
+|Role|.  Note the use of the |mapTuple| function, which applies
+the same function over both elements in a 2-tuple.  |mapTuple| is used
 again in later stream processings.
 
 \begin{code}
@@ -364,11 +363,11 @@ again in later stream processings.
         (\x -> ((mapTuple eventToRole . fst) x, snd x)) <$> srEventDesc
 \end{code}
 
-\textit{srExtentsDesc} takes each \textit{Role}, and constructs a
-\textit{GlobalTransmission} with that role.  We do this because, once again,
-\textit{un} must take a \textit{GlobalProtocol} as input.  Then, we look up the
-unparsed string in \textit{extentsMap}, so that our 2-tuple now has a pair of
-\textit{Extent}s.
+|srExtentsDesc| takes each |Role|, and constructs a
+|GlobalTransmission| with that role.  We do this because, once again,
+|un| must take a |GlobalProtocol| as input.  Then, we look up the
+unparsed string in |extentsMap|, so that our 2-tuple now has a pair of
+|Extent|s.
 
 \begin{code}
       srExtentsDesc =
@@ -391,7 +390,7 @@ unparsed string in \textit{extentsMap}, so that our 2-tuple now has a pair of
         -- TODO probably lookup returns Nothing
 \end{code}
 
-\textit{srXDesc} converts each \textit{Extent} into the x-coordinate of their
+|srXDesc| converts each |Extent| into the x-coordinate of their
 centers.  The first x-coordinate is the sender's, and the second x-coordinate
 is the receiver's.
 
@@ -400,11 +399,11 @@ is the receiver's.
         (\x -> ((mapTuple centerOfExtent . fst) x, snd x)) <$> srExtentsDesc
 \end{code}
 
-Finally, \textit{srXYDesc} actually constructs \textit{Transmit}s.  Since we
+Finally, |srXYDesc| actually constructs |Transmit|s.  Since we
 already have the sender's x-coordinate, the receiver's x-coordinate, and the
 transmission description, all that is left is to calculate the y-coordinate of
 the transmission.  This is done by first applying a constant offset
-\textit{exYOffset}, then a variable offset that depends on \textit{bStepCount}.
+|exYOffset|, then a variable offset that depends on |bStepCount|.
 
 \begin{code}
       srXYDesc =
@@ -492,8 +491,7 @@ mayScroll e =
 %endif
 
 \defslide{FrontendTransmit}{
-\textit{transmit} defines a transmission as a pictorial arrow, without an
-origin.
+|transmit| defines a transmission as a pictorial arrow, without an origin.
 
 \begin{code}
 transmit :: Float -> Float -> Float -> Float -> Picture
@@ -522,7 +520,7 @@ transmit bl hh hl t =
 
 \defslide{FrontendTransmitSRDescDesc}{
 \begin{enumerate}
-  \item \textit{transmitSRDesc} defines a transmission as a pictorial arrow,
+  \item |transmitSRDesc| defines a transmission as a pictorial arrow,
   \underline{with} an origin.  The x-coordinate of the origin is always the
   sender of the transmission's x-coordinate.
   \item The direction of the pictorial arrow depends on the x-coordinate of the
@@ -586,8 +584,8 @@ drawParties ss =
 %endif
 
 %if False
-\textit{drawParty} draws each party as text in a box, centered on its
-\textit{Extent}, and a vertical line starting from and centered on the
+|drawParty| draws each party as text in a box, centered on its
+|Extent|, and a vertical line starting from and centered on the
 x-coordinate of the box, ending at the bottom of the screen.
 \par
 
@@ -614,10 +612,10 @@ drawParty w h s ex = pictures $ map (translate xf yf) shapes
 %endif
 
 %if False
-\textit{getPartiesExtents} creates an \textit{Extent} for each party.  An
-\textit{Extent} is a rectangular area.  The width and height of each
-\textit{Extent}, and the spacing between two \textit{Extent}s, are given as
-\textit{w}, \textit{h}, and \textit{s} respectively.
+|getPartiesExtents| creates an |Extent| for each party.  An
+|Extent| is a rectangular area.  The width and height of each
+|Extent|, and the spacing between two |Extent|s, are given as
+|w|, |h|, and |s| respectively.
 
 \begin{code}
 getPartiesExtents :: [String] -> Int -> Int -> Int -> [Extent]

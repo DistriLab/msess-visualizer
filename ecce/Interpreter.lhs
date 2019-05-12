@@ -1,5 +1,5 @@
 \defslide{InterpreterIntroduction}{
-Abstracted textual interface between \textit{ecce} and the user.
+Abstracted textual interface between |ecce| and the user.
 \begin{itemize}
   \item Configures a mapping between commands and functions.
   \item Mapping matches first word from user, mapped function executes on the
@@ -43,7 +43,7 @@ import qualified Text.Parsec (parse)
 %endif
 
 \defslide{InterpreterOutput}{
-The \textit{Output} function prints a tuple of information.
+The |Output| function prints a tuple of information.
 
 \begin{code}
 type Output = (String, [String], String) -> IO ()
@@ -58,17 +58,17 @@ extractParse p s = Text.Parsec.parse p "" s
 %endif
 
 %if False
-We use \textit{Output} to define two interpreters with two input-output (IO)
-backends: either the \textit{Haskeline} library, or Haskell's usual monadic IO.
-\textit{Haskeline} includes many more textual interface features, like allowing
-us to delete our previous inputs.  \textit{Haskeline} is also used in
-\textit{ghci}, therefore we recommend \textit{Haskeline} as an interpreter, to
-provide a uniform text-input experience to \textit{ghci} users.
+We use |Output| to define two interpreters with two input-output (IO)
+backends: either the |Haskeline| library, or Haskell's usual monadic IO.
+|Haskeline| includes many more textual interface features, like allowing
+us to delete our previous inputs.  |Haskeline| is also used in
+|ghci|, therefore we recommend |Haskeline| as an interpreter, to
+provide a uniform text-input experience to |ghci| users.
 \par
-\textit{mainRegular} performs an \textit{IO ()}.
+|mainRegular| performs an |IO ()|.
 \par
-\textit{mainHaskeline} wraps an \textit{InputT IO ()} object with
-\textit{defaultSettings} in a \textit{runInputT}.
+|mainHaskeline| wraps an |InputT IO ()| object with
+|defaultSettings| in a |runInputT|.
 
 \begin{code}
 mainHaskeline :: [(String, Output)] -> Output -> IO ()
@@ -91,8 +91,8 @@ welcome = do
   mapM_ putStrLn $ "Welcome!" : "Type \"help\" for more information." : "" : []
 \end{code}
 
-The non-\textit{Haskeline} interpreter is defined in the conventional manner:
-firstly, print a prompt, then get user input, \textit{interpret} user input,
+The non-|Haskeline| interpreter is defined in the conventional manner:
+firstly, print a prompt, then get user input, |interpret| user input,
 and lastly repeat.
 
 \begin{code}
@@ -104,20 +104,20 @@ interpreterRegular commandOutputs incommandOutput = do
   interpreterRegular commandOutputs incommandOutput
 \end{code}
 
-The \textit{Haskeline} interpreter works similarly, but uses different
+The |Haskeline| interpreter works similarly, but uses different
 functions.  Prompt printing and getting user input is performed in a single
-call to \textit{getInputLine}.  While the non-\textit{Haskeline} interpreter
-gets user input as a \textit{String}, the \textit{Haskeline} interpreter
-returns a \textit{Maybe} object: either the user gave some input, or not.  We
-thus define two behaviors on \textit{Maybe}: if it is \textit{Nothing}, then we
+call to |getInputLine|.  While the non-|Haskeline| interpreter
+gets user input as a |String|, the |Haskeline| interpreter
+returns a |Maybe| object: either the user gave some input, or not.  We
+thus define two behaviors on |Maybe|: if it is |Nothing|, then we
 print a departing message.  If it contains a user input, then we firstly
-interpret that input, and then repeat the \textit{Haskeline} interpreter.  We
-take the return value of the interpretation, and use \textit{liftIO} to change
-the \textit{IO} context to the environmental monadic context.  The
+interpret that input, and then repeat the |Haskeline| interpreter.  We
+take the return value of the interpretation, and use |liftIO| to change
+the |IO| context to the environmental monadic context.  The
 environmental monadic context is determined by the type of the other
 monadically composed object.  In this case, the monadic composition is
-performed by \textit{>>}, and the monadically composed object is the
-\textit{Haskeline} interpreter itself, which we know has a \textit{InputT IO}
+performed by |>>|, and the monadically composed object is the
+|Haskeline| interpreter itself, which we know has a |InputT IO|
 context.
 \par
 \begin{code}
@@ -147,22 +147,21 @@ interpreterHaskeline commandOutputs incommandOutput = do
 %endif
 
 \defslide{InterpreterInterpretDesc}{
-\textit{interpret} parses the first word of \textit{inputLine} as a command,
-then looks up this command in the \textit{commandOutputs} mapping to get the
-corresponding \textit{Output} function.
+|interpret| parses the first word of |inputLine| as a command, then looks up
+this command in the |commandOutputs| mapping to get the corresponding |Output|
+function.
 \begin{itemize}
-  \item For each \textit{String} in \textit{commands}, we create a parser that
-  parses only that \textit{String}.  We try each parser on \textit{inputLine},
-  and the parsed value is stored in \textit{command}.
+  \item For each |String| in |commands|, we create a parser that parses only
+  that |String|.  We try each parser on |inputLine|, and the parsed value is
+  stored in |command|.
   \item The order of trying parsers matters.
-  \item If \textit{command} does not exist in the \textit{commandOutputs}
-  mapping, then we pass the rest of the input line to be processed by
-  \textit{incommandOutput}.  Otherwise, if \textit{command} exists in the
-  mapping, then we use the mapped \textit{Output} to process the rest of the
-  input line.
+  \item If |command| does not exist in the |commandOutputs| mapping, then we
+  pass the rest of the input line to be processed by |incommandOutput|.
+  Otherwise, if |command| exists in the mapping, then we use the mapped
+  |Output| to process the rest of the input line.
 \end{itemize}
-The selected \textit{Output} function defines the behavior of
-\textit{interpret}.
+The selected |Output| function defines the behavior of
+|interpret|.
 }
 
 \defslide{InterpreterInterpretCode}{

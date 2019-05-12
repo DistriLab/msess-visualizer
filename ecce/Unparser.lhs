@@ -48,21 +48,15 @@ incommandOutput =
 \end{code}
 %endif
 
-\defslide{UnparserUn}{
-Unparsing is done by simply passing the partial isomorphism
-\textit{parseGlobalProtocol} and a \textit{GlobalProtocol} to
-\textit{invertible-syntax}'s \textit{print} function.  We then unwrap the
-\textit{Maybe} result, and display an error if \textit{Nothing} is returned.
-
 %if False
 \par
-\textit{un} takes a \textit{GlobalProtocol} as input instead of any well-formed
+|un| takes a |GlobalProtocol| as input instead of any well-formed
 expression in typical pretty-printers.  This is because partial isomorphisms
 and existential types do not mix well.  It is possible to wrap a existential
-type \textit{AnyExpr} around all expression types (e.g. \textit{Pure},
-\textit{GlobalProtocol}, etc...).  However, deconstructing \textit{AnyExpr} is
+type |AnyExpr| around all expression types (e.g. |Pure|,
+|GlobalProtocol|, etc...).  However, deconstructing |AnyExpr| is
 impossible, since we do not know which expression type is actually being
-wrapped inside \textit{AnyExpr}.  Therefore, we can only construct existential
+wrapped inside |AnyExpr|.  Therefore, we can only construct existential
 types, but not destruct existential types.  So, we are unable to establish an
 isomorphism between the existential and the expression types.
 \par
@@ -79,15 +73,21 @@ contrasts with a parser defined with partial isomorphisms: the unparser is
 dependent on the parser, so only the parser needs to be changed.
 \par
 It may seem logical to extend partial isomorphisms to all transformations
-within \textit{ecce}: that is, to also have a partial isomorphism between the
+within |ecce|: that is, to also have a partial isomorphism between the
 ADT and the visualization.  However, there is a challenge.  For other parts of
-\textit{ecce}, the definition of partial isomorphisms on each transformation is
+|ecce|, the definition of partial isomorphisms on each transformation is
 not obvious.  For example, it is not obvious how the inverse function of the
-\textit{Event} constructor can be formulated.
+|Event| constructor can be formulated.
 
 As such, we have limited the application of partial isomorphisms purely to
 syntax parsing and printing.
 %endif
+
+\defslide{UnparserUn}{
+Unparsing is done by simply passing the partial isomorphism
+|parseGlobalProtocol| and a |GlobalProtocol| to |invertible-syntax|'s |print|
+function.  We then unwrap the |Maybe| result, and display an error if |Nothing|
+is returned.
 
 \begin{code}
 un :: GlobalProtocol -> String

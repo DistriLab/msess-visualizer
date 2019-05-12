@@ -1,8 +1,7 @@
 \defslide{ProcessorIntroduction}{
 \begin{itemize}
-  \item Wrap deconstructed \textit{GlobalProtocol}s in \textit{Process}
-  datatype.
-  \item Deconstruct with \textit{GlobalProtocol} constructors.
+  \item Wrap deconstructed |GlobalProtocol|s in |Process| datatype.
+  \item Deconstruct with |GlobalProtocol| constructors.
 \end{itemize}
 }
 
@@ -134,8 +133,8 @@ commands = "help" : "load" : []
 %endif
 
 \defslide{ProcessorProcess}{
-A \textit{Process} is either a single \textit{GlobalProtocol}, or a list of
-other \textit{Process}es.
+A |Process| is either a single |GlobalProtocol|, or a list of other
+|Process|es.
 
 \begin{code}
 data Process
@@ -158,11 +157,11 @@ data Process
 %endif
 
 %if False
-\textit{networkDescription} reads a \textit{GlobalProtocol} from a file at
-\textit{filePath}.  \textit{reactive-banana} provides the user input as a
-single character, \textit{eKey}, which \textit{networkDescription} passes on to
-\textit{networkProcessor}, before passing the processed result to
-\textit{networkPrinter}.
+|networkDescription| reads a |GlobalProtocol| from a file at
+|filePath|.  |reactive-banana| provides the user input as a
+single character, |eKey|, which |networkDescription| passes on to
+|networkProcessor|, before passing the processed result to
+|networkPrinter|.
 
 \begin{code}
 networkDescription :: FilePath -> Event Char -> MomentIO ()
@@ -176,44 +175,44 @@ networkDescription filePath eKey =
 %endif
 
 \defslide{ProcessorInputs}{
-\textit{networkProcessor} behaves differently based on user inputs:
+|networkProcessor| behaves differently based on user inputs:
 \begin{itemize}
-  \item \textit{'s'} to step the processor,
-  \item \textit{'1'} to choose the left side of a \textit{GlobalChoice},
-  \item \textit{'2'} to choose the right side of a \textit{GlobalChoice}.
+  \item |'s'| to step the processor,
+  \item |'1'| to choose the left side of a |GlobalChoice|,
+  \item |'2'| to choose the right side of a |GlobalChoice|.
 \end{itemize}
 }
 
 \defslide{ProcessorDiagram}{
-\textit{networkProcessor} is a recursive monadic-do, there is some cycle.
+|networkProcessor| is a recursive monadic-do, there is some cycle.
 \\\begin{center}
 \includegraphics[scale=0.2]{../ecce/plantuml/processor.png}
 \end{center}
 }
 
 %if False
-\textit{networkProcessor} also uses \textit{Event}s and \textit{Behavior}s from
-\textit{reactive-banana}.  We give a rough overview of
-\textit{reactive-banana}.  This overview is merely conceptual, the underlying
-implementation of \textit{reactive-banana} could be different.
-\textit{reactive-banana} is a functional reactive programming framework, that
+|networkProcessor| also uses |Event|s and |Behavior|s from
+|reactive-banana|.  We give a rough overview of
+|reactive-banana|.  This overview is merely conceptual, the underlying
+implementation of |reactive-banana| could be different.
+|reactive-banana| is a functional reactive programming framework, that
 processes data streams.  Data streams are lists with potentially infinite
-elements.  Each element can be understood as a 2-tuple of \textit{Time} and
-\textit{Data}, meaning the \textit{Data} was generated at time \textit{Time}.
-An event is a data stream.  A behavior is a description of how \textit{Data}
-varies with \textit{Time}.
+elements.  Each element can be understood as a 2-tuple of |Time| and
+|Data|, meaning the |Data| was generated at time |Time|.
+An event is a data stream.  A behavior is a description of how |Data|
+varies with |Time|.
 \par
-\textit{Event}s are used like data streams, and \textit{Behavior}s are used to
-store a snapshot of an \textit{Event}: it allows for data persistence.  As
-such, we refer to \textit{Event}s as if they were the data streams itself, and
-we refer to \textit{Behavior}s as if they were the data itself.
-\textit{networkProcessor} is defined in terms of many small \textit{Event}s and
-\textit{Behavior}s to allow ease of understanding and enable UNIX-style
-composition of \textit{Event}s and \textit{Behavior}s.  This makes
-modifications easier than if the \textit{Processor} was defined in a monolithic
-fashion.  As a convention, variables containing \textit{Event}s have names
-prefixed with \textit{e}, and variables containing \textit{Behavior}s have
-names prefixed with \textit{b}.
+|Event|s are used like data streams, and |Behavior|s are used to
+store a snapshot of an |Event|: it allows for data persistence.  As
+such, we refer to |Event|s as if they were the data streams itself, and
+we refer to |Behavior|s as if they were the data itself.
+|networkProcessor| is defined in terms of many small |Event|s and
+|Behavior|s to allow ease of understanding and enable UNIX-style
+composition of |Event|s and |Behavior|s.  This makes
+modifications easier than if the |Processor| was defined in a monolithic
+fashion.  As a convention, variables containing |Event|s have names
+prefixed with |e|, and variables containing |Behavior|s have
+names prefixed with |b|.
 %endif
 
 %if False
@@ -258,14 +257,13 @@ networkProcessor p eKey
 
 %if False
 Due to the circular nature of the network, we need to make an assumption in
-order to explain the rest of the network.  We assume that the \textit{Behavior}
-\textit{bProc} is the list of remaining \textit{Process}es.
+order to explain the rest of the network.  We assume that the |Behavior|
+|bProc| is the list of remaining |Process|es.
 %endif
 
 \defslide{ProcessbProcChoiceMay}{
-If the data in \textit{bProc} is a \textit{GlobalChoice},
-\textit{bProcChoiceMay} splits that into the first choice \textit{g1} and the
-second choice \textit{g2}.
+If the data in |bProc| is a |GlobalChoice|, |bProcChoiceMay| splits that into
+the first choice |g1| and the second choice |g2|.
 
 \begin{code}
   mdo let bProcChoiceMay :: Behavior (Maybe [Process])
@@ -280,11 +278,11 @@ second choice \textit{g2}.
 }
 
 \defslide{ProcessorBProcChoiceFunc}{
-\textit{bProcChoiceFunc}:
+|bProcChoiceFunc|:
 \begin{itemize}
-  \item maps \textit{Char}s to \textit{Process}es,
-  \item indexes into \textit{bProcChoiceMay} by ASCII,
-  \item maps \textit{'1'} to \textit{'g1'}, and \textit{'2'} to \textit{'g2'}.
+  \item maps |Char|s to |Process|es,
+  \item indexes into |bProcChoiceMay| by ASCII,
+  \item maps |'1'| to |'g1'|, and |'2'| to |'g2'|.
 \end{itemize}
 
 \begin{code}
@@ -296,9 +294,8 @@ second choice \textit{g2}.
 }
 
 \defslide{ProcessorEProcChoice}{
-\textit{eProcChoice} applies \textit{bProcChoiceFunc} on the stream of
-\textit{eChooserChoice}.  The resulting stream is the \textit{Process}es chosen
-by the user: either \textit{g1} or \textit{g2}.
+|eProcChoice| applies |bProcChoiceFunc| on the stream of |eChooserChoice|.  The
+resulting stream is the |Process|es chosen by the user: either |g1| or |g2|.
 
 \begin{code}
           eProcChoice :: Event Process
@@ -307,9 +304,8 @@ by the user: either \textit{g1} or \textit{g2}.
 }
 
 \defslide{ProcessorBProcIsChoice}{
-\textit{bProcIsChoice} is \textit{True} only if \textit{bProcChoiceMay}
-contains the choice of \textit{g1} and \textit{g2}.  Otheriwse,
-\textit{bProcIsChoice} is \textit{False}.
+|bProcIsChoice| is |True| only if |bProcChoiceMay| contains the choice of |g1|
+and |g2|.  Otheriwse, |bProcIsChoice| is |False|.
 
 \begin{code}
           bProcIsChoice :: Behavior Bool
@@ -318,8 +314,8 @@ contains the choice of \textit{g1} and \textit{g2}.  Otheriwse,
 }
 
 \defslide{ProcessorEChooseMay}{
-\textit{eChooseMay} allows us to look at the \textit{eKey} stream only when the
-list of remaining \textit{Process}es is a \textit{GlobalChoice}.
+|eChooseMay| allows us to look at the |eKey| stream only when the list of
+remaining |Process|es is a |GlobalChoice|.
 
 \begin{code}
           eChooseMay :: Event Char
@@ -328,8 +324,8 @@ list of remaining \textit{Process}es is a \textit{GlobalChoice}.
 }
 
 \defslide{ProcessorEChooseMayNot}{
-\textit{eChooseMayNot} allows us to look at the \textit{eKey} stream only when
-the list of remaining \textit{Process}es is not a \textit{GlobalChoice}.
+|eChooseMayNot| allows us to look at the |eKey| stream only when the list of
+remaining |Process|es is not a |GlobalChoice|.
 
 \begin{code}
           eChooseMayNot :: Event Char
@@ -338,13 +334,13 @@ the list of remaining \textit{Process}es is not a \textit{GlobalChoice}.
 }
 
 \defslide{ProcessorEChooseScopes}{
-The partitioned scopes of \textit{eChooseMay} and \textit{eChooseMayNot}
-ensures that further stream processing is similarly partitioned.
+The partitioned scopes of |eChooseMay| and |eChooseMayNot| ensures that further
+stream processing is similarly partitioned.
 }
 
 \defslide{ProcessorEStepper}{
-\textit{eStepper} is the stream of \textit{eChooseMayNot} when
-\textit{eChooseMayNot} has \textit{'s'} in its data stream.
+|eStepper| is the stream of |eChooseMayNot| when |eChooseMayNot| has |'s'| in
+its data stream.
 
 \begin{code}
           eStepper :: Event Char
@@ -353,8 +349,8 @@ ensures that further stream processing is similarly partitioned.
 }
 
 \defslide{ProcessorEDigit}{
-\textit{eDigit} is the stream of \textit{eChooseMay} when \textit{eChooseMay}
-has any digits in its data stream.
+|eDigit| is the stream of |eChooseMay| when |eChooseMay| has any digits in its
+data stream.
 
 \begin{code}
           eDigit :: Event Char
@@ -363,8 +359,7 @@ has any digits in its data stream.
 }
 
 \defslide{ProcessorEChooserChoice}{
-\textit{eChooserChoice} is the stream of \textit{'1'}s and \textit{'2'}s inside
-\textit{eDigit}.
+|eChooserChoice| is the stream of |'1'|s and |'2'|s inside |eDigit|.
 
 \begin{code}
           eChooserChoice :: Event Char
@@ -387,13 +382,11 @@ has any digits in its data stream.
 
 \defslide{ProcessETransBProc}{
 \begin{itemize}
-  \item \textit{unionWith} merges two incoming streams into one, without
-  duplicates
-  \item The two incoming streams, \textit{eProcChoice} and \textit{eStepper},
-  have disjoint scopes.
-  \item To show that \textit{bProc} is the list of remaining
-  \textit{Process}es, \textit{processStep} needs to return the correct
-  \textit{bProc}.
+  \item |unionWith| merges two incoming streams into one, without duplicates.
+  \item The two incoming streams, |eProcChoice| and |eStepper|, have disjoint
+  scopes.
+  \item To show that |bProc| is the list of remaining |Process|es,
+  |processStep| needs to return the correct |bProc|.
 \end{itemize}
 
 \begin{code}
@@ -415,9 +408,9 @@ has any digits in its data stream.
 %endif
 
 \defslide{ProcessorBStepCount}{
-\textit{bStepCount} is the number of steps the user made so far.  When we are
-done processing, the input \textit{Process} \textit{p} is completely consumed,
-and \textit{bProc} will have \textit{Nothing}.
+|bStepCount| is the number of steps the user made so far.  When we are done
+processing, the input |Process| |p| is completely consumed, and |bProc| will
+have |Nothing|.
 
 \begin{code}
       (bStepCount :: Behavior Int) <-
@@ -428,8 +421,8 @@ and \textit{bProc} will have \textit{Nothing}.
 }
 
 \defslide{ProcessorEDone}{
-\textit{eDone} indicates that \textit{bProc} is completely consumed.  The data
-in \textit{eStepper} is converted to the unit value \textit{()}.
+|eDone| indicates that |bProc| is completely consumed.  The data in |eStepper|
+is converted to the unit value |()|.
 
 \begin{code}
       let eDone :: Event ()
@@ -438,8 +431,8 @@ in \textit{eStepper} is converted to the unit value \textit{()}.
 }
 
 \defslide{ProcessorNetworkDescription}{
-\textit{networkDescription} returns a 4-tuple \textit{(eTrans, bProc,
-eDone, bStepCount)} to be used by \textit{networkPrinter} and external modules.
+|networkDescription| returns a 4-tuple |(eTrans, bProc, eDone, bStepCount)| to
+be used by |networkPrinter| and external modules.
 
 \begin{code}
       return (eTrans, bProc, eDone, bStepCount)
@@ -447,16 +440,16 @@ eDone, bStepCount)} to be used by \textit{networkPrinter} and external modules.
 }
 
 \defslide{ProcessorNetworkPrinterDesc}{
-\textit{networkPrinter} allows the processor to be run on the textual interface
-defined in \textit{Interpreter.lhs}.  We print many things:
+|networkPrinter| allows the processor to be run on the textual interface
+defined in |Interpreter.lhs|.  We print many things:
 \begin{enumerate}
-  \item Transmissions from \textit{eTrans},
-  \item Changes in \textit{bProc}, which are first converted to
-  \textit{GlobalProtocol}s by the \textit{mayProcessToGlobalProtocol} function,
+  \item Transmissions from |eTrans|,
+  \item Changes in |bProc|, which are first converted to
+  |GlobalProtocol|s by the |mayProcessToGlobalProtocol| function,
   then projected to endpoint transmissions.
   \item Changes in step count,
-  \item \textit{"Done!"} indicates that the processor completely consumed
-  \textit{bProc}.
+  \item |"Done!"| indicates that the processor completely consumed
+  |bProc|.
 \end{enumerate}
 }
 
@@ -524,13 +517,13 @@ channelsInGlobalProtocol g =
 %endif
 
 %if False
-\textit{mayProcessToGlobalProtocol} returns a \textit{EGlobalProtocolEmp} if
-its input is \textit{Nothing}.  Otherwise, it applies a fixpoint function on
+|mayProcessToGlobalProtocol| returns a |EGlobalProtocolEmp| if
+its input is |Nothing|.  Otherwise, it applies a fixpoint function on
 the input: this fixpoint function is accessible from within itself as
-\textit{r}.  We deconstruct \textit{Leaf} \textit{Process}es in the expected
-manner.  We deconstruct the other \textit{Process}es, \textit{NodeS}s and
-\textit{NodeC}s, by recursing on only the head of the contained lists.  If the
-list is empty, then the fixpoint function returns \textit{EGlobalProtocolEmp}.
+|r|.  We deconstruct |Leaf| |Process|es in the expected
+manner.  We deconstruct the other |Process|es, |NodeS|s and
+|NodeC|s, by recursing on only the head of the contained lists.  If the
+list is empty, then the fixpoint function returns |EGlobalProtocolEmp|.
 
 \begin{code}
 mayProcessToGlobalProtocol :: Maybe Process -> GlobalProtocol
@@ -562,8 +555,8 @@ parseContents xs =
 %endif
 
 \defslide{ProcessorProcessStepNothing}{
-\textit{processStep} deconstructs a single level of \textit{Process}, to return
-a tuple of \textit{Maybe GlobalTransmission} and \textit{Maybe Process}.
+|processStep| deconstructs a single level of |Process|, to return a tuple of
+|Maybe GlobalTransmission| and |Maybe Process|.
 
 \begin{code}
 processStep :: Maybe Process -> (Maybe GlobalProtocol, Maybe Process)

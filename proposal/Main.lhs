@@ -83,9 +83,9 @@ There are a few directions we can expand our work to.
   \item Make every transformation have an inverse. This means:
   \begin{enumerate}
     \item Transformations within external packages like
-    \textit{reactive-banana} also have to be reversed.
-    \item The \textit{Processor} network defined in terms of reactive-banana
-    \textit{Event}s and \textit{Behavior}s has to be reversed.
+    |reactive-banana| also have to be reversed.
+    \item The |Processor| network defined in terms of |reactive-banana|
+    |Event|s and |Behavior|s has to be reversed.
   \end{enumerate}
 \end{enumerate}
 }

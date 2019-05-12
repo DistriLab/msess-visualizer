@@ -1,6 +1,6 @@
 \defslide{ParserIntroduction}{
 \begin{itemize}
-  \item A parser converts well-formed strings into Abstract Syntax Trees
+  \item A parser converts well-formed strings into Abstract Syntax Trees 
   (ASTs).  An AST is constructed with Abstract Data Types (ADTs).
   \item Our ADT is given by the grammars in \cite{Andreea2017thesis}.
   \item We also define some base ADTs, lifted from Haskell's base types.
@@ -180,8 +180,8 @@ extractParseShow p s = show $ head $ extractParse p s
 %endif
 
 \defslide{ParserVarFirst}{
-Constructors have the same name as the data type, but with an \textit{E}
-prepended to signify that it constructs an \textit{E}xpression.
+Constructors have the same name as the data type, but with an |E| prepended to 
+signify that it constructs an |E|xpression.
 
 \begin{code}
 data VarFirst =
@@ -322,7 +322,7 @@ data BoolePresburger
 %endif
 
 \defslide{ParserPresburger}{
-We use the base types to define the data types as in Fig. 2.2 of
+We use the base types to define the data types as in Fig. 2.2 of 
 \cite{Andreea2017thesis}.
 
 \begin{code}
@@ -334,8 +334,8 @@ data Presburger
 }
 
 \defslide{ParserEOpPresburgerBinary}{
-Convention: binary constructors of datatype \textit{Presburger} moved to
-another definition, named \textit{OpTypeBinary}.
+Convention: binary constructors of datatype |Presburger| moved to another 
+definition, named |OpTypeBinary|.
 \begin{code}
   | EOpPresburgerBinary Presburger
                         OpPresburgerBinary
@@ -350,8 +350,7 @@ another definition, named \textit{OpTypeBinary}.
 %endif
 
 \defslide{ParserOpPresburgerBinary}{
-The \textit{OpPresburgerBinary} has the binary operators as nullary
-constructors.
+The |OpPresburgerBinary| has the binary operators as nullary constructors.
 
 \begin{code}
 data OpPresburgerBinary
@@ -520,6 +519,7 @@ identifier =
 }
 
 %if False
+\begin{code}
 keyword :: Syntax delta => String -> delta ()
 keyword s = inverse right <$> (identifier <+> text s)
 
@@ -569,7 +569,7 @@ Each constructor has a partial isomorphism.  It consists of two functions:
   \item Constructs the data type,
   \item Deconstructs the data type.
 \end{enumerate}
-By convention, the isomorphism names always start with \textit{e}.
+By convention, the isomorphism names always start with |e|.
 
 \begin{code}
 eVarFirst :: Iso Integer VarFirst
@@ -1346,8 +1346,8 @@ eChannelProtocolSequencing =
 \defslide{ParserParseVarFirst}{
 \begin{itemize}
   \item Parsers are applications of isomorphisms on the base type.
-  \item The \textit{parseVarFirst} parser first lexes an \textit{Integer}, then
-  passes the result to the \textit{eVarFirst} constructor.
+  \item The |parseVarFirst| parser first lexes an |Integer|, then passes the 
+  result to the |eVarFirst| constructor.
 \end{itemize}
 
 \begin{code}
@@ -1523,9 +1523,8 @@ parseBoolePresburger = exp 0
 %endif
 
 \defslide{ParserComplexOp}{
-A parser of more complex expression is handled in multiple stages.
-Firstly, a parser that ignores leading and trailing spaces,
-\textit{opPresburgerBinary}.
+A parser of more complex expression is handled in multiple stages.  Firstly, a 
+parser that ignores leading and trailing spaces, |opPresburgerBinary|.
 
 \begin{code}
 opPresburgerBinary :: Syntax delta => delta OpPresburgerBinary
@@ -1539,8 +1538,7 @@ opPresburgerBinary =
 
 \defslide{ParserComplexPrio}{
 \begin{itemize}
-  \item We override the ordering implied by \textit{<||>} with
-  \textit{prioPresburgerBinary}.
+  \item We override the ordering implied by |<||>| with |prioPresburgerBinary|.
   \item Convention: operators mapped to a higher integer are parsed first.
 \end{itemize}
 
@@ -1556,7 +1554,7 @@ Recursive-descent parser:
 \begin{itemize}
   \item Top-level binary operator of highest priority,
   \item one or more lower-level binary operators with descending priority,
-  \item base grammar with all non-binary constructors, and the recursive
+  \item base grammar with all non-binary constructors, and the recursive 
   parser.
 \end{itemize}
 
@@ -1575,8 +1573,8 @@ parsePresburger = exp 2
 }
 
 \defslide{ParserComplexOpPrio}{
-\textit{opPrioPresburgerBinary} returns the binary operator that matches the
-input priority.
+|opPrioPresburgerBinary| returns the binary operator that matches the input 
+priority.
 
 \begin{code}
     opPrioPresburgerBinary n =

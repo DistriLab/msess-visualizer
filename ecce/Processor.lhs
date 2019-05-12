@@ -600,9 +600,9 @@ processStep p =
 \slide{ProcessorProcess}
 \slide{ProcessorInputs}
 \slide{ProcessorDiagram}
-\slide{ProcessBProcChoiceMay}
-\slide{ProcessorBProcChoiceFunc}
 \slide{ProcessorEProcChoice}
+\slide{ProcessorBProcChoiceFunc}
+\slide{ProcessBProcChoiceMay}
 \slide{ProcessorBProcIsChoice}
 \slide{ProcessorEChooseMay}
 \slide{ProcessorEChooseMayNot}

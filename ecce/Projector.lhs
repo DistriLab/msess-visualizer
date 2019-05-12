@@ -63,7 +63,7 @@ import Parser
 \end{code}
 %endif
 
-\defslide{ProjectorTr}{
+\defslide{ProjectorTrDesc}{
 \textit{tr} decomposes a \textit{GlobalProtocol} into many
 \textit{Transmission}s.  There are three patterns to note about this style of
 decomposition:
@@ -77,7 +77,9 @@ decomposition:
   ignored, because they do not contain any \textit{Transmission}s.
   \item Thirdly, \textit{tr} returns an order-preserved list.
 \end{enumerate}
+}
 
+\defslide{ProjectorTrCode}{
 \begin{code}
 tr :: GlobalProtocol -> [GlobalProtocol]
 tr g =
@@ -164,6 +166,7 @@ evConstraint c =
 \end{code}
 %endif
 
+%if False
 \textit{projectGlobalToParty} rewraps \textit{GlobalProtocol} to
 \textit{PartyProtocol}, by recursively using \textit{GlobalProtocol}
 deconstructors to get the operands, then wrapping those operands with a
@@ -190,6 +193,8 @@ projectGlobalToParty g p =
         EPartyProtocolConcurrency
         (projectGlobalToParty g2 p)
 \end{code}
+%endif
+
 %if False
 \begin{code}
     EOpGlobalProtocolBinary g1 EGlobalProtocolChoice g2 ->
@@ -269,5 +274,6 @@ projectPartyToEndpoint p c =
 %endif
 
 \slide{ProjectorIntroduction}
-\slide{ProjectorTr}
+\slide{ProjectorTrDesc}
+\slide{ProjectorTrCode}
 \slide{ProjectorEv}

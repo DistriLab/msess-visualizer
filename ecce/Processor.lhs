@@ -136,7 +136,6 @@ commands = "help" : "load" : []
 \defslide{ProcessorProcess}{
 A \textit{Process} is either a single \textit{GlobalProtocol}, or a list of
 other \textit{Process}es.
-}
 
 \begin{code}
 data Process
@@ -144,6 +143,8 @@ data Process
   | NodeS [Process]
   | NodeC [Process]
 \end{code}
+}
+
 %if False
 \begin{code}
   deriving (Show)
@@ -226,10 +227,11 @@ networkProcessor ::
             , Event ()
             , Behavior Int)
 \end{code}
-%endif
 \begin{code}
 networkProcessor p eKey
 \end{code}
+%endif
+
 %if False
 \begin{code}
       -- SUBSECTION USER INPUT
@@ -569,7 +571,7 @@ parseContents xs =
 \end{code}
 %endif
 
-\defslide{ProcessorProcessStep}{
+\defslide{ProcessorProcessStepNothing}{
 \textit{processStep} deconstructs a single level of \textit{Process}, to return
 a tuple of \textit{Maybe GlobalTransmission} and \textit{Maybe Process}.
 
@@ -580,6 +582,11 @@ processStep p =
     Nothing -> (Nothing, Nothing)
     Just p ->
       case p of
+\end{code}
+}
+
+\defslide{ProcessorProcessStepLeaf}{
+\begin{code}
         Leaf g ->
           case g of
             EOpGlobalProtocolBinary g1 EGlobalProtocolConcurrency g2 ->
@@ -587,6 +594,11 @@ processStep p =
             EOpGlobalProtocolBinary g1 EGlobalProtocolSequencing g2 ->
               (Nothing, Just $ NodeS [Leaf g1, Leaf g2])
             otherwise -> (Just g, Nothing)
+\end{code}
+}
+
+\defslide{ProcessorProcessStepNode}{
+\begin{code}
         NodeS [] -> (Nothing, Nothing)
         NodeS (p:ps) -> (s', Just $ NodeS ps')
           where (s', p') = processStep (Just p)
@@ -616,4 +628,6 @@ processStep p =
 \slide{ProcessorEDone}
 \slide{ProcessorNetworkDescription}
 \slide{ProcessorNetworkPrinterDesc}
-\slide{ProcessorProcessStep}
+\slide{ProcessorProcessStepNothing}
+\slide{ProcessorProcessStepLeaf}
+\slide{ProcessorProcessStepNode}

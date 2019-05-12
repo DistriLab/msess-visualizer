@@ -146,7 +146,7 @@ interpreterHaskeline commandOutputs incommandOutput = do
 \end{code}
 %endif
 
-\defslide{InterpreterInterpret}{
+\defslide{InterpreterInterpretDesc}{
 \textit{interpret} parses the first word of \textit{inputLine} as a command,
 then looks up this command in the \textit{commandOutputs} mapping to get the
 corresponding \textit{Output} function.
@@ -163,7 +163,9 @@ corresponding \textit{Output} function.
 \end{itemize}
 The selected \textit{Output} function defines the behavior of
 \textit{interpret}.
+}
 
+\defslide{InterpreterInterpretCode}{
 \begin{code}
 interpret :: [(String, Output)] -> Output -> String -> IO ()
 interpret commandOutputs incommandOutput inputLine =
@@ -203,4 +205,5 @@ parseRestInputLine commands =
 
 \slide{InterpreterIntroduction}
 \slide{InterpreterOutput}
-\slide{InterpreterInterpret}
+\slide{InterpreterInterpretDesc}
+\slide{InterpreterInterpretCode}

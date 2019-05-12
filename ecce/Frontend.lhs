@@ -204,6 +204,7 @@ type Transmit = (Float, Float, Float, String)
 \end{code}
 %endif
 
+\defslide{FrontendNetworkDescription}{
 \textit{networkDescription} displays a picture on the screen.  It runs the
 Kleisli arrow \textit{(aPicture p extentsMap)} to get a picture, then monitors
 changes in the picture and displays to the screen through a reference.
@@ -220,6 +221,7 @@ networkDescription p picRef extentsMap eGloss = do
   changes picture >>= reactimate' . fmap (fmap (writeIORef picRef))
   valueBLater picture >>= liftIO . writeIORef picRef
 \end{code}
+}
 
 \defslide{FrontendAPicture}{
 Composition of many Kleisli arrows.
@@ -245,11 +247,11 @@ aPicture p extentsMap =
  - SUBSECTION NETWORK INPUTS
  -}
 \end{code}
-%endif
 \begin{code}
 networkInput :: Event Gloss.Event -> Moment (Event (Maybe Char))
 networkInput eGloss = return $ mayKey <$> eGloss
 \end{code}
+%endif
 
 %if False
 \begin{code}
@@ -518,15 +520,17 @@ transmit bl hh hl t =
 \end{code}
 %endif
 
-\defslide{FrontendTransmitSRDesc}{
+\defslide{FrontendTransmitSRDescDesc}{
 \begin{enumerate}
-  \item \textit{transmit} defines a transmission as a pictorial arrow,
-  \textbf{with} an origin.  The x-coordinate of the origin is always the sender
-  of the transmission's x-coordinate.
+  \item \textit{transmitSRDesc} defines a transmission as a pictorial arrow,
+  \underline{with} an origin.  The x-coordinate of the origin is always the
+  sender of the transmission's x-coordinate.
   \item The direction of the pictorial arrow depends on the x-coordinate of the
   receiver relative to the x-coordinate of the sender.
 \end{enumerate}
+}
 
+\defslide{FrontendTransmitSRDescCode}{
 \begin{code}
 transmitSRDesc :: Float -> Float -> String -> Picture
 transmitSRDesc sX rX desc
@@ -636,10 +640,12 @@ mappingPartyExtent ss = zip ss (getPartiesExtents ss exWidth exHeight exSpace)
 \slide{FrontendIntroduction}
 \slide{FrontendDiagram}
 \slide{FrontendOverview}
+\slide{FrontendNetworkDescription}
 \slide{FrontendAPicture}
 \slide{FrontendNetworkDraw}
 \slide{FrontendNetworkTransmitType}
 \slide{FrontendNetworkTransmitETransJust}
 \slide{FrontendNetworkTransmitSREventDesc}
 \slide{FrontendTransmit}
-\slide{FrontendTransmitSRDesc}
+\slide{FrontendTransmitSRDescDesc}
+\slide{FrontendTransmitSRDescCode}

@@ -53,7 +53,7 @@ Unparsing is done by simply passing the partial isomorphism
 \textit{parseGlobalProtocol} and a \textit{GlobalProtocol} to
 \textit{invertible-syntax}'s \textit{print} function.  We then unwrap the
 \textit{Maybe} result, and display an error if \textit{Nothing} is returned.
-}
+
 %if False
 \par
 \textit{un} takes a \textit{GlobalProtocol} as input instead of any well-formed
@@ -96,6 +96,7 @@ un e =
     Just x -> x
     Nothing -> error "Print error: " ++ show e
 \end{code}
+}
 
 \slide{UnparserIntroduction}
 \slide{UnparserUn}

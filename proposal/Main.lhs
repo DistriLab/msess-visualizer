@@ -31,7 +31,7 @@
 
 \title{ecce}
 \subtitle{A Visualizer and Simulator for Session Protocols}
-\author{Koo Zhengqun}
+\author{Zhengqun Koo}
 \date{\today}
 
 \begin{document}

@@ -46,13 +46,13 @@ Transforms structured data.
 
 \defslide{Types}{
 \begin{center}
-\includegraphics[scale=0.2]{../ecce/plantuml/transformations.png}
+\includegraphics[scale=0.175]{../ecce/plantuml/transformations.png}
 \end{center}
 }
 
 \defslide{Modules}{
 \begin{center}
-\includegraphics[scale=0.3]{../ecce/plantuml/modules.png}
+\includegraphics[scale=0.275]{../ecce/plantuml/modules.png}
 \end{center}
 }
 
@@ -90,5 +90,22 @@ There are a few directions we can expand our work to.
 
 \section{Future Work}
 \slide{Future Work}
+
+\section{References}
+\begin{frame}[allowframebreaks]
+  \frametitle<presentation>{Further Reading}
+  \begin{thebibliography}{10}
+  \beamertemplatebookbibitems
+  \bibitem{Autor1990}
+    A.~Autor.
+    \newblock {\em Introduction to Giving Presentations}.
+    \newblock Klein-Verlag, 1990.
+  \beamertemplatearticlebibitems
+  \bibitem{Jemand2000}
+    S.~Jemand.
+    \newblock On this and that.
+    \newblock {\em Journal of This and That}, 2(1):50--100, 2000.
+  \end{thebibliography}
+\end{frame}
 
 \end{document}

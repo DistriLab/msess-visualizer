@@ -1,7 +1,6 @@
 \defslide{ProjectorIntroduction}{
 Decompose big structures onto small structures, sometimes forgetting some
 information.
-Each level of projection is performed by a function.
 }
 
 %if False
@@ -63,17 +62,16 @@ import Parser
 
 \defslide{ProjectorTrDesc}{
 \textit{tr} decomposes a \textit{GlobalProtocol} into many
-\textit{Transmission}s.  There are three patterns to note about this style of
-decomposition:
+\textit{Transmission}s.  There are three patterns:
 \begin{enumerate}
-  \item Firstly, the pattern of decomposition for \textit{Concurrency},
-  \textit{Choice}, and \textit{Sequencing}.  These are binary deconstructors
-  (indicated by \textit{EOpGlobalProtocolBinary}), so \textit{tr} takes the two
+  \item The pattern of decomposition for \textit{Concurrency}, \textit{Choice},
+  and \textit{Sequencing}.  These are binary deconstructors (indicated by
+  \textit{EOpGlobalProtocolBinary}), so \textit{tr} takes the two
   \textit{GlobalProtocol}s on both sides of the deconstructor, then further
   processes them.
-  \item Secondly, \textit{Assumption}, \textit{Guard}, and \textit{Emp} are
-  ignored, because they do not contain any \textit{Transmission}s.
-  \item Thirdly, \textit{tr} returns an order-preserved list.
+  \item \textit{Assumption}, \textit{Guard}, and \textit{Emp} are ignored,
+  because they do not contain any \textit{Transmission}s.
+  \item \textit{tr} returns an order-preserved list.
 \end{enumerate}
 }
 

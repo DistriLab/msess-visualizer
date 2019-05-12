@@ -185,8 +185,7 @@ networkDescription filePath eKey =
 }
 
 \defslide{ProcessorDiagram}{
-\textit{networkProcessor} is defined as a recursive monadic-do, meaning there
-is some cycle in the sequential composition of monads.
+\textit{networkProcessor} is a recursive monadic-do, there is some cycle.
 \\\begin{center}
 \includegraphics[scale=0.2]{../ecce/plantuml/processor.png}
 \end{center}
@@ -264,10 +263,9 @@ order to explain the rest of the network.  We assume that the \textit{Behavior}
 %endif
 
 \defslide{ProcessbProcChoiceMay}{
-\textit{bProcChoiceMay} looks at the data inside \textit{bProc}, and if the
-data is a \textit{GlobalChoice}, \textit{bProcChoiceMay} converts that data
-into a 2-element list of the first choice \textit{g1} and the second choice
-\textit{g2}.
+If the data in \textit{bProc} is a \textit{GlobalChoice},
+\textit{bProcChoiceMay} splits that into the first choice \textit{g1} and the
+second choice \textit{g2}.
 
 \begin{code}
   mdo let bProcChoiceMay :: Behavior (Maybe [Process])
@@ -282,11 +280,12 @@ into a 2-element list of the first choice \textit{g1} and the second choice
 }
 
 \defslide{ProcessorBProcChoiceFunc}{
-\textit{bProcChoiceFunc} is a function that maps \textit{Char}s into
-\textit{Process}es.  \textit{'1'} is converted into index 0, and \textit{'2'}
-is converted into index 1.  \textit{bProcChoiceFunc} uses these indexes to
-index into \textit{bProcChoiceMay}.  Therefore, it maps \textit{'1'} to
-\textit{'g1'}, and \textit{'2'} to \textit{'g2'}.
+\textit{bProcChoiceFunc}:
+\begin{itemize}
+  \item maps \textit{Char}s to \textit{Process}es,
+  \item indexes into \textit{bProcChoiceMay} by ASCII,
+  \item maps \textit{'1'} to \textit{'g1'}, and \textit{'2'} to \textit{'g2'}.
+\end{itemize}
 
 \begin{code}
           bProcChoiceFunc :: Behavior (Char -> Process)
@@ -416,13 +415,9 @@ has any digits in its data stream.
 %endif
 
 \defslide{ProcessorBStepCount}{
-\textit{bStepCount} is the number of steps the user made so far.  It
-accumulates an integer with initial value zero, and applies an increment
-function \textit{(+ 1)} whenever \textit{bProc} has a \textit{Just} value, and
-the user makes a step.  This means that, when we are done processing, the input
-\textit{Process} \textit{p} is completely consumed, and \textit{bProc} will
-have \textit{Nothing}.  In this case, the increment function will not be
-applied.
+\textit{bStepCount} is the number of steps the user made so far.  When we are
+done processing, the input \textit{Process} \textit{p} is completely consumed,
+and \textit{bProc} will have \textit{Nothing}.
 
 \begin{code}
       (bStepCount :: Behavior Int) <-
@@ -433,12 +428,8 @@ applied.
 }
 
 \defslide{ProcessorEDone}{
-\textit{eDone} indicates that \textit{bProc} is completely consumed.  Note the
-similarities in implementation as compared to \textit{bStepCount}, except that
-the data in \textit{eStepper} is converted to the unit value \textit{()} before
-further processing.  This ensures that \textit{eDone} will have a type of
-\textit{Event ()}.  We use the unit type because we only need an event to
-indicate that processing is done.
+\textit{eDone} indicates that \textit{bProc} is completely consumed.  The data
+in \textit{eStepper} is converted to the unit value \textit{()}.
 
 \begin{code}
       let eDone :: Event ()
@@ -448,8 +439,7 @@ indicate that processing is done.
 
 \defslide{ProcessorNetworkDescription}{
 \textit{networkDescription} returns a 4-tuple \textit{(eTrans, bProc,
-eDone, bStepCount)} to be used by \textit{networkPrinter} and external modules
-(like \textit{networkTransmit} in \textit{Frontend.lhs}).
+eDone, bStepCount)} to be used by \textit{networkPrinter} and external modules.
 
 \begin{code}
       return (eTrans, bProc, eDone, bStepCount)

@@ -1,7 +1,7 @@
 \defslide{FrontendIntroduction}{
 The frontend displays the textual results from \textit{Processor} as graphics.
-We first define a bunch of graphical objects, then combine these objects
-according to the results from \textit{Processor}.
+We define graphical objects, then combine them according to the
+\textit{Processor}.
 }
 
 %if False

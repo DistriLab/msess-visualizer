@@ -1,7 +1,14 @@
 # Installation
 Run this command in the same folder as this README file:
 ```
-cabal install
+cabal new-install .
+```
+
+# GHCi
+With the new version of `cabal-install`, to avoid passing `-package` options to 
+`ghci`, use:
+```
+cabal new-repl
 ```
 
 # Usage

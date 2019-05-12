@@ -606,6 +606,7 @@ processStep p =
 \slide{ProcessorBProcIsChoice}
 \slide{ProcessorEChooseMay}
 \slide{ProcessorEChooseMayNot}
+\slide{ProcessorEChooseScopes}
 \slide{ProcessorEStepper}
 \slide{ProcessorEDigit}
 \slide{ProcessorEChooserChoice}

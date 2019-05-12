@@ -263,7 +263,7 @@ order to explain the rest of the network.  We assume that the |Behavior|
 |bProc| is the list of remaining |Process|es.
 %endif
 
-\defslide{ProcessbProcChoiceMay}{
+\defslide{ProcessBProcChoiceMay}{
 If the data in |bProc| is a |GlobalChoice|, |bProcChoiceMay| splits that into
 the first choice |g1| and the second choice |g2|.
 
@@ -600,7 +600,7 @@ processStep p =
 \slide{ProcessorProcess}
 \slide{ProcessorInputs}
 \slide{ProcessorDiagram}
-\slide{ProcessbProcChoiceMay}
+\slide{ProcessBProcChoiceMay}
 \slide{ProcessorBProcChoiceFunc}
 \slide{ProcessorEProcChoice}
 \slide{ProcessorBProcIsChoice}

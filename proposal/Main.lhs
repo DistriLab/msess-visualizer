@@ -2,6 +2,23 @@
 %include Library/polycode.fmt
 %include Library/beamer.fmt
 
+\usepackage[geometry]{ifsym}
+\newcommand{\clap}[1]{\hbox to0pt{\hss#1\hss}}
+\renewcommand{\diamond}[2][0.25ex]{\hbox to 1.5em{\hfil\clap{\raisebox{-0.45ex}{\BigDiamondshape}}\clap{\raisebox{#1}{\scriptsize #2}}\hfil}}
+\newcommand{\rdiamond}[2][0.25ex]{\hbox to 1.5em{\hfil\clap{\raisebox{-0.45ex}{\ \TriangleRight}}\clap{\raisebox{#1}{\scriptsize #2}}\hfil}}
+\newcommand{\ldiamond}[2][0.25ex]{\hbox to 1.5em{\hfil\clap{\raisebox{-0.45ex}{\TriangleLeft\ }}\clap{\raisebox{#1}{\scriptsize #2}}\hfil}}
+
+%format delta = "\delta{}"
+%format >=> = ">\!\!\!\!\:\!=\!\!\!\!\!\:\!>"
+%format <+> = "\diamond{$+$}"
+%format <-> = "\diamond{$-$}"
+%format <|> = "\diamond{$|$}"
+%format <$> = "\diamond[0ex]{\rm\$}"
+%format <*> = "\diamond{$\ast$}"
+%format *> = "\rdiamond{$\ast$}"
+%format <* = "\ldiamond{$\ast$}"
+
+
 \newcommand{\defslide}[2]{
 \frame<hidden>[label=#1]{#2}
 }

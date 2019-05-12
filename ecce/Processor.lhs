@@ -158,7 +158,7 @@ data Process
 
 %if False
 |networkDescription| reads a |GlobalProtocol| from a file at
-|filePath|.  |reactive-banana| provides the user input as a
+|filePath|.  \textit{reactive-banana} provides the user input as a
 single character, |eKey|, which |networkDescription| passes on to
 |networkProcessor|, before passing the processed result to
 |networkPrinter|.
@@ -194,10 +194,10 @@ except for two back edges from |bProc| to |bProc| and from |bProc| to
 
 %if False
 |networkProcessor| also uses |Event|s and |Behavior|s from
-|reactive-banana|.  We give a rough overview of
-|reactive-banana|.  This overview is merely conceptual, the underlying
-implementation of |reactive-banana| could be different.
-|reactive-banana| is a functional reactive programming framework, that
+\textit{reactive-banana}.  We give a rough overview of
+\textit{reactive-banana}.  This overview is merely conceptual, the underlying
+implementation of \textit{reactive-banana} could be different.
+\textit{reactive-banana} is a functional reactive programming framework, that
 processes data streams.  Data streams are lists with potentially infinite
 elements.  Each element can be understood as a 2-tuple of |Time| and
 |Data|, meaning the |Data| was generated at time |Time|.

@@ -85,9 +85,9 @@ syntax parsing and printing.
 
 \defslide{UnparserUn}{
 Unparsing is done by simply passing the partial isomorphism
-|parseGlobalProtocol| and a |GlobalProtocol| to |invertible-syntax|'s |print|
-function.  We then unwrap the |Maybe| result, and display an error if |Nothing|
-is returned.
+|parseGlobalProtocol| and a |GlobalProtocol| to \textit{invertible-syntax}'s
+|print| function.  We then unwrap the |Maybe| result, and display an error if
+|Nothing| is returned.
 
 \begin{code}
 un :: GlobalProtocol -> String

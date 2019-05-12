@@ -335,7 +335,7 @@ data Presburger
   | EPresburgerNeg Presburger
 \end{code}
 
-As a convention, if a data type named |Presburger| has a binary constructor,
+As a convention, if a data type named |Type| has a binary constructor,
 then all binary constructors will be moved to another data type definition,
 named |OpTypeBinary|.  The |Presburger| data type will have all its binary
 constructors replaced by this:
@@ -1524,7 +1524,7 @@ A parser of more complex expression needs to be handled in multiple stages.  We
 again look at the example of |Presburger| data type.
 \par
 Firstly, a parser that ignores leading and trailing spaces for binary operators
-is defined, |.opPresburgerBinary|.  The |<||>| operator has an implied
+is defined, |opPresburgerBinary|.  The |<||>| operator has an implied
 ordering, to first try the left parser, then if the left fails, the right
 parser is tried.
 

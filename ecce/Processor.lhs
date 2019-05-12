@@ -261,7 +261,7 @@ the first choice |g1| and the second choice |g2|.
 |bProcChoiceFunc| is a function that maps |Char|s into |Process|es.  |'1'| is
 converted into index 0, and |'2'| is converted into index 1.  |bProcChoiceFunc|
 uses these indexes to index into |bProcChoiceMay|.  Therefore, it maps |'1'| to
-|'g1'|, and |'2'| to |'g2'|.
+|g1|, and |'2'| to |g2|.
 
 \begin{code}
           bProcChoiceFunc :: Behavior (Char -> Process)
@@ -299,8 +299,8 @@ only when |bProc| is a |GlobalChoice|.
 
 |eChooseMayNot| is similar to |eChooseMay|: it is identical to |eKey| only when
 |bProcIsChoice| is |False|.  Otheriwse, |eChooseMayNot| is an empty stream.  In
-other words, |eChooseMay| allows us to look at the |eKey| stream only when the
-list of remaining |Process|es is not a |GlobalChoice|.  This restricts
+other words, |eChooseMayNot| allows us to look at the |eKey| stream only when
+the list of remaining |Process|es is not a |GlobalChoice|.  This restricts
 processing of user inputs to only when |bProc| is not a |GlobalChoice|.
 
 \begin{code}
@@ -309,8 +309,8 @@ processing of user inputs to only when |bProc| is not a |GlobalChoice|.
 \end{code}
 
 The partitioned scopes of |eChooseMay| and |eChooseMayNot| ensures that further
-processing of data will be resttricted to only either one of those scopes.
-This is helpful in reasoning about the behavior of the network.
+processing of data will be restricted to only either one of those scopes.  This
+is helpful in reasoning about the behavior of the network.
 \par
 |eStepper| is the stream of |eChooseMayNot| when |eChooseMayNot| has |'s'| in
 its data stream.  |'s'| is the character the user gives as input, in order to
@@ -352,28 +352,26 @@ respectively.
 %endif
 
 Here is the function that completes the circular monadic sequential
-composition.  This function processes each step of the input |Process|
-|p|, and accumulates the results inside |eTrans| and
-|bProc|.  Processing handled by the |processStep| function.
+composition.  This function processes each step of the input |Process| |p|, and
+accumulates the results inside |eTrans| and |bProc|.  Processing handled by the
+|processStep| function.
 \par
-|unionWith| merges two incoming streams into one.  We know that this
-merged stream has no duplicates, because the two incomings streams,
-|eProcChoice| and |eStepper|, have disjoint scopes.
+|unionWith| merges two incoming streams into one.  We know that this merged
+stream has no duplicates, because the two incoming streams, |eProcChoice| and
+|eStepper|, have disjoint scopes.
 \par
-For the |eProcChoice| stream, we just take the |Process| inside
-|eProcChoice|, and pass it on to |processStep|.  Processing for
-the |eStepper| stream is different: when the user triggers a step, the
-current |bProc| is passed to |processStep|, and
-|processStep| returns an updated |bProc|.
+For the |eProcChoice| stream, we just take the |Process| inside |eProcChoice|,
+and pass it on to |processStep|.  Processing for the |eStepper| stream is
+different: when the user triggers a step, the current |bProc| is passed to
+|processStep|, and |processStep| returns an updated |bProc|.
 \par
 To discharge our assumption when we first started analyzing this circular
-composition, that |bProc| is the list of remaining |Process|es,
-|processStep| needs to return the correct |bProc|.  Note that the
-initial |bProc| is given by the input |Process| |p|, and
-we assume that this initial |p| satisfies our assumption.  This is a
-reasonable assumption to make, because it is reasonable to have undefined
-behavior when inputs to functions are not well-formed.  We defer the rest of
-the analysis (of |processStep|) to the end of this section.
+composition, that |bProc| is the list of remaining |Process|es, |processStep|
+needs to return the correct |bProc|.  Note that the initial |bProc| is given by
+the input |Process| |p|, and we assume that this initial |p| satisfies our
+assumption.  This is areasonable assumption to make, because it is reasonable
+to have undefined behavior when inputs to functions are not well-formed.  We
+defer the rest of the analysis (of |processStep|) to the end of this section.
 \par
 \begin{code}
       (eTrans :: Event (Maybe GlobalProtocol), bProc :: Behavior (Maybe Process)) <-
@@ -416,8 +414,8 @@ because we only need an event to indicate that processing is done.
           eDone = whenE ((maybe True (const False)) <$> bProc) (() <$ eStepper)
 \end{code}
 
-Lastly, |networkDescription| returns a 4-tuple |(eTrans, bProc, eDone, 
-bStepCount)| to be used by |networkPrinter| and external modules (like 
+Lastly, |networkDescription| returns a 4-tuple |(eTrans, bProc, eDone,
+bStepCount)| to be used by |networkPrinter| and external modules (like
 |networkTransmit| in |Frontend.lhs|).
 
 \begin{code}
@@ -552,16 +550,16 @@ since it is already handled by |networkProcessor|.
 \par
 Secondly, we analyze the |Maybe Process| return value.  We apply induction on
 the structure of |Process|, with an induction hypothesis that the |Maybe
-Process| return value of the subsequent call to |processStep| is well-formed.  
-We split our analysis by cases.  If the input |Process| |p| is a |Leaf|, then 
-the |Process| return value is a well-formed process, since the |Process| 
-constructors |NodeC| and |NodeS| are used.  Otherwise, if the input |p :: 
-Process| is a |NodeS| or |NodeC|, then we deconstruct the node into its 
-well-formed head |p :: Maybe Process| and tail |ps :: [Maybe Process]|.  We 
-next take the |p' :: Maybe Process| from the subsequent call to |processStep|, 
-which we know is well-formed by our induction hypothesis.  Then, we form |ps' 
-:: [Maybe Process]| by prepending |p'| to |ps| only if |p'| is not |Nothing|.  
-Since both |p'| and |ps| are well-formed, thus both |NodeS ps'| and |NodeC ps'| 
+Process| return value of the subsequent call to |processStep| is well-formed.
+We split our analysis by cases.  If the input |Process| |p| is a |Leaf|, then
+the |Process| return value is a well-formed process, since the |Process|
+constructors |NodeC| and |NodeS| are used.  Otherwise, if the input |p ::
+Process| is a |NodeS| or |NodeC|, then we deconstruct the node into its
+well-formed head |p :: Maybe Process| and tail |ps :: [Maybe Process]|.  We
+next take the |p' :: Maybe Process| from the subsequent call to |processStep|,
+which we know is well-formed by our induction hypothesis.  Then, we form |ps'
+:: [Maybe Process]| by prepending |p'| to |ps| only if |p'| is not |Nothing|.
+Since both |p'| and |ps| are well-formed, thus both |NodeS ps'| and |NodeC ps'|
 are also well-formed.
 \par
 We now fully discharge the assumption that we had at the beginning of our

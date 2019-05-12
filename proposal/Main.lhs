@@ -10,18 +10,12 @@
 
 \newcommand{\slide}[1]{\againframe<1->{#1}}
 
+\usetheme{Singapore}
+
 \title{ecce}
 \subtitle{A Visualizer and Simulator for Session Protocols}
 \author{Koo Zhengqun}
 \date{\today}
-
-\AtBeginSection[]
-{
-  \begin{frame}
-    \frametitle{Table of Contents}
-    \tableofcontents[currentsection]
-  \end{frame}
-}
 
 \begin{document}
 

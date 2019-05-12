@@ -2,9 +2,9 @@
 
 The unparser, or pretty-printer, is just the inverse function of the parser.
 That is, an unparser converts an ADT into a string.  Implementing this with
-\textit{partial-isomorphism}s is not only straightforward, but also has the
-advantage of being isomorphic.  That is, an unparsed ADT can be parsed to get
-the same ADT, and a parsed string can be unparsed to get the same string.
+|partial-isomorphism|s is not only straightforward, but also has the advantage
+of being isomorphic.  That is, an unparsed ADT can be parsed to get the same
+ADT, and a parsed string can be unparsed to get the same string.
 
 %if False
 \begin{code}
@@ -53,19 +53,19 @@ incommandOutput =
 %endif
 
 Unparsing is done by simply passing the partial isomorphism
-\textit{parseGlobalProtocol} and a \textit{GlobalProtocol} to
-\textit{invertible-syntax}'s \textit{print} function.  We then unwrap the
-\textit{Maybe} result, and display an error if \textit{Nothing} is returned.
+|parseGlobalProtocol| and a |GlobalProtocol| to |invertible-syntax|'s |print|
+function.  We then unwrap the |Maybe| result, and display an error if |Nothing|
+is returned.
 \par
-\textit{un} takes a \textit{GlobalProtocol} as input instead of any well-formed
-expression in typical pretty-printers.  This is because partial isomorphisms
-and existential types do not mix well.  It is possible to wrap a existential
-type \textit{AnyExpr} around all expression types (e.g. \textit{Pure},
-\textit{GlobalProtocol}, etc...).  However, deconstructing \textit{AnyExpr} is
-impossible, since we do not know which expression type is actually being
-wrapped inside \textit{AnyExpr}.  Therefore, we can only construct existential
-types, but not destruct existential types.  So, we are unable to establish an
-isomorphism between the existential and the expression types.
+|un| takes a |GlobalProtocol| as input instead of any well-formed expression in
+typical pretty-printers.  This is because partial isomorphisms and existential
+types do not mix well.  It is possible to wrap a existential type |AnyExpr|
+around all expression types (e.g. |Pure|, |GlobalProtocol|, etc...).  However,
+deconstructing |AnyExpr| is impossible, since we do not know which expression
+type is actually being wrapped inside |AnyExpr|.  Therefore, we can only
+construct existential types, but not destruct existential types.  So, we are
+unable to establish an isomorphism between the existential and the expression
+types.
 \par
 Note that by using partial isomorphisms, we guarantee a one-to-one
 correspondence betwene the parsed string and the printed string.  This avoids
@@ -80,12 +80,12 @@ contrasts with a parser defined with partial isomorphisms: the unparser is
 dependent on the parser, so only the parser needs to be changed.
 \par
 It may seem logical to extend partial isomorphisms to all transformations
-within \textit{ecce}: that is, to also have a partial isomorphism between the
-ADT and the visualization.  However, there is a challenge.  For other parts of
-\textit{ecce}, the definition of partial isomorphisms on each transformation is
-not obvious.  For example, it is not obvious how the inverse function of the
-\textit{Event} constructor can be formulated.
-
+within |ecce|: that is, to also have a partial isomorphism between the ADT and
+the visualization.  However, there is a challenge.  For other parts of |ecce|,
+the definition of partial isomorphisms on each transformation is not obvious.
+For example, it is not obvious how the inverse function of the |Event|
+constructor can be formulated.
+\par
 As such, we have limited the application of partial isomorphisms purely to
 syntax parsing and printing.
 

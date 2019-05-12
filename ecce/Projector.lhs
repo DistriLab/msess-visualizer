@@ -1,12 +1,12 @@
 \subsection{Projector}
 
-Now that we have our \textit{GlobalProtocol}s, we can define some functions to
+Now that we have our |GlobalProtocol|s, we can define some functions to
 deconstruct them.  We project (or decompose) big structures onto small
 structures, sometimes forgetting some information.  This projection is
 performed by deconstructors.
 \par
 Each level of projection is performed by a function.  The biggest structure to
-be projected is a \textit{GlobalProtocol}.
+be projected is a |GlobalProtocol|.
 
 %if False
 \begin{code}
@@ -65,18 +65,17 @@ import Parser
 \end{code}
 %endif
 
-\textit{tr} decomposes a \textit{GlobalProtocol} into many
-\textit{Transmission}s.  There are three patterns to note about this style of
-decomposition.  We will see similar patterns in the other projection functions.
+|tr| decomposes a |GlobalProtocol| into many |Transmission|s.  There are three
+patterns to note about this style of decomposition.  We will see similar
+patterns in the other projection functions.
 \begin{enumerate}
-  \item Firstly, the pattern of decomposition for \textit{Concurrency},
-  \textit{Choice}, and \textit{Sequencing}.  These are binary deconstructors
-  (indicated by \textit{EOpGlobalProtocolBinary}), so \textit{tr} takes the two
-  \textit{GlobalProtocol}s on both sides of the deconstructor, then further
-  processes them.
-  \item Secondly, \textit{Assumption}, \textit{Guard}, and \textit{Emp} are
-  ignored, because they do not contain any \textit{Transmission}s.
-  \item Thirdly, \textit{tr} returns an order-preserved list.
+  \item Firstly, the pattern of decomposition for |Concurrency|, |Choice|, and
+  |Sequencing|.  These are binary deconstructors (indicated by
+  |EOpGlobalProtocolBinary|), so |tr| takes the two |GlobalProtocol|s on both
+  sides of the deconstructor, then further processes them.
+  \item Secondly, |Assumption|, |Guard|, and |Emp| are ignored, because they do
+  not contain any |Transmission|s.
+  \item Thirdly, |tr| returns an order-preserved list.
 \end{enumerate}
 
 \begin{code}
@@ -110,11 +109,10 @@ tr g =
 \end{code}
 %endif
 
-\textit{ev} decomposes a \textit{GlobalProtocol} in a similar manner to
-\textit{tr}.  However, when it takes a \textit{Transmission} as input, it
-extracts the sender role \textit{s}, label \textit{i}, and receiver role
-\textit{r}, to create two \textit{Event}s: one event for the sender, and one
-for the receiver, with the same label.  Then, it puts those two events in a
+|ev| decomposes a |GlobalProtocol| in a similar manner to |tr|.  However, when
+it takes a |Transmission| as input, it extracts the sender role |s|, label |i|,
+and receiver role |r|, to create two |Event|s: one event for the sender, and
+one for the receiver, with the same label.  Then, it puts those two events in a
 list, with the sender event coming before the receiver event.  We enforce this
 order because it reflects real-world transmissions: the sender sends the
 transmission first, and time is needed for the transmission to propogate,
@@ -133,9 +131,8 @@ ev g =
     EGlobalProtocolEmp -> []
 \end{code}
 
-Decompositions to lists of \textit{Event}s are defined similarly for
-\textit{Assertion}s and \textit{Constraint}s.  We will not be discussing them
-here.
+Decompositions to lists of |Event|s are defined similarly for |Assertion|s and
+|Constraint|s.  We will not be discussing them here.
 
 %if False
 \begin{code}
@@ -167,17 +164,17 @@ evConstraint c =
 \end{code}
 %endif
 
-\textit{projectGlobalToParty} rewraps \textit{GlobalProtocol} to
-\textit{PartyProtocol}, by recursively using \textit{GlobalProtocol}
+|projectGlobalToParty| rewraps |GlobalProtocol| to
+|PartyProtocol|, by recursively using |GlobalProtocol|
 deconstructors to get the operands, then wrapping those operands with a
-\textit{PartyProtocol} constructor.  For readability, we only show one.
+|PartyProtocol| constructor.  For readability, we only show one.
 \par
-The interesting case is when \textit{projectGlobalToParty} takes a
-\textit{Transmission} as input, where the behavior of
-\textit{projectGlobalToParty} depends on the role it gets as input.  If the
-role is a sender, then it constructs a \textit{PartySend} event.  If the role
-is a receiver, then it constructs a \textit{PartyReceive} event.  Otherwise, it
-constructs an empty \textit{Party} event.
+The interesting case is when |projectGlobalToParty| takes a
+|Transmission| as input, where the behavior of
+|projectGlobalToParty| depends on the role it gets as input.  If the
+role is a sender, then it constructs a |PartySend| event.  If the role
+is a receiver, then it constructs a |PartyReceive| event.  Otherwise, it
+constructs an empty |Party| event.
 \par
 \begin{code}
 projectGlobalToParty :: GlobalProtocol -> Role -> PartyProtocol
@@ -228,13 +225,12 @@ projectGlobalToParty g p =
 \end{code}
 %endif
 
-\textit{projectPartyToEndpoint} behaves similarly to
-\textit{projectGlobalToParty}, except that it projects on \textit{Channel}s
-rather than \textit{Role}s.  This function deconstructs and looks at the
-channel of a \textit{PartySend}, and constructs an \textit{EndpointSend} event
-only if its input channel matches.  Otherwise, no \textit{Endpoint} event will
-be constructed.  \textit{PartyReceive} is handled similarly to construct
-\textit{EndpointReceive}.  We again exclude the uninteresting projections.
+|projectPartyToEndpoint| behaves similarly to |projectGlobalToParty|, except
+that it projects on |Channel|s rather than |Role|s.  This function deconstructs
+and looks at the channel of a |PartySend|, and constructs an |EndpointSend|
+event only if its input channel matches.  Otherwise, no |Endpoint| event will
+be constructed.  |PartyReceive| is handled similarly to construct
+|EndpointReceive|.  We again exclude the uninteresting projections.
 
 \begin{code}
 projectPartyToEndpoint :: PartyProtocol -> Channel -> EndpointProtocol

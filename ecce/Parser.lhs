@@ -182,11 +182,10 @@ extractParseShow p s = show $ head $ extractParse p s
 %endif
 
 Firstly, we define data types and constructors that lift the base Haskell
-types: \textit{VarFirst}, \textit{DataStructure}, \textit{VarType},
-\textit{Predicate}, \textit{Role}, \textit{Channel}, and \textit{Label}.  The
-constructors have the same name as the data type, but with an \textit{E}
-prepended to signify that it constructs an \textit{E}xpression.  We only show
-one data type definition for brevity.
+types: |VarFirst|, |DataStructure|, |VarType|, |Predicate|, |Role|, |Channel|,
+and |Label|.  The constructors have the same name as the data type, but with an
+|E| prepended to signify that it constructs an |E|xpression.  We only show one
+data type definition for brevity.
 
 \begin{code}
 data VarFirst =
@@ -336,10 +335,10 @@ data Presburger
   | EPresburgerNeg Presburger
 \end{code}
 
-As a convention, if a data type named \textit{Presburger} has a binary
-constructor, then all binary constructors will be moved to another data type
-definition, named \textit{OpTypeBinary}.  The \textit{Presburger} data type
-will have all its binary constructors replaced by this:
+As a convention, if a data type named |Presburger| has a binary constructor,
+then all binary constructors will be moved to another data type definition,
+named |OpTypeBinary|.  The |Presburger| data type will have all its binary
+constructors replaced by this:
 \begin{code}
   | EOpPresburgerBinary Presburger
                         OpPresburgerBinary
@@ -352,8 +351,8 @@ will have all its binary constructors replaced by this:
 \end{code}
 %endif
 
-The \textit{OpPresburgerBinary} data type will then have the binary operators as
-nullary constructors, like \textit{EPresburgerSeparate} in this example:
+The |OpPresburgerBinary| data type will then have the binary operators as
+nullary constructors, like |EPresburgerSeparate| in this example:
 
 \begin{code}
 data OpPresburgerBinary
@@ -566,15 +565,13 @@ the data type.  We are thus establishing an isomorphism between a constructor's
 inputs and its data type.
 \par
 Note that both of the two components of the isomorphisms, are functions that
-return a \textit{Maybe} value.  This is because the partial isomorphism could
-be undefined for certain elements in its domain, in which case the function
-that maps the domain to the image will return \textit{Nothing} for that
-element.
+return a |Maybe| value.  This is because the partial isomorphism could be
+undefined for certain elements in its domain, in which case the function that
+maps the domain to the image will return |Nothing| for that element.
 \par
-Since by convention the constructor names always start with \textit{E}, and
-defining an isomorphism using Template Haskell makes the first letter
-lower-case, then by convention, the isomorphism names always start with
-\textit{e}.
+Since by convention the constructor names always start with |E|, and defining
+an isomorphism using Template Haskell makes the first letter lower-case, then
+by convention, the isomorphism names always start with |e|.
 
 \begin{code}
 eVarFirst :: Iso Integer VarFirst
@@ -1348,9 +1345,9 @@ eChannelProtocolSequencing =
 %endif
 
 Parsers are applications of isomorphisms on the base type.  As an example, the
-\textit{parseVarFirst} parser first lexes an \textit{Integer}, then passes the
-result to the \textit{eVarFirst} constructor.  Similar parsers of other base
-types are defined, but not shown.
+|parseVarFirst| parser first lexes an |Integer|, then passes the result to the
+|eVarFirst| constructor.  Similar parsers of other base types are defined, but
+not shown.
 
 \begin{code}
 parseVarFirst :: Syntax delta => delta VarFirst
@@ -1524,12 +1521,12 @@ parseBoolePresburger = exp 0
 %endif
 
 A parser of more complex expression needs to be handled in multiple stages.  We
-again look at the example of \textit{Presburger} data type.
+again look at the example of |Presburger| data type.
 \par
 Firstly, a parser that ignores leading and trailing spaces for binary operators
-is defined, \textit{.opPresburgerBinary}.  The \textit{<||>} operator has an
-implied ordering, to first try the left parser, then if the left fails, the
-right parser is tried.
+is defined, |.opPresburgerBinary|.  The |<||>| operator has an implied
+ordering, to first try the left parser, then if the left fails, the right
+parser is tried.
 
 \begin{code}
 opPresburgerBinary :: Syntax delta => delta OpPresburgerBinary
@@ -1540,14 +1537,14 @@ opPresburgerBinary =
     (ePresburgerMul <$> text "*" <|> ePresburgerAdd <$> text "+")
 \end{code}
 
-However, the ordering implied by \textit{<||>} does not matter, because we
-define \textit{prioPresburgerBinary}, a mapping from constructors to
-\textit{Integer}s.  Here, we have the convention that operators mapped to a
-higher integer are parsed first.  For example, since we want multiplications to
-have a higher precedence than additions, we want additions to be parsed before
-multiplications, so that multiplication expressions are embedded inside
-addition expressions.  So \textit{EPresburgerAdd} will have a priority of
-\textit{2}, higher than \textit{EpresburgerMul}'s priority of 1.
+However, the ordering implied by |<||>| does not matter, because we define
+|prioPresburgerBinary|, a mapping from constructors to |Integer|s.  Here, we
+have the convention that operators mapped to ahigher integer are parsed first.
+For example, since we want multiplications to have a higher precedence than
+additions, we want additions to be parsed before multiplications, so that
+multiplication expressions are embedded inside addition expressions.  So
+|EPresburgerAdd| will have a priority of |2|, higher than |EpresburgerMul|'s
+priority of |1|.
 
 \begin{code}
 prioPresburgerBinary :: OpPresburgerBinary -> Integer
@@ -1555,8 +1552,8 @@ prioPresburgerBinary EPresburgerMul = 1
 prioPresburgerBinary EPresburgerAdd = 2
 \end{code}
 
-With those two tools, we can now define the actual \textit{Presburger} parser.
-Our parser is a recursive-descent parser, so have have a top-level grammar of a
+With those two tools, we can now define the actual |Presburger| parser.  Our
+parser is a recursive-descent parser, so have have a top-level grammar of a
 binary operator of highest priority, then one or more lower-level grammars,
 each with a binary operator with descending priority, and finally a base
 grammar which contains all non-binary constructors, as well as the recursive
@@ -1575,8 +1572,8 @@ parsePresburger = exp 2
     exp 2 = chainl1 (exp 1) opPresburgerBinary (opPrioPresburgerBinary 2)
 \end{code}
 
-\textit{opPrioPresburgerBinary} is defined using \textit{prioPresburgerBinary}.
-It returns the binary operator that matches the input priority.
+|opPrioPresburgerBinary| is defined using |prioPresburgerBinary|.  It returns
+the binary operator that matches the input priority.
 
 \begin{code}
     opPrioPresburgerBinary n =

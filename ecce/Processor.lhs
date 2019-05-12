@@ -1,9 +1,8 @@
 \subsection{Processor}
 
-With our \textit{GlobalProtocol} deconstructors, we can actually start to
-deconstruct them.  But first, we need to wrap the deconstructed
-\textit{GlobalProtocol}s in another data structure, \textit{Process}, so that
-we do not lose information.
+With our |GlobalProtocol| deconstructors, we can actually start to deconstruct
+them.  But first, we need to wrap the deconstructed |GlobalProtocol|s in
+another data structure, |Process|, so that we do not lose information.
 
 %if False
 \begin{code}
@@ -132,11 +131,11 @@ commands = "help" : "load" : []
 \end{code}
 %endif
 
-A \textit{Process} is either a single \textit{GlobalProtocol}, or a list of
-other \textit{Process}es.  A sequential process resolves processes in order:
-resolve the head \textit{Process}, then resolve the tails.  A concurrent
-\textit{Process} is resolved without a defined order.  However, for ease of
-implementation, we resolve concurrent \textit{Process}es in order.
+A |Process| is either a single |GlobalProtocol|, or a list of other
+|Process|es.  A sequential process resolves processes in order: resolve the
+head |Process|, then resolve the tails.  A concurrent |Process| is resolved
+without a defined order.  However, for ease of implementation, we resolve
+concurrent |Process|es in order.
 
 \begin{code}
 data Process
@@ -156,11 +155,10 @@ data Process
 \end{code}
 %endif
 
-\textit{networkDescription} reads a \textit{GlobalProtocol} from a file at
-\textit{filePath}.  \textit{reactive-banana} provides the user input as a
-single character, \textit{eKey}, which \textit{networkDescription} passes on to
-\textit{networkProcessor}, before passing the processed result to
-\textit{networkPrinter}.
+|networkDescription| reads a |GlobalProtocol| from a file at |filePath|.
+|reactive-banana| provides the user input as asingle character, |eKey|, which
+|networkDescription| passes on to |networkProcessor|, before passing the
+processed result to |networkPrinter|.
 
 \begin{code}
 networkDescription :: FilePath -> Event Char -> MomentIO ()
@@ -172,40 +170,35 @@ networkDescription filePath eKey =
   networkPrinter
 \end{code}
 
-\textit{networkProcessor} behaves differently based on the value of
-\textit{eKey}.  There are two types of inputs a user may make: either
-\textit{'s'} to step the processor, or \textit{'1'} to choose the left side of
-a \textit{GlobalChoice}, or \textit{'2'} to choose the right side of a
-\textit{GlobalChoice}.
-
-\textit{networkProcessor} is defined as a recursive monadic-do, meaning there
-is some cycle in the sequential composition of monads (Fig. TODO).
+|networkProcessor| behaves differently based on the value of |eKey|.  There are
+two types of inputs a user may make: either |'s'| to step the processor, or
+|'1'| to choose the left side of a |GlobalChoice|, or |'2'| to choose the right
+side of a |GlobalChoice|.
+\par
+|networkProcessor| is defined as a recursive monadic-do, meaning there is some
+cycle in the sequential composition of monads (Fig. TODO).
 \\\begin{center}
 \includegraphics[scale=0.4]{../ecce/plantuml/processor.png}
 \end{center}
 
-\textit{networkProcessor} also uses \textit{Event}s and \textit{Behavior}s from
-\textit{reactive-banana}.  We give a rough overview of
-\textit{reactive-banana}.  This overview is merely conceptual, the underlying
-implementation of \textit{reactive-banana} could be different.
-\textit{reactive-banana} is a functional reactive programming framework, that
-processes data streams.  Data streams are lists with potentially infinite
-elements.  Each element can be understood as a 2-tuple of \textit{Time} and
-\textit{Data}, meaning the \textit{Data} was generated at time \textit{Time}.
-An event is a data stream.  A behavior is a description of how \textit{Data}
-varies with \textit{Time}.
+|networkProcessor| also uses |Event|s and |Behavior|s from |reactive-banana|.
+We give a rough overview of |reactive-banana|.  This overview is merely
+conceptual, the underlying implementation of |reactive-banana| could be
+different.  |reactive-banana| is a functional reactive programming framework,
+that processes data streams.  Data streams are lists with potentially infinite
+elements.  Each element can be understood as a 2-tuple of |Time| and |Data|,
+meaning the |Data| was generated at time |Time|.  An event is a data stream.  A
+behavior is a description of how |Data| varies with |Time|.
 \par
-\textit{Event}s are used like data streams, and \textit{Behavior}s are used to
-store a snapshot of an \textit{Event}: it allows for data persistence.  As
-such, we refer to \textit{Event}s as if they were the data streams itself, and
-we refer to \textit{Behavior}s as if they were the data itself.
-\textit{networkProcessor} is defined in terms of many small \textit{Event}s and
-\textit{Behavior}s to allow ease of understanding and enable UNIX-style
-composition of \textit{Event}s and \textit{Behavior}s.  This makes
-modifications easier than if the \textit{Processor} was defined in a monolithic
-fashion.  As a convention, variables containing \textit{Event}s have names
-prefixed with \textit{e}, and variables containing \textit{Behavior}s have
-names prefixed with \textit{b}.
+|Event|s are used like data streams, and |Behavior|s are used to store a
+snapshot of an |Event|: it allows for data persistence.  As such, we refer to
+|Event|s as if they were the data streams itself, and we refer to |Behavior|s
+as if they were the data itself.  |networkProcessor| is defined in terms of
+many small |Event|s and |Behavior|s to allow ease of understanding and enable
+UNIX-style composition of |Event|s and |Behavior|s.  This makes modifications
+easier than if the |Processor| was defined in a monolithic fashion.  As a
+convention, variables containing |Event|s have names prefixed with |e|, and
+variables containing |Behavior|s have names prefixed with |b|.
 
 %if False
 \begin{code}
@@ -247,13 +240,12 @@ networkProcessor p eKey
 %endif
 
 Due to the circular nature of the network, we need to make an assumption in
-order to explain the rest of the network.  We assume that the \textit{Behavior}
-\textit{bProc} is the list of remaining \textit{Process}es.
+order to explain the rest of the network.  We assume that the |Behavior|
+|bProc| is the list of remaining |Process|es.
 
-\textit{bProcChoiceMay} looks at the data inside \textit{bProc}, and if the
-data is a \textit{GlobalChoice}, \textit{bProcChoiceMay} converts that data
-into a 2-element list of the first choice \textit{g1} and the second choice
-\textit{g2}.
+|bProcChoiceMay| looks at the data inside |bProc|, and if the data is a
+|GlobalChoice|, |bProcChoiceMay| converts that data into a 2-element list of
+the first choice |g1| and the second choice |g2|.
 
 \begin{code}
   mdo let bProcChoiceMay :: Behavior (Maybe [Process])
@@ -266,11 +258,10 @@ into a 2-element list of the first choice \textit{g1} and the second choice
              bProc)
 \end{code}
 
-\textit{bProcChoiceFunc} is a function that maps \textit{Char}s into
-\textit{Process}es.  \textit{'1'} is converted into index 0, and \textit{'2'}
-is converted into index 1.  \textit{bProcChoiceFunc} uses these indexes to
-index into \textit{bProcChoiceMay}.  Therefore, it maps \textit{'1'} to
-\textit{'g1'}, and \textit{'2'} to \textit{'g2'}.
+|bProcChoiceFunc| is a function that maps |Char|s into |Process|es.  |'1'| is
+converted into index 0, and |'2'| is converted into index 1.  |bProcChoiceFunc|
+uses these indexes to index into |bProcChoiceMay|.  Therefore, it maps |'1'| to
+|'g1'|, and |'2'| to |'g2'|.
 
 \begin{code}
           bProcChoiceFunc :: Behavior (Char -> Process)
@@ -279,73 +270,68 @@ index into \textit{bProcChoiceMay}.  Therefore, it maps \textit{'1'} to
             bProcChoiceMay
 \end{code}
 
-\textit{eProcChoice} applies \textit{bProcChoiceFunc} on the stream of
-\textit{eChooserChoice}.  The resulting stream is the \textit{Process}es chosen
-by the user: either \textit{g1} or \textit{g2}.
+|eProcChoice| applies |bProcChoiceFunc| on the stream of |eChooserChoice|.  The
+resulting stream is the |Process|es chosen by the user: either |g1| or |g2|.
 
 \begin{code}
           eProcChoice :: Event Process
           eProcChoice = bProcChoiceFunc <@> eChooserChoice
 \end{code}
 
-\textit{bProcIsChoice} is \textit{True} only if \textit{bProcChoiceMay}
-contains the choice of \textit{g1} and \textit{g2}.  Otheriwse,
-\textit{bProcIsChoice} is \textit{False}.
+|bProcIsChoice| is |True| only if |bProcChoiceMay| contains the choice of |g1|
+and |g2|.  Otheriwse, |bProcIsChoice| is |False|.
 
 \begin{code}
           bProcIsChoice :: Behavior Bool
           bProcIsChoice = maybe False (const True) <$> bProcChoiceMay
 \end{code}
 
-\textit{eChooseMay} is identical to \textit{eKey} only when
-\textit{bProcIsChoice} is \textit{True}.  Otheriwse, \textit{eChooseMay} is an
-empty stream.  In other words, \textit{eChooseMay} allows us to look at the
-\textit{eKey} stream only when the list of remaining \textit{Process}es is a
-\textit{GlobalChoice}.  This restricts processing of user inputs to only when
-\textit{bProc} is a \textit{GlobalChoice}.
+|eChooseMay| is identical to |eKey| only when |bProcIsChoice| is |True|.
+Otheriwse, |eChooseMay| is an empty stream.  In other words, |eChooseMay|
+allows us to look at the |eKey| stream only when the list of remaining
+|Process|es is a|GlobalChoice|.  This restricts processing of user inputs to
+only when |bProc| is a |GlobalChoice|.
 
 \begin{code}
           eChooseMay :: Event Char
           eChooseMay = whenE bProcIsChoice (filterJust eKey)
 \end{code}
 
-\textit{eChooseMayNot} is similar to \textit{eChooseMay}: it is identical to
-\textit{eKey} only when \textit{bProcIsChoice} is \textit{False}.  Otheriwse,
-\textit{eChooseMayNot} is an empty stream.  In other words, \textit{eChooseMay}
-allows us to look at the \textit{eKey} stream only when the list of remaining
-\textit{Process}es is not a \textit{GlobalChoice}.  This restricts processing
-of user inputs to only when \textit{bProc} is not a \textit{GlobalChoice}.
+|eChooseMayNot| is similar to |eChooseMay|: it is identical to |eKey| only when
+|bProcIsChoice| is |False|.  Otheriwse, |eChooseMayNot| is an empty stream.  In
+other words, |eChooseMay| allows us to look at the |eKey| stream only when the
+list of remaining |Process|es is not a |GlobalChoice|.  This restricts
+processing of user inputs to only when |bProc| is not a |GlobalChoice|.
 
 \begin{code}
           eChooseMayNot :: Event Char
           eChooseMayNot = whenE (not <$> bProcIsChoice) (filterJust eKey)
 \end{code}
 
-The partitioned scopes of \textit{eChooseMay} and \textit{eChooseMayNot}
-ensures that further processing of data will be resttricted to only either one
-of those scopes.  This is helpful in reasoning about the behavior of the
-network.
+The partitioned scopes of |eChooseMay| and |eChooseMayNot| ensures that further
+processing of data will be resttricted to only either one of those scopes.
+This is helpful in reasoning about the behavior of the network.
 \par
-\textit{eStepper} is the stream of \textit{eChooseMayNot} when
-\textit{eChooseMayNot} has \textit{'s'} in its data stream.  \textit{'s'} is
-the character the user gives as input, in order to step the processor.
+|eStepper| is the stream of |eChooseMayNot| when |eChooseMayNot| has |'s'| in
+its data stream.  |'s'| is the character the user gives as input, in order to
+step the processor.
 
 \begin{code}
           eStepper :: Event Char
           eStepper = filterE (== 's') eChooseMayNot
 \end{code}
 
-\textit{eDigit} is the stream of \textit{eChooseMay} when \textit{eChooseMay}
-has any digits in its data stream.
+|eDigit| is the stream of |eChooseMay| when |eChooseMay| has any digits in its
+data stream.
 
 \begin{code}
           eDigit :: Event Char
           eDigit = filterE isDigit eChooseMay
 \end{code}
 
-\textit{eChooserChoice} is the stream of \textit{'1'}s and \textit{'2'}s inside
-\textit{eDigit}.  \textit{'1'}s and \textit{'2'}s are the characters the user
-gives as input, to choose \textit{g1} or \textit{g2} respectively.
+|eChooserChoice| is the stream of |'1'|s and |'2'|s inside |eDigit|.  |'1'|s
+and |'2'|s are the characters the user gives as input, to choose |g1| or |g2|
+respectively.
 
 \begin{code}
           eChooserChoice :: Event Char
@@ -366,28 +352,28 @@ gives as input, to choose \textit{g1} or \textit{g2} respectively.
 %endif
 
 Here is the function that completes the circular monadic sequential
-composition.  This function processes each step of the input \textit{Process}
-\textit{p}, and accumulates the results inside \textit{eTrans} and
-\textit{bProc}.  Processing handled by the \textit{processStep} function.
+composition.  This function processes each step of the input |Process|
+|p|, and accumulates the results inside |eTrans| and
+|bProc|.  Processing handled by the |processStep| function.
 \par
-\textit{unionWith} merges two incoming streams into one.  We know that this
+|unionWith| merges two incoming streams into one.  We know that this
 merged stream has no duplicates, because the two incomings streams,
-\textit{eProcChoice} and \textit{eStepper}, have disjoint scopes.
+|eProcChoice| and |eStepper|, have disjoint scopes.
 \par
-For the \textit{eProcChoice} stream, we just take the \textit{Process} inside
-\textit{eProcChoice}, and pass it on to \textit{processStep}.  Processing for
-the \textit{eStepper} stream is different: when the user triggers a step, the
-current \textit{bProc} is passed to \textit{processStep}, and
-\textit{processStep} returns an updated \textit{bProc}.
+For the |eProcChoice| stream, we just take the |Process| inside
+|eProcChoice|, and pass it on to |processStep|.  Processing for
+the |eStepper| stream is different: when the user triggers a step, the
+current |bProc| is passed to |processStep|, and
+|processStep| returns an updated |bProc|.
 \par
 To discharge our assumption when we first started analyzing this circular
-composition, that \textit{bProc} is the list of remaining \textit{Process}es,
-\textit{processStep} needs to return the correct \textit{bProc}.  Note that the
-initial \textit{bProc} is given by the input \textit{Process} \textit{p}, and
-we assume that this initial \textit{p} satisfies our assumption.  This is a
+composition, that |bProc| is the list of remaining |Process|es,
+|processStep| needs to return the correct |bProc|.  Note that the
+initial |bProc| is given by the input |Process| |p|, and
+we assume that this initial |p| satisfies our assumption.  This is a
 reasonable assumption to make, because it is reasonable to have undefined
 behavior when inputs to functions are not well-formed.  We defer the rest of
-the analysis (of \textit{processStep}) to the end of this section.
+the analysis (of |processStep|) to the end of this section.
 \par
 \begin{code}
       (eTrans :: Event (Maybe GlobalProtocol), bProc :: Behavior (Maybe Process)) <-
@@ -405,13 +391,12 @@ the analysis (of \textit{processStep}) to the end of this section.
 \end{code}
 %endif
 
-\textit{bStepCount} is the number of steps the user made so far.  It
-accumulates an integer with initial value zero, and applies an increment
-function \textit{(+ 1)} whenever \textit{bProc} has a \textit{Just} value, and
-the user makes a step.  This means that, when we are done processing, the input
-\textit{Process} \textit{p} is completely consumed, and \textit{bProc} will
-have \textit{Nothing}.  In this case, the increment function will not be
-applied.
+|bStepCount| is the number of steps the user made so far.  It accumulates an
+integer with initial value zero, and applies an increment function |(+ 1)|
+whenever |bProc| has a |Just| value, and the user makes a step.  This means
+that, when we are done processing, the input |Process| |p| is completely
+consumed, and |bProc| will have |Nothing|.  In this case, the increment
+function will not be applied.
 
 \begin{code}
       (bStepCount :: Behavior Int) <-
@@ -420,40 +405,38 @@ applied.
           ((+ 1) <$ whenE ((maybe False (const True)) <$> bProc) eStepper)
 \end{code}
 
-\textit{eDone} indicates that \textit{bProc} is completely consumed.  Note the
-similarities in implementation as compared to \textit{bStepCount}, except that
-the data in \textit{eStepper} is converted to the unit value \textit{()} before
-further processing.  This ensures that \textit{eDone} will have a type of
-\textit{Event ()}.  We use the unit type because we only need an event to
-indicate that processing is done.
+|eDone| indicates that |bProc| is completely consumed.  Note the similarities
+in implementation as compared to |bStepCount|, except that the data in
+|eStepper| is converted to the unit value |()| before further processing.  This
+ensures that |eDone| will have a type of |Event ()|.  We use the unit type
+because we only need an event to indicate that processing is done.
 
 \begin{code}
       let eDone :: Event ()
           eDone = whenE ((maybe True (const False)) <$> bProc) (() <$ eStepper)
 \end{code}
 
-Lastly, \textit{networkDescription} returns a 4-tuple \textit{(eTrans, bProc,
-eDone, bStepCount)} to be used by \textit{networkPrinter} and external modules
-(like \textit{networkTransmit} in \textit{Frontend.lhs}).
+Lastly, |networkDescription| returns a 4-tuple |(eTrans, bProc, eDone, 
+bStepCount)| to be used by |networkPrinter| and external modules (like 
+|networkTransmit| in |Frontend.lhs|).
 
 \begin{code}
       return (eTrans, bProc, eDone, bStepCount)
 \end{code}
 
-\textit{networkPrinter} allows the processor to be run on the textual interface
-defined in \textit{Interpreter.lhs}.  We print many things:
+|networkPrinter| allows the processor to be run on the textual interface
+defined in |Interpreter.lhs|.  We print many things:
 \begin{enumerate}
-  \item Transmissions from \textit{eTrans},
-  \item Changes in \textit{bProc}, which are first converted to
-  \textit{GlobalProtocol}s by the \textit{mayProcessToGlobalProtocol} function
-  (more about this function later), then projected to endpoint transmissions.
-  Since the unparsing function \textit{un} takes an input of type
-  \textit{GlobalProtocol} as input, we have to convert \textit{EndpointSend}s
-  and \textit{EndpointReceive}s back into \textit{GlobalTransimission}s, with
+  \item Transmissions from |eTrans|,
+  \item Changes in |bProc|, which are first converted to |GlobalProtocol|s by
+  the |mayProcessToGlobalProtocol| function (more about this function later),
+  then projected to endpoint transmissions.  Since the unparsing function |un|
+  takes an input of type |GlobalProtocol| as input, we have to convert
+  |EndpointSend|s and |EndpointReceive|s back into |GlobalTransimission|s, with
   some blank fields.
   \item Changes in step count, and
-  \item \textit{"Done!"} to indicate that the processor has completely consumed
-  \textit{bProc}.
+  \item |"Done!"| to indicate that the processor has completely consumed
+  |bProc|.
 \end{enumerate}
 
 \begin{code}
@@ -517,13 +500,13 @@ channelsInGlobalProtocol g =
 \end{code}
 %endif
 
-\textit{mayProcessToGlobalProtocol} returns a \textit{EGlobalProtocolEmp} if
-its input is \textit{Nothing}.  Otherwise, it applies a fixpoint function on
-the input: this fixpoint function is accessible from within itself as
-\textit{r}.  We deconstruct \textit{Leaf} \textit{Process}es in the expected
-manner.  We deconstruct the other \textit{Process}es, \textit{NodeS}s and
-\textit{NodeC}s, by recursing on only the head of the contained lists.  If the
-list is empty, then the fixpoint function returns \textit{EGlobalProtocolEmp}.
+|mayProcessToGlobalProtocol| returns a |EGlobalProtocolEmp| if its input is
+|Nothing|.  Otherwise, it applies a fixpoint function on the input: this
+fixpoint function is accessible from within itself as |r|.  We deconstruct
+|Leaf| |Process|es in the expected manner.  We deconstruct the other
+|Process|es, |NodeS|s and |NodeC|s, by recursing on only the head of the
+contained lists.  If the list is empty, then the fixpoint function returns
+|EGlobalProtocolEmp|.
 
 \begin{code}
 mayProcessToGlobalProtocol :: Maybe Process -> GlobalProtocol
@@ -553,60 +536,53 @@ parseContents xs =
 \end{code}
 %endif
 
-\textit{processStep} deconstructs a single level of \textit{Process}, to return
-a tuple of \textit{Maybe GlobalProtocol} and \textit{Maybe Process}.  This
-\textit{GlobalProtocol} is actually a \textit{GlobalTransmission}, and the
-returned \textit{Process} is the rest of the unprocessed \textit{Process}es.
-This way of interpretation draws parallels between \textit{procesStep} and the
-model of a debugger.  We now explain how \textit{processStep} derives its
-return value.
+|processStep| deconstructs a single level of |Process|, to return a tuple of
+|Maybe GlobalProtocol| and |Maybe Process|.  This |GlobalProtocol| is actually
+a |GlobalTransmission|, and the returned |Process| is the rest of the
+unprocessed |Process|es.  This way of interpretation draws parallels between
+|procesStep| and the model of a debugger.  We now explain how |processStep|
+derives its return value.
 \par
-Firstly, we analyze \textit{Maybe GlobalProtocol} return value.  When
-deconstructing with binary operators, \textit{Maybe GlobalProtocol} is
-\textit{Nothing}, as deconstructing a single level of \textit{Process} does not
-yield any transmissions.  However, for all other types of
-\textit{GlobalProtocol}s, and in the recursive calls to \textit{processStep},
-some \textit{GlobalTransmission} is yielded.  We do not handle
-\textit{GlobalChoice} here, since it is already handled by
-\textit{networkProcessor}.
+Firstly, we analyze |Maybe GlobalProtocol| return value.  When deconstructing
+with binary operators, |Maybe GlobalProtocol| is |Nothing|, as deconstructing a
+single level of |Process| does not yield any transmissions.  However, for all
+other types of |GlobalProtocol|s, and in the recursive calls to |processStep|,
+some |GlobalTransmission| is yielded.  We do not handle |GlobalChoice| here,
+since it is already handled by |networkProcessor|.
 \par
-Secondly, we analyze the \textit{Maybe Process} return value.  We apply
-induction on the structure of \textit{Process}, with an induction hypothesis
-that the \textit{Maybe Process} return value of the subsequent call to
-\textit{processStep} is well-formed.  We split our analysis by cases.  If the
-input \textit{Process} \textit{p} is a \textit{Leaf}, then the \textit{Process}
-return value is a well-formed process, since the \textit{Process} constructors
-\textit{NodeC} and \textit{NodeS} are used.  Otherwise, if the input \textit{p
-:: Process} is a \textit{NodeS} or \textit{NodeC}, then we deconstruct the node
-into its well-formed head \textit{p :: Maybe Process} and tail \textit{ps ::
-[Maybe Process]}.  We next take the \textit{p' :: Maybe Process} from the
-subsequent call to \textit{processStep}, which we know is well-formed by our
-induction hypothesis.  Then, we form \textit{ps' :: [Maybe Process]} by
-prepending \textit{p'} to \textit{ps} only if \textit{p'} is not
-\textit{Nothing}.  Since both \textit{p'} and \textit{ps} are well-formed, thus
-both \textit{NodeS ps'} and \textit{NodeC ps'} are also well-formed.
+Secondly, we analyze the |Maybe Process| return value.  We apply induction on
+the structure of |Process|, with an induction hypothesis that the |Maybe
+Process| return value of the subsequent call to |processStep| is well-formed.  
+We split our analysis by cases.  If the input |Process| |p| is a |Leaf|, then 
+the |Process| return value is a well-formed process, since the |Process| 
+constructors |NodeC| and |NodeS| are used.  Otherwise, if the input |p :: 
+Process| is a |NodeS| or |NodeC|, then we deconstruct the node into its 
+well-formed head |p :: Maybe Process| and tail |ps :: [Maybe Process]|.  We 
+next take the |p' :: Maybe Process| from the subsequent call to |processStep|, 
+which we know is well-formed by our induction hypothesis.  Then, we form |ps' 
+:: [Maybe Process]| by prepending |p'| to |ps| only if |p'| is not |Nothing|.  
+Since both |p'| and |ps| are well-formed, thus both |NodeS ps'| and |NodeC ps'| 
+are also well-formed.
 \par
 We now fully discharge the assumption that we had at the beginning of our
-circular analysis of \textit{networkProcessor}.  Remember that we reasonably
-claimed that the input \textit{Process} to \textit{networkProcessor} satisfies
-our assumption.  Now, we can observe that the inductive step is true, that
-subsequent \textit{Maybe Process} are also well-formed.  This stems from what
-we have shown, that \textit{processStep} returns a well-formed \textit{Maybe
-Process}.
+circular analysis of |networkProcessor|.  Remember that we reasonably claimed
+that the input |Process| to |networkProcessor| satisfies our assumption.  Now,
+we can observe that the inductive step is true, that subsequent |Maybe Process|
+are also well-formed.  This stems from what we have shown, that |processStep|
+returns a well-formed |Maybe Process|.
 \par
-To observe that the returned \textit{Maybe Process} is the list of remaining
-unprocessed processes, just note that for each call to \textit{processStep},
-processing is done only on the head of the input \textit{Process}, and the
-results from that processing is prepended onto the tail of the input
-\textit{Process}.
+To observe that the returned |Maybe Process| is the list of remaining
+unprocessed processes, just note that for each call to |processStep|,
+processing is done only on the head of the input |Process|, and the results
+from that processing is prepended onto the tail of the input |Process|.
 \par
 This circular nature of the network is strongly reminiscent of Hughes'
-\textit{ArrowLoop} class, where signals output from the \textit{Arrow} are fed
-back as input.  Indeed, if we define \textit{reactive-banana} behavior
-transformations as \textit{Arrow}s, then we would be able to replace the
-circular network with an \textit{ArrowLoop}.  However, choosing this more
-imperative style eases explanation, and the reader does not need to understand
-arrows in order to understand the \textit{reactive-banana} network.
+|ArrowLoop| class, where signals output from the |Arrow| are fed back as input.
+Indeed, if we define |reactive-banana| behavior transformations as |Arrow|s,
+then we would be able to replace the circular network with an |ArrowLoop|.
+However, choosing this more imperative style eases explanation, and the reader
+does not need to understand arrows in order to understand the |reactive-banana|
+network.
 
 \begin{code}
 processStep :: Maybe Process -> (Maybe GlobalProtocol, Maybe Process)

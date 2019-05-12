@@ -187,7 +187,7 @@ networkDescription filePath eKey =
 \textit{networkProcessor} is defined as a recursive monadic-do, meaning there
 is some cycle in the sequential composition of monads.
 \\\begin{center}
-\includegraphics[scale=0.4]{../ecce/plantuml/processor.png}
+\includegraphics[scale=0.2125]{../ecce/plantuml/processor.png}
 \end{center}
 }
 

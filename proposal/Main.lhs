@@ -39,13 +39,13 @@ Transforms structured data.
 
 \defslide{Types}{
 \begin{center}
-\includegraphics[scale=0.4]{../ecce/plantuml/transformations.png}
+\includegraphics[scale=0.2]{../ecce/plantuml/transformations.png}
 \end{center}
 }
 
 \defslide{Modules}{
 \begin{center}
-\includegraphics[scale=0.5]{../ecce/plantuml/modules.png}
+\includegraphics[scale=0.3]{../ecce/plantuml/modules.png}
 \end{center}
 }
 

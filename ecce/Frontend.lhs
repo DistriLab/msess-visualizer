@@ -137,7 +137,7 @@ numTransmitsOnScreenMax =
 
 \defslide{FrontendDiagram}{
 \begin{center}
-\includegraphics[scale=0.5]{../ecce/plantuml/network.png}
+\includegraphics[scale=0.225]{../ecce/plantuml/network.png}
 \end{center}
 }
 

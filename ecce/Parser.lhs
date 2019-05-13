@@ -93,7 +93,19 @@ type Test = (Integer, String, String)
 
 main :: IO ()
 main = mainHaskeline commandOutputs incommandOutput
+\end{code}
+%endif
 
+As a concrete example, we show the interpreter configuration for |Parser.lhs|.
+\begin{itemize}
+    \item |commandOutputs| maps three commands: |"help"|, |"load"|, |"test"|,
+    to three behaviors.
+    \item |"help"| depends on argument 2: the list of commands.
+    \item |"load"| and |"test"| depends on argument 3: the rest of the input
+    line.
+\end{itemize}
+
+\begin{code}
 commandOutputs :: [(String, Output)]
 commandOutputs =
   [ ( "help"
@@ -104,12 +116,23 @@ commandOutputs =
   , ( "test"
     , \(_, _, restInputLine) -> parseFileTest restInputLine >>= mapM_ putStrLn)
   ]
+\end{code}
 
+On failure to match command keys to the command mapping, the parser will use
+|incommandOutput|.  The parser's behavior is configured to depend on the
+|inputLine|.
+
+\begin{code}
 incommandOutput :: Output
 incommandOutput =
   \(inputLine, _, _) ->
     putStrLn $ extractParseShow parseGlobalProtocol inputLine
+\end{code}
 
+In summary, the |Output| type exposes tokens of user inputs |(String, [String],
+String]|, for the printing behavior |IO ()| to be defined on.
+
+%if False
 -- Parse file at filePath with shower
 parseFile ::
      Show a

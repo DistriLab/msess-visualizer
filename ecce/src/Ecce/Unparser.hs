@@ -169,3 +169,46 @@ un (AnyExpr e)
 
 unSep :: String -> [AnyExpr] -> String
 unSep s es = intercalate s (map un es)
+
+uml :: AnyExpr -> [String]
+uml (AnyExpr e)
+  -- Constructors defined in Expr
+ =
+  case e of
+    EGlobalProtocolTransmission s i r c v f ->
+      return $
+      join $
+      un (AnyExpr s) :
+      "->" :
+      un (AnyExpr r) :
+      ":(" :
+      un (AnyExpr i) :
+      ")" :
+      un (AnyExpr c) : "<" : un (AnyExpr v) : "." : un (AnyExpr f) : ">" : []
+    EGlobalProtocolConcurrency g1 g2 ->
+      "par" : uml (AnyExpr g1) ++ uml (AnyExpr g2) ++ "end" : []
+    EGlobalProtocolChoice g1 g2 ->
+      "alt choice 1" :
+      uml (AnyExpr g1) ++ "else choice 2" : uml (AnyExpr g2) ++ "end" : []
+    EGlobalProtocolSequencing g1 g2 ->
+      join $ map uml (AnyExpr g1 : AnyExpr g2 : [])
+    EGlobalProtocolAssumption a -> "Assumption(" : un (AnyExpr a) : ")" : []
+    EGlobalProtocolGuard a -> "Guard(" : un (AnyExpr a) : ")" : []
+    EGlobalProtocolEmp -> []
+
+exportPlantuml :: AnyExpr -> [String]
+exportPlantuml a = header : uml a ++ footer : []
+  where
+    header = "@startuml"
+    footer = "@enduml"
+
+parseAndExport :: String -> [String]
+parseAndExport s = map (++ "\n") $ exportPlantuml e
+  where
+    Right e = extractParse parseExpr s
+
+exportAndWrite :: FilePath -> String -> IO ()
+exportAndWrite f s = writeFile f $ join $ parseAndExport s
+
+readAndWrite :: FilePath -> FilePath -> IO ()
+readAndWrite i o = readFile i >>= exportAndWrite o

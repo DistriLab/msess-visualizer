@@ -5,7 +5,7 @@ cabal new-install .
 ```
 
 # GHCi
-With the new version of `cabal-install`, to avoid passing `-package` options to 
+With the new version of `cabal-install`, to avoid passing `-package` options to
 `ghci`, use:
 ```
 cabal new-repl
@@ -86,12 +86,24 @@ Quitting
 ecce>
 ```
 
+## Unparser.hs
+```
+ghci Unparser.hs
+*Unparser> main
+```
+
+### Example Execution
+```
+λ> readAndWrite "test/processor/example" "test.pu"
+(0.02 secs, 1,274,856 bytes)
+```
+
 ## Main.hs
 Within the GUI, use the same keybindings as for `Processor.hs`.
 
 ### Performance
-Running either `Frontend.hs` or `Main.hs` in `ghci` often takes 100% CPU. To 
-reduce CPU (and memory) usage, compile the Main module to generate the 
+Running either `Frontend.hs` or `Main.hs` in `ghci` often takes 100% CPU. To
+reduce CPU (and memory) usage, compile the Main module to generate the
 executable (`ghc Main.hs`), and then run the compiled executable (`Main`).
 
 # Notes
@@ -102,7 +114,7 @@ Every branch has a `patch-notes.md` that has:
 - Title: the name of the branch
 - Description: what the branch modifies
 The idea is:
-- The default branch is the simplest implementation with less code and less 
+- The default branch is the simplest implementation with less code and less
   features. Code is easier to read and understand.
-- If users want a specific feature, they checkout a branch, generate a diff 
+- If users want a specific feature, they checkout a branch, generate a diff
   patch against the default branch, and apply the changes in that patch.

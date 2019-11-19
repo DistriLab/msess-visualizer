@@ -1,2 +1,2 @@
-# ecce-standalone
-This branch removes extraneous dependencies from ecce.
+# mxgraph
+Allow processor to output mxgraph syntax.

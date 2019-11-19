@@ -20,7 +20,7 @@ import Data.Char (isDigit)
 import Data.Either (rights)
 import Data.Functor ((<$), (<$>))
 import Data.List (intercalate, nub)
-import Data.Maybe (fromJust)
+import Data.Maybe (fromJust, maybeToList)
 import Ecce.Base (extractParse)
 import Ecce.Interpreter (Output, mainHaskeline)
 import Ecce.Parser
@@ -293,6 +293,12 @@ processStep p =
           where (s', p') = processStep (Just p)
                 ps' = maybe ps (: ps) p'
         NodeC [] -> (Nothing, Nothing)
-        NodeC (p:ps) -> (s', Just $ NodeC ps')
-          where (s', p') = processStep (Just p)
-                ps' = maybe ps (: ps) p'
+        NodeC ps -> (Just ss, Just $ NodeC ps')
+          where (ss, ps') =
+                  foldr
+                    (\(s, p) ->
+                       (\(t, q) ->
+                          ( maybe t (EGlobalProtocolConcurrency t) s
+                          , maybeToList p ++ q)))
+                    (EGlobalProtocolEmp, []) $
+                  map (processStep . Just) ps

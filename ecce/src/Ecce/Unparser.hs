@@ -196,14 +196,14 @@ uml (AnyExpr e)
     EGlobalProtocolGuard a -> "Guard(" : un (AnyExpr a) : ")" : []
     EGlobalProtocolEmp -> []
 
-exportPlantuml :: AnyExpr -> [String]
-exportPlantuml a = header : uml a ++ footer : []
+exportUml :: AnyExpr -> [String]
+exportUml a = header : uml a ++ footer : []
   where
     header = "@startuml"
     footer = "@enduml"
 
 parseAndExport :: String -> [String]
-parseAndExport s = map (++ "\n") $ exportPlantuml e
+parseAndExport s = map (++ "\n") $ exportUml e
   where
     Right e = extractParse parseExpr s
 

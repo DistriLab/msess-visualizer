@@ -7,7 +7,7 @@ dist/
 dist-newstyle/
 dist-ghcjs/
 ecce-result
-ecce-frontend-result
+ecce-gloss-result
 .ghc.environment.x86_64-linux-8.6.5
 *.png
 ecce/Main

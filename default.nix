@@ -2,11 +2,11 @@
 (import /home/koo/github/reflex-platform { inherit system; }).project ({ pkgs, ...  }: {
   packages = {
     ecce = ./ecce;
-    ecce-frontend = ./ecce-frontend;
+    ecce-gloss = ./ecce-gloss;
   };
 
   shells = {
-    ghc = ["ecce"];
-    ghcjs = ["ecce-frontend"];
+    ghc = ["ecce" "ecce-gloss"];
+    ghcjs = [];
   };
 })

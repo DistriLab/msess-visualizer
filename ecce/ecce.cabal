@@ -13,6 +13,7 @@ maintainer:          root@zhengqunkoo.com
 -- copyright:           
 category:            Concurrency
 build-type:          Simple
+data-dir:            test
 
 library
   exposed-modules:     Ecce.Base
@@ -22,6 +23,7 @@ library
                      , Ecce.Unparser
                      , Ecce.Processor
                      , Ecce.Frontend
+  other-modules:       Paths_ecce
   build-depends:       base >=4.2 && <5
                      , reactive-banana
                      , gloss

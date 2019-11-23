@@ -53,6 +53,7 @@ import Graphics.Gloss.Interface.IO.Game
   , MouseButton(WheelDown, WheelUp)
   , playIO
   )
+import Paths_ecce
 import Reactive.Banana
   ( Behavior
   , Event
@@ -113,7 +114,8 @@ textScale = 0.1
  -}
 main :: IO ()
 main = do
-  xs <- extractFile "test/processor/example"
+  filename <- getDataFileName "processor/example"
+  xs <- extractFile filename
   let p = fmap head (parseContents xs)
       Just (Leaf g) = p -- TODO deconstruct p better
       (picBase, extentsMap) = drawParties (showParties g)

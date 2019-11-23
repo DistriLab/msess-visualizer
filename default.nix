@@ -4,9 +4,11 @@
     ecce = ./ecce;
     ecce-haskeline = ./ecce-haskeline;
     ecce-gloss = ./ecce-gloss;
+    ecce-mxgraph = ./ecce-mxgraph;
   };
 
   shells = {
     ghc = ["ecce" "ecce-gloss" "ecce-haskeline"];
+    ghcjs = ["ecce-mxgraph"];
   };
 })

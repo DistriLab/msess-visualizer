@@ -1,0 +1,3 @@
+[submodule "ecce-mxgraph/grapheditor-mod"]
+	path = ecce-mxgraph/grapheditor-mod
+	url = zhengqun@loris-5.d2.comp.nus.edu.sg:/home/zhengqun/grapheditor-mod

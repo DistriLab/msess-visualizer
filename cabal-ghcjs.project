@@ -1,3 +1,4 @@
 compiler: ghcjs
 packages:
   ecce/
+  ecce-mxgraph/

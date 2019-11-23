@@ -1,4 +1,6 @@
 module Main where
 
+import qualified Ecce.Gloss.Frontend (main)
+
 main :: IO ()
-main = putStrLn "Hello, Haskell!"
+main = Ecce.Gloss.Frontend.main

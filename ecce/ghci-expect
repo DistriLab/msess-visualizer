@@ -1,0 +1,17 @@
+#!/usr/bin/env expect
+
+set ghci_options [lindex $argv 0]
+
+log_user 0
+spawn ghci $ghci_options
+log_user 1
+
+expect ".*> "
+send ":set prompt \"\\x03BB> \"\n"
+
+expect "\\x03BB> "
+send "main\n"
+expect "ecce> "
+send "help\n"
+
+interact

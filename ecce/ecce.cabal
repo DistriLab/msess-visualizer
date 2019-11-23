@@ -30,21 +30,3 @@ library
                      , transformers
   if impl(ghc >=7.8.1)
       build-depends: gloss-algorithms
-
-executable ecce
-  main-is: Main.hs
-  other-modules:       Base
-                     , Interpreter
-                     , Parser
-                     , Projector
-                     , Unparser
-                     , Processor
-                     , Frontend
-  build-depends:       base >=4.2 && <5
-                     , reactive-banana
-                     , haskeline
-                     , gloss
-                     , parsec
-                     , transformers
-  if impl(ghc >=7.8.1)
-      build-depends: gloss-algorithms

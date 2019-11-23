@@ -8,7 +8,7 @@ version:             0.1.0.0
 license:             BSD-3-Clause
 license-file:        LICENSE
 author:              Zhengqun Koo
-maintainer:          zhengqun.koo@gmail.com
+maintainer:          root@zhengqunkoo.com
 -- copyright:           
 category:            Concurrency
 build-type:          Simple

@@ -29,12 +29,6 @@ import Text.Parsec ((<|>), anyChar, many, space, string, try)
 -- So that the interpret function can be generalized
 type Output = (String, [String], String) -> IO ()
 
-mainHaskeline :: [(String, Output)] -> Output -> IO ()
-mainHaskeline commandOutputs incommandOutput = do
-  welcome
-  runInputT defaultSettings $
-    interpreterHaskeline commandOutputs incommandOutput
-
 mainRegular :: [(String, Output)] -> Output -> IO ()
 mainRegular commandOutputs incommandOutput = do
   welcome
@@ -50,16 +44,6 @@ interpreterRegular commandOutputs incommandOutput = do
   inputLine <- getLine
   interpret commandOutputs incommandOutput inputLine
   interpreterRegular commandOutputs incommandOutput
-
-interpreterHaskeline :: [(String, Output)] -> Output -> InputT IO ()
-interpreterHaskeline commandOutputs incommandOutput = do
-  mInputLine <- getInputLine "ecce> "
-  maybe
-    (outputStrLn "Quitting")
-    (\inputLine ->
-       (liftIO $ interpret commandOutputs incommandOutput inputLine) >>
-       interpreterHaskeline commandOutputs incommandOutput)
-    mInputLine
 
 -- Parses inputLine for command, parsers extracted from keys of input (1)
 -- Looks up parsed command in input (1), to determine correct function to call

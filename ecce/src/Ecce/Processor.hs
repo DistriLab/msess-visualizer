@@ -70,7 +70,7 @@ import System.IO (FilePath)
  - SECTION USER INTERFACE
  -}
 main :: IO ()
-main = mainHaskeline commandOutputs incommandOutput
+main = mainRegular commandOutputs incommandOutput
 
 commandOutputs :: [(String, Output)]
 commandOutputs =

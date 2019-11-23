@@ -23,7 +23,7 @@ import Ecce.Parser (AnyExpr(AnyExpr), AnyExpr, Expr(..), parseExpr)
 type Test = (Integer, String, String)
 
 main :: IO ()
-main = mainHaskeline commandOutputs incommandOutput
+main = mainRegular commandOutputs incommandOutput
 
 commandOutputs :: [(String, Output)]
 commandOutputs =

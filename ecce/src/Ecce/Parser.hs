@@ -35,7 +35,7 @@ import qualified Text.ParserCombinators.Parsec.Token as Token
 type Test = (Integer, String, String)
 
 main :: IO ()
-main = mainHaskeline commandOutputs incommandOutput
+main = mainRegular commandOutputs incommandOutput
 
 commandOutputs :: [(String, Output)]
 commandOutputs =

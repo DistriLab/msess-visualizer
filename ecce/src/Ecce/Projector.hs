@@ -6,12 +6,12 @@
 {-
  - SECTION MODULE
  -}
-module Projector where
+module Ecce.Projector where
 
 {-
  - SECTION IMPORTS
  -}
-import Parser
+import Ecce.Parser
   ( Assertion
   , Channel
   , Constraint

@@ -9,13 +9,13 @@
 {-
  - SECTION MODULE
  -}
-module Interpreter where
+module Ecce.Interpreter where
 
 {-
  - SECTION IMPORTS
  -}
-import Base (SParsec, extractParse)
 import Control.Monad.IO.Class (liftIO)
+import Ecce.Base (SParsec, extractParse)
 import System.Console.Haskeline
   ( InputT
   , defaultSettings

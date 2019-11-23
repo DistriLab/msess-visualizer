@@ -15,18 +15,19 @@ category:            Concurrency
 build-type:          Simple
 
 library
-  exposed-modules:     Base
-                     , Interpreter
-                     , Parser
-                     , Projector
-                     , Unparser
-                     , Processor
-                     , Frontend
+  exposed-modules:     Ecce.Base
+                     , Ecce.Interpreter
+                     , Ecce.Parser
+                     , Ecce.Projector
+                     , Ecce.Unparser
+                     , Ecce.Processor
+                     , Ecce.Frontend
   build-depends:       base >=4.2 && <5
                      , reactive-banana
                      , haskeline
                      , gloss
                      , parsec
                      , transformers
+  hs-source-dirs:      src
   if impl(ghc >=7.8.1)
       build-depends: gloss-algorithms

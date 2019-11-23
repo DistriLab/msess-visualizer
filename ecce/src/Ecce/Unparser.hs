@@ -6,16 +6,16 @@
 {-
  - SECTION MODULE
  -}
-module Unparser where
+module Ecce.Unparser where
 
 {-
  - SECTION IMPORTS
  -}
-import Base (extractParse)
 import Control.Monad (join)
 import Data.List (intercalate)
-import Interpreter (Output, mainHaskeline)
-import Parser (AnyExpr(AnyExpr), AnyExpr, Expr(..), parseExpr)
+import Ecce.Base (extractParse)
+import Ecce.Interpreter (Output, mainHaskeline)
+import Ecce.Parser (AnyExpr(AnyExpr), AnyExpr, Expr(..), parseExpr)
 
 {-
  - SECTION USER INTERFACE

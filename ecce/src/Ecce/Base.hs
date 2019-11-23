@@ -4,7 +4,7 @@
 {-
  - SECTION MODULE
  -}
-module Base where
+module Ecce.Base where
 
 {-
  - SECTION IMPORTS

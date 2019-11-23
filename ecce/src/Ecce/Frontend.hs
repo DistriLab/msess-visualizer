@@ -7,7 +7,7 @@
 {-
  - SECTION MODULE
  -}
-module Frontend where
+module Ecce.Frontend where
 
 {-
  - SECTION IMPORTS
@@ -16,6 +16,22 @@ import Control.Arrow (Kleisli(Kleisli), (***), returnA, runKleisli)
 import Control.Monad ((>=>), join)
 import Data.IORef (IORef, newIORef, readIORef, writeIORef)
 import Data.List (intercalate, nub)
+import Ecce.Parser
+  ( AnyExpr(AnyExpr)
+  , Expr(EEvent, EGlobalProtocolTransmission)
+  , GlobalProtocol
+  , Role
+  , extractFile
+  )
+import qualified Ecce.Parser (Event)
+import Ecce.Processor
+  ( Process(Leaf)
+  , networkProcessor
+  , parseContents
+  , partiesInGlobalProtocol
+  )
+import Ecce.Projector (ev)
+import Ecce.Unparser (un)
 import Graphics.Gloss
   ( Display(InWindow)
   , Picture
@@ -37,21 +53,6 @@ import Graphics.Gloss.Interface.IO.Game
   , MouseButton(WheelDown, WheelUp)
   , playIO
   )
-import Parser
-  ( AnyExpr(AnyExpr)
-  , Expr(EEvent, EGlobalProtocolTransmission)
-  , GlobalProtocol
-  , Role
-  , extractFile
-  )
-import qualified Parser (Event)
-import Processor
-  ( Process(Leaf)
-  , networkProcessor
-  , parseContents
-  , partiesInGlobalProtocol
-  )
-import Projector (ev)
 import Reactive.Banana
   ( Behavior
   , Event
@@ -75,7 +76,6 @@ import Reactive.Banana.Frameworks
   , newAddHandler
   , reactimate'
   )
-import Unparser (un)
 
 {-
  - SECTION CONFIG
@@ -257,7 +257,7 @@ transToDesc :: Expr GlobalProtocol -> String
 transToDesc (EGlobalProtocolTransmission _ i _ c v f) =
   intercalate " " $ map un [AnyExpr i, AnyExpr c, AnyExpr v, AnyExpr f]
 
-eventToRole :: Expr Parser.Event -> Expr Role
+eventToRole :: Expr Ecce.Parser.Event -> Expr Role
 eventToRole (EEvent p _) = p
 
 -- TODO srX :: (Maybe Extent, Maybe Extent) -> (Float, Float)

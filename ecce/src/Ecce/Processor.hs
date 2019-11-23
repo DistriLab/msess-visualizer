@@ -8,12 +8,11 @@
 {-
  - SECTION MODULE
  -}
-module Processor where
+module Ecce.Processor where
 
 {-
  - SECTION IMPORTS
  -}
-import Base (extractParse)
 import Control.Monad (when)
 import Control.Monad.Fix (fix)
 import Control.Monad.IO.Class (liftIO)
@@ -22,8 +21,9 @@ import Data.Either (rights)
 import Data.Functor ((<$), (<$>))
 import Data.List (intercalate, nub)
 import Data.Maybe (fromJust)
-import Interpreter (Output, mainHaskeline)
-import Parser
+import Ecce.Base (extractParse)
+import Ecce.Interpreter (Output, mainHaskeline)
+import Ecce.Parser
   ( AnyExpr(AnyExpr)
   , Channel
   , EndpointProtocol
@@ -36,7 +36,8 @@ import Parser
   , extractFile
   , parseGlobalProtocol
   )
-import Projector (ev, projectGlobalToParty, projectPartyToEndpoint, tr)
+import Ecce.Projector (ev, projectGlobalToParty, projectPartyToEndpoint, tr)
+import Ecce.Unparser (un)
 import Reactive.Banana
   ( Behavior
   , Event
@@ -64,7 +65,6 @@ import Reactive.Banana.Frameworks
   , reactimate'
   )
 import System.IO (FilePath)
-import Unparser (un)
 
 {-
  - SECTION USER INTERFACE

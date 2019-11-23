@@ -9,16 +9,16 @@
 {-
  - SECTION MODULE
  -}
-module Parser where
+module Ecce.Parser where
 
 {-
  - SECTION IMPORTS
  -}
-import Base (SParsec, extractParse)
 import Control.Exception (SomeException)
 import qualified Control.Exception (try)
 import Control.Monad (liftM)
-import Interpreter (Output, mainHaskeline)
+import Ecce.Base (SParsec, extractParse)
+import Ecce.Interpreter (Output, mainHaskeline)
 import System.IO (FilePath, readFile)
 import Text.Parsec ((<|>), alphaNum, between, lower, sepBy, sepBy1, try)
 import Text.ParserCombinators.Parsec.Expr

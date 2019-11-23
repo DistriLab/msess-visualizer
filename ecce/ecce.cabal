@@ -24,7 +24,6 @@ library
                      , Ecce.Frontend
   build-depends:       base >=4.2 && <5
                      , reactive-banana
-                     , haskeline
                      , gloss
                      , parsec
                      , transformers

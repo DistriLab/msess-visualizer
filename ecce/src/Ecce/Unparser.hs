@@ -14,7 +14,7 @@ module Ecce.Unparser where
 import Control.Monad (join)
 import Data.List (intercalate)
 import Ecce.Base (extractParse)
-import Ecce.Interpreter (Output, mainHaskeline)
+import Ecce.Interpreter (Output, mainRegular)
 import Ecce.Parser (AnyExpr(AnyExpr), AnyExpr, Expr(..), parseExpr)
 
 {-

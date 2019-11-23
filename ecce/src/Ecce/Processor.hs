@@ -22,7 +22,7 @@ import Data.Functor ((<$), (<$>))
 import Data.List (intercalate, nub)
 import Data.Maybe (fromJust)
 import Ecce.Base (extractParse)
-import Ecce.Interpreter (Output, mainHaskeline)
+import Ecce.Interpreter (Output, mainRegular)
 import Ecce.Parser
   ( AnyExpr(AnyExpr)
   , Channel

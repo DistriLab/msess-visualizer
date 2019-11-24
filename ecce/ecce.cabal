@@ -22,7 +22,7 @@ library
                      , Ecce.Projector
                      , Ecce.Unparser
                      , Ecce.Processor
-  other-modules:       Paths_ecce
+                     , Paths_ecce
   build-depends:       base >=4.2 && <5
                      , reactive-banana
                      , parsec

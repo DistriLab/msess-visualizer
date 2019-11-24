@@ -40,6 +40,7 @@ import GHCJS.Foreign.Callback
   ( Callback
   , OnBlocked(ContinueAsync)
   , releaseCallback
+  , syncCallback
   , syncCallback1
   )
 import GHCJS.Marshal.Pure (pFromJSVal, pToJSVal)
@@ -62,10 +63,7 @@ foreign import javascript unsafe "new Show().show($1)" mx_show
 
 foreign import javascript unsafe "replPrint($1)" mx_print :: JSString -> IO ()
 
-foreign import javascript unsafe "new Cloner().replaceNested($1, replRead, [0, 0, 0])" mx_cloner_replaceNested
-  :: Node -> Element -> JSArray -> IO Node
-
-foreign import javascript unsafe "mxEvent.addListener(replRead, 'keydown', mxUtils.bind(this, function(evt) { if (evt.keyCode == 13 /* Enter */) { replPrint($1); mxEvent.consume(evt); } }));" mx_set_keydownCb
+foreign import javascript unsafe "mx_eval_keydown = function(replRead) { mxEvent.addListener(replRead, 'keydown', mxUtils.bind(this, function(evt) { if (evt.keyCode == 13 /* Enter */) { replPrint($1); mxEvent.consume(evt); } })); };" mx_eval_keydown
   :: Callback a -> IO ()
 
 uml :: AnyExpr -> [String]
@@ -133,29 +131,10 @@ eventLoop fireKey jsval = do
   fireKey . head . pFromJSVal $ jsval
 
 main :: IO ()
-main
- -- Javascript
- = do
-  Just doc <- currentDocument
-  replRead <- createElement doc $ pack "input"
-  setAttribute replRead (pack "id") (pack "replRead")
-  setAttribute replRead (pack "type") (pack "text")
-  setAttribute replRead (pack "placeholder") (pack ">")
-  sidebarContainers <- getElementsByClassName doc (pack "geSidebarContainer")
-  Just sidebarContainer <- HTMLCollection.item sidebarContainers 0
-  sidebarContainerChildren <- getChildNodes sidebarContainer
-  Just sidebarContainerFirstChild <- NodeList.item sidebarContainerChildren 0
-  Just sidebarContainerSecondChild <- NodeList.item sidebarContainerChildren 1
-  replaced <-
-    mx_cloner_replaceNested
-      sidebarContainerSecondChild
-      replRead
-      (fromList $ map (pToJSVal :: Int -> JSVal) [0, 0, 0])
-  insertBefore sidebarContainer replaced (Just sidebarContainerFirstChild)
-  -- Reactive.Banana
+main = do
   (addKeyEvent, fireKey) <- newAddHandler
   network <- compile $ fromAddHandler addKeyEvent >>= networkDescription
   actuate network
   cb <- syncCallback1 ContinueAsync $ eventLoop fireKey
-  mx_set_keydownCb cb
+  mx_eval_keydown cb
   releaseCallback cb

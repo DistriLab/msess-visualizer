@@ -3,10 +3,11 @@
   packages = {
     ecce = ./ecce;
     ecce-frontend = ./ecce-frontend;
+    ecce-haskeline = ./ecce-haskeline;
   };
 
   shells = {
-    ghc = ["ecce"];
+    ghc = ["ecce" "ecce-haskeline"];
     ghcjs = ["ecce-frontend"];
   };
 })

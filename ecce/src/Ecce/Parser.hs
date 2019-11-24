@@ -18,7 +18,7 @@ import Control.Exception (SomeException)
 import qualified Control.Exception (try)
 import Control.Monad (liftM)
 import Ecce.Base (SParsec, extractParse)
-import Ecce.Interpreter (Output, mainHaskeline)
+import Ecce.Interpreter (Output, mainRegular)
 import System.IO (FilePath, readFile)
 import Text.Parsec ((<|>), alphaNum, between, lower, sepBy, sepBy1, try)
 import Text.ParserCombinators.Parsec.Expr
@@ -35,7 +35,7 @@ import qualified Text.ParserCombinators.Parsec.Token as Token
 type Test = (Integer, String, String)
 
 main :: IO ()
-main = mainHaskeline commandOutputs incommandOutput
+main = mainRegular commandOutputs incommandOutput
 
 commandOutputs :: [(String, Output)]
 commandOutputs =

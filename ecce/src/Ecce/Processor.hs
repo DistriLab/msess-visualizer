@@ -22,7 +22,7 @@ import Data.Functor ((<$), (<$>))
 import Data.List (intercalate, nub)
 import Data.Maybe (fromJust)
 import Ecce.Base (extractParse)
-import Ecce.Interpreter (Output, mainHaskeline)
+import Ecce.Interpreter (Output, mainRegular)
 import Ecce.Parser
   ( AnyExpr(AnyExpr)
   , Channel
@@ -70,7 +70,7 @@ import System.IO (FilePath)
  - SECTION USER INTERFACE
  -}
 main :: IO ()
-main = mainHaskeline commandOutputs incommandOutput
+main = mainRegular commandOutputs incommandOutput
 
 commandOutputs :: [(String, Output)]
 commandOutputs =

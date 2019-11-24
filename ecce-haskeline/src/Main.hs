@@ -1,6 +1,6 @@
 module Main where
 
-import qualified Ecce.Frontend (main)
+import qualified Ecce.Gloss.Frontend (main)
 
 main :: IO ()
-main = Ecce.Frontend.main
+main = Ecce.Gloss.Frontend.main

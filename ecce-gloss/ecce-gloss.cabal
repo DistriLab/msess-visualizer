@@ -31,7 +31,7 @@ library
 
 executable ecce-gloss
   main-is:             Main.hs
-  -- other-modules:
+  other-modules:     Ecce.Gloss.Frontend
   -- other-extensions:
   build-depends:       base ^>=4.12.0.0
                      , ecce

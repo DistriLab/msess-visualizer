@@ -1,2 +1,2 @@
-# default
-This is the default branch.
+# ecce-standalone
+This branch removes extraneous dependencies from ecce.

@@ -7,7 +7,7 @@
 {-
  - SECTION MODULE
  -}
-module Ecce.Frontend where
+module Ecce.Gloss.Frontend where
 
 {-
  - SECTION IMPORTS

@@ -23,7 +23,6 @@ import Ecce.Parser
   )
 import Ecce.Processor
   ( Process
-  , eventLoop
   , mayProcessToGlobalProtocol
   , networkProcessor
   , parseContents
@@ -31,9 +30,25 @@ import Ecce.Processor
   )
 import Ecce.Projector (projectPartyToEndpoint)
 import Ecce.Unparser (un)
+import GHCJS.DOM (currentDocument)
+import GHCJS.DOM.Document (createElement, getElementsByClassName)
+import GHCJS.DOM.Element (Element, setAttribute)
+import qualified GHCJS.DOM.HTMLCollection as HTMLCollection (item)
+import GHCJS.DOM.Node (Node, getChildNodes, insertBefore)
+import qualified GHCJS.DOM.NodeList as NodeList (item)
+import GHCJS.Foreign.Callback
+  ( Callback
+  , OnBlocked(ContinueAsync)
+  , releaseCallback
+  , syncCallback1
+  )
+import GHCJS.Marshal.Pure (pFromJSVal, pToJSVal)
+import GHCJS.Types (JSVal)
+import JavaScript.Array (JSArray, fromList)
 import Reactive.Banana (Behavior, Event, Moment, accumE, compile, liftMoment)
 import Reactive.Banana.Frameworks
-  ( MomentIO
+  ( Handler
+  , MomentIO
   , actuate
   , changes
   , fromAddHandler
@@ -44,6 +59,14 @@ import Reactive.Banana.Frameworks
 
 foreign import javascript unsafe "new Show().show($1)" mx_show
   :: JSString -> IO ()
+
+foreign import javascript unsafe "replPrint($1)" mx_print :: JSString -> IO ()
+
+foreign import javascript unsafe "new Cloner().replaceNested($1, replRead, [0, 0, 0])" mx_cloner_replaceNested
+  :: Node -> Element -> JSArray -> IO Node
+
+foreign import javascript unsafe "mxEvent.addListener(replRead, 'keydown', mxUtils.bind(this, function(evt) { if (evt.keyCode == 13 /* Enter */) { replPrint($1); mxEvent.consume(evt); } }));" mx_set_keydownCb
+  :: Callback a -> IO ()
 
 uml :: AnyExpr -> [String]
 uml (AnyExpr e)
@@ -88,18 +111,9 @@ networkPrinter (eTrans, bProc, eDone, bStepCount) = do
   eTransAcc <-
     accumE EGlobalProtocolEmp (maybe id EGlobalProtocolSequencing <$> eTrans)
   reactimate $ (mx_show . pack . un . AnyExpr) <$> eTransAcc
-  eProc <- changes bProc
-  -- TODO find more efficient way of getting endpoint protocols
-  reactimate' $
-    fmap
-      (putStrLn .
-       intercalate "\n" .
-       nub .
-       map (un . AnyExpr) . projectGlobalToEndpoint . mayProcessToGlobalProtocol) <$>
-    eProc
   eStepCount <- changes bStepCount
-  reactimate' $ fmap (mx_show . pack . show) <$> eStepCount
-  reactimate $ (mx_show . pack) "Done!" <$ eDone
+  reactimate' $ fmap (mx_print . pack . show) <$> eStepCount
+  reactimate $ (mx_print . pack) "Done!" <$ eDone
 
 networkDescription :: Event Char -> MomentIO ()
 networkDescription eKey =
@@ -114,9 +128,34 @@ networkDescription eKey =
      (Just <$> eKey)) >>=
   networkPrinter
 
+eventLoop :: Handler Char -> JSVal -> IO ()
+eventLoop fireKey jsval = do
+  fireKey . head . pFromJSVal $ jsval
+
 main :: IO ()
-main = do
+main
+ -- Javascript
+ = do
+  Just doc <- currentDocument
+  replRead <- createElement doc $ pack "input"
+  setAttribute replRead (pack "id") (pack "replRead")
+  setAttribute replRead (pack "type") (pack "text")
+  setAttribute replRead (pack "placeholder") (pack ">")
+  sidebarContainers <- getElementsByClassName doc (pack "geSidebarContainer")
+  Just sidebarContainer <- HTMLCollection.item sidebarContainers 0
+  sidebarContainerChildren <- getChildNodes sidebarContainer
+  Just sidebarContainerFirstChild <- NodeList.item sidebarContainerChildren 0
+  Just sidebarContainerSecondChild <- NodeList.item sidebarContainerChildren 1
+  replaced <-
+    mx_cloner_replaceNested
+      sidebarContainerSecondChild
+      replRead
+      (fromList $ map (pToJSVal :: Int -> JSVal) [0, 0, 0])
+  insertBefore sidebarContainer replaced (Just sidebarContainerFirstChild)
+  -- Reactive.Banana
   (addKeyEvent, fireKey) <- newAddHandler
   network <- compile $ fromAddHandler addKeyEvent >>= networkDescription
   actuate network
-  eventLoop fireKey network
+  cb <- syncCallback1 ContinueAsync $ eventLoop fireKey
+  mx_set_keydownCb cb
+  releaseCallback cb

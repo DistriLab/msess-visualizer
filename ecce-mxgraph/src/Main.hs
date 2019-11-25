@@ -57,13 +57,15 @@ import Reactive.Banana.Frameworks
   , reactimate'
   )
 
-foreign import javascript unsafe "new Show().show($1)" mx_show
+foreign import javascript unsafe "new Show().show($1);" mx_show
   :: JSString -> IO ()
 
-foreign import javascript unsafe "replPrint($1)" mx_print :: JSString -> IO ()
+foreign import javascript unsafe "replShow($1);" mx_print :: JSString -> IO ()
 
 foreign import javascript unsafe "mx_eval_keydown = function(replRead) { mxEvent.addListener(replRead, 'keydown', mxUtils.bind(this, function(evt) { if (evt.keyCode == 13 /* Enter */) { replEval($1, false); mxEvent.consume(evt); } })); };" mx_eval_keydown
   :: Callback a -> IO ()
+
+foreign import javascript unsafe "console.log($1);" mx_log :: JSString -> IO ()
 
 uml :: AnyExpr -> [String]
 uml (AnyExpr e)

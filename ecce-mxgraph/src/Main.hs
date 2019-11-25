@@ -36,7 +36,12 @@ import GHCJS.DOM.Element (Element, setAttribute)
 import qualified GHCJS.DOM.HTMLCollection as HTMLCollection (item)
 import GHCJS.DOM.Node (Node, getChildNodes, insertBefore)
 import qualified GHCJS.DOM.NodeList as NodeList (item)
-import GHCJS.Foreign.Callback (Callback, releaseCallback, syncCallback1')
+import GHCJS.Foreign.Callback
+  ( Callback
+  , OnBlocked(ContinueAsync)
+  , releaseCallback
+  , syncCallback1
+  )
 import GHCJS.Marshal.Pure (pFromJSVal, pToJSVal)
 import GHCJS.Types (JSVal)
 import JavaScript.Array (JSArray, fromList)
@@ -57,7 +62,7 @@ foreign import javascript unsafe "new Show().show($1)" mx_show
 
 foreign import javascript unsafe "replPrint($1)" mx_print :: JSString -> IO ()
 
-foreign import javascript unsafe "mx_eval_keydown = function(replRead) { mxEvent.addListener(replRead, 'keydown', mxUtils.bind(this, function(evt) { if (evt.keyCode == 13 /* Enter */) { replPrint($1); mxEvent.consume(evt); } })); };" mx_eval_keydown
+foreign import javascript unsafe "mx_eval_keydown = function(replRead) { mxEvent.addListener(replRead, 'keydown', mxUtils.bind(this, function(evt) { if (evt.keyCode == 13 /* Enter */) { replEval($1, false); mxEvent.consume(evt); } })); };" mx_eval_keydown
   :: Callback a -> IO ()
 
 uml :: AnyExpr -> [String]
@@ -120,16 +125,17 @@ networkDescription eKey =
      (Just <$> eKey)) >>=
   networkPrinter
 
-eventLoop :: Handler Char -> JSVal -> IO JSVal
-eventLoop fireKey jsval = do
-  fireKey . head . pFromJSVal $ jsval
-  return jsval
+eventLoop :: Handler Char -> JSVal -> IO ()
+eventLoop fireKey s = do
+  let c = head . pFromJSVal $ s
+  fireKey c
+  (mx_log . pFromJSVal . pToJSVal) c
 
 main :: IO ()
 main = do
   (addKeyEvent, fireKey) <- newAddHandler
   network <- compile $ fromAddHandler addKeyEvent >>= networkDescription
   actuate network
-  cb <- syncCallback1' $ eventLoop fireKey
+  cb <- syncCallback1 ContinueAsync $ eventLoop fireKey
   mx_eval_keydown cb
   releaseCallback cb

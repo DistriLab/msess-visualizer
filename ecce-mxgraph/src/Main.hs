@@ -36,13 +36,7 @@ import GHCJS.DOM.Element (Element, setAttribute)
 import qualified GHCJS.DOM.HTMLCollection as HTMLCollection (item)
 import GHCJS.DOM.Node (Node, getChildNodes, insertBefore)
 import qualified GHCJS.DOM.NodeList as NodeList (item)
-import GHCJS.Foreign.Callback
-  ( Callback
-  , OnBlocked(ContinueAsync)
-  , releaseCallback
-  , syncCallback
-  , syncCallback1
-  )
+import GHCJS.Foreign.Callback (Callback, releaseCallback, syncCallback1')
 import GHCJS.Marshal.Pure (pFromJSVal, pToJSVal)
 import GHCJS.Types (JSVal)
 import JavaScript.Array (JSArray, fromList)
@@ -126,15 +120,16 @@ networkDescription eKey =
      (Just <$> eKey)) >>=
   networkPrinter
 
-eventLoop :: Handler Char -> JSVal -> IO ()
+eventLoop :: Handler Char -> JSVal -> IO JSVal
 eventLoop fireKey jsval = do
   fireKey . head . pFromJSVal $ jsval
+  return jsval
 
 main :: IO ()
 main = do
   (addKeyEvent, fireKey) <- newAddHandler
   network <- compile $ fromAddHandler addKeyEvent >>= networkDescription
   actuate network
-  cb <- syncCallback1 ContinueAsync $ eventLoop fireKey
+  cb <- syncCallback1' $ eventLoop fireKey
   mx_eval_keydown cb
   releaseCallback cb
